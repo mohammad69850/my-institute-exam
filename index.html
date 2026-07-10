@@ -4,20 +4,23 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>MY Institute – Exam System</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&family=Amiri:wght@400;700&display=swap" rel="stylesheet"/>
   <!-- jsPDF for client-side PDF generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     :root{
-      --gold:#B8972A;--gold-light:#D4AF37;--gold-pale:#F0DFA0;
-      --black:#0A0A0A;--dark:#111111;--card:#181818;--border:#2A2A2A;
-      --text:#E8E8E8;--muted:#888;--danger:#C0392B;--success:#27AE60;--radius:10px;
+      --gold:#C8971A;--gold-light:#E6A800;--gold-pale:#FFF3CC;
+      --black:#1A1200;--dark:#FFFBF0;--card:#FFFFFF;--border:#E8D9A0;
+      --text:#2C1810;--muted:#8B7355;--danger:#C0392B;--success:#1E8449;--radius:12px;
+      --bg:#FFFDF5;--bg2:#FFF8E1;--accent:#4A7C59;--accent-light:#E8F5E9;
+      --blue:#2E6DA4;--blue-light:#EBF4FF;--purple:#6B4FA0;--purple-light:#F3EEFF;
+      --shadow:0 2px 16px rgba(180,140,0,0.10);
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{background:var(--black);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
+    body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
 
     /* HEADER */
-    .header{background:var(--dark);border-bottom:1px solid var(--border);padding:14px 24px;
+    .header{background:#FFFFFF;border-bottom:2px solid var(--border);padding:14px 24px;box-shadow:0 2px 12px rgba(180,140,0,0.08);
       display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
     .logo-area{display:flex;align-items:center;gap:12px}
     .logo-area img{height:44px;width:44px;object-fit:contain;border-radius:6px}
@@ -35,20 +38,20 @@
 
     /* AUTH */
     .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;
-      padding:24px;background:radial-gradient(ellipse at 50% 30%,#1a1500 0%,var(--black) 70%)}
-    .auth-card{background:var(--card);border:1px solid var(--border);border-radius:16px;
-      padding:48px 40px;width:100%;max-width:400px;text-align:center}
+      padding:24px;background:linear-gradient(135deg,#FFFDF0 0%,#FFF8DC 50%,#F0F8E8 100%)}
+    .auth-card{background:#FFFFFF;border:2px solid var(--border);border-radius:20px;
+      padding:48px 40px;width:100%;max-width:400px;text-align:center;box-shadow:0 8px 40px rgba(180,140,0,0.15)}
     .auth-logo{height:80px;margin-bottom:16px}
-    .auth-title{font-family:'Cinzel',serif;font-size:22px;color:var(--gold-light);margin-bottom:4px}
+    .auth-title{font-family:'Cinzel',serif;font-size:22px;color:var(--gold);margin-bottom:4px}
     .auth-sub{font-size:13px;color:var(--muted);margin-bottom:32px}
 
     /* FIELDS & BTNS */
     .field{margin-bottom:16px;text-align:left}
     .field label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;
       display:block;margin-bottom:6px}
-    .field input,.field select,.field textarea{width:100%;background:var(--dark);border:1px solid var(--border);
+    .field input,.field select,.field textarea{width:100%;background:#FFFDF5;border:2px solid var(--border);
       border-radius:var(--radius);padding:12px 14px;color:var(--text);font-size:14px;
-      font-family:'Inter',sans-serif;transition:border-color .2s}
+      font-family:'Inter',sans-serif;transition:all .2s}
     .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--gold)}
     .field textarea{resize:vertical;min-height:80px}
     .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
@@ -68,7 +71,7 @@
 
     /* CONTAINER & TABS */
     .container{max-width:1200px;margin:0 auto;padding:32px 24px}
-    .tabs{display:flex;gap:4px;background:var(--dark);border:1px solid var(--border);
+    .tabs{display:flex;gap:4px;background:#FFF8E1;border:2px solid var(--border);
       border-radius:10px;padding:4px;margin-bottom:28px;width:fit-content;flex-wrap:wrap}
     .tab{padding:8px 18px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;
       color:var(--muted);background:transparent;border:none;transition:all .2s;font-family:'Inter',sans-serif}
@@ -76,12 +79,12 @@
     .tab:not(.active):hover{color:var(--text)}
 
     /* LEADERBOARD */
-    .leaderboard-section{background:var(--card);border:1px solid var(--border);
-      border-radius:14px;padding:24px;margin-bottom:32px}
+    .leaderboard-section{background:linear-gradient(135deg,#FFFDF0 0%,#FFFFFF 100%);border:2px solid var(--border);
+      border-radius:18px;padding:24px;margin-bottom:32px;box-shadow:0 4px 20px rgba(180,140,0,0.10)}
     .section-title{font-family:'Cinzel',serif;font-size:16px;color:var(--gold-light);
       margin-bottom:20px;display:flex;align-items:center;gap:10px}
-    .lb-row{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:8px;
-      margin-bottom:8px;background:var(--dark);border:1px solid transparent;transition:border-color .2s}
+    .lb-row{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:12px;
+      margin-bottom:8px;background:#FFFBF0;border:2px solid transparent;transition:all .2s}
     .lb-row:hover{border-color:var(--border)}
     .lb-row.top1{border-color:#FFD700;background:linear-gradient(135deg,rgba(255,215,0,.08) 0%,transparent 100%)}
     .lb-row.top2{border-color:#C0C0C0;background:linear-gradient(135deg,rgba(192,192,192,.06) 0%,transparent 100%)}
@@ -97,13 +100,13 @@
     .grid{display:grid;gap:16px}
     .grid-2{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
     .grid-3{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:12px;
-      padding:20px;transition:border-color .2s,transform .2s}
-    .card:hover{border-color:var(--gold);transform:translateY(-2px)}
+    .card{background:#FFFFFF;border:2px solid var(--border);border-radius:16px;
+      padding:22px;transition:all .2s;box-shadow:0 2px 12px rgba(180,140,0,0.07)}
+    .card:hover{border-color:var(--gold-light);transform:translateY(-3px);box-shadow:0 8px 24px rgba(180,140,0,0.15)}
     .card-title{font-weight:600;font-size:15px;margin-bottom:8px}
     .card-meta{font-size:12px;color:var(--muted);margin-bottom:14px}
     .stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-bottom:28px}
-    .stat-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;text-align:center}
+    .stat-box{background:#FFFFFF;border:2px solid var(--border);border-radius:14px;padding:20px;text-align:center;box-shadow:0 2px 10px rgba(180,140,0,0.08)}
     .stat-num{font-family:'Cinzel',serif;font-size:28px;font-weight:700;color:var(--gold-light)}
     .stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
     .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
@@ -114,7 +117,7 @@
 
     /* EXAM AREA */
     .exam-wrap{max-width:760px;margin:0 auto;padding:32px 24px}
-    .exam-header{background:var(--card);border:1px solid var(--border);border-radius:12px;
+    .exam-header{background:#FFFFFF;border:2px solid var(--border);border-radius:16px;box-shadow:0 2px 12px rgba(180,140,0,0.08);
       padding:20px 24px;display:flex;align-items:center;justify-content:space-between;
       margin-bottom:24px;flex-wrap:wrap;gap:12px}
     .exam-title-area .name{font-family:'Cinzel',serif;font-size:18px;color:var(--gold-light)}
@@ -128,11 +131,11 @@
     .progress-bar{height:4px;background:var(--border);border-radius:2px;margin-bottom:28px;overflow:hidden}
     .progress-fill{height:100%;background:linear-gradient(90deg,var(--gold) 0%,var(--gold-light) 100%);
       border-radius:2px;transition:width .3s}
-    .question-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:16px}
+    .question-card{background:#FFFFFF;border:2px solid var(--border);border-radius:16px;padding:28px;margin-bottom:16px;box-shadow:0 2px 12px rgba(180,140,0,0.07)}
     .question-num{font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
     .question-text{font-size:17px;line-height:1.6;margin-bottom:22px}
     .options{display:grid;gap:10px}
-    .option{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--dark);
+    .option{display:flex;align-items:center;gap:14px;padding:14px 18px;background:#FFFDF5;
       border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all .2s;font-size:14px}
     .option:hover{border-color:var(--gold)}
     .option.selected{border-color:var(--gold-light);background:rgba(184,151,42,.1)}
@@ -147,8 +150,8 @@
     .exam-nav{display:flex;gap:12px;justify-content:space-between;margin-top:24px;flex-wrap:wrap}
 
     /* RESULT */
-    .result-card{background:var(--card);border:1px solid var(--border);border-radius:16px;
-      padding:40px;text-align:center;max-width:520px;margin:0 auto}
+    .result-card{background:#FFFFFF;border:2px solid var(--border);border-radius:20px;
+      padding:40px;text-align:center;max-width:520px;margin:0 auto;box-shadow:0 8px 32px rgba(180,140,0,0.12)}
     .result-score-ring{width:140px;height:140px;border-radius:50%;border:6px solid var(--gold);
       display:flex;flex-direction:column;align-items:center;justify-content:center;
       margin:0 auto 24px;background:radial-gradient(circle,rgba(184,151,42,.1) 0%,transparent 70%)}
@@ -174,7 +177,7 @@
     .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);
       z-index:1000;align-items:center;justify-content:center;padding:20px}
     .modal-overlay.open{display:flex}
-    .modal{background:var(--card);border:1px solid var(--border);border-radius:16px;
+    .modal{background:#FFFFFF;border:2px solid var(--border);border-radius:20px;
       padding:32px;width:100%;max-width:580px;max-height:88vh;overflow-y:auto}
     .modal-title{font-family:'Cinzel',serif;font-size:18px;color:var(--gold-light);
       margin-bottom:24px;display:flex;align-items:center;justify-content:space-between}
@@ -183,13 +186,13 @@
     .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;flex-wrap:wrap}
 
     /* MCQ BUILDER */
-    .question-builder{background:var(--dark);border:1px solid var(--border);border-radius:10px;
+    .question-builder{background:#FFFBF0;border:2px solid var(--border);border-radius:12px;
       padding:18px;margin-bottom:12px;position:relative}
     .question-builder .q-num{font-size:11px;color:var(--gold);margin-bottom:10px;font-weight:600;text-transform:uppercase}
     .option-input{display:flex;gap:8px;margin-bottom:8px;align-items:center}
     .option-input label{font-size:12px;color:var(--muted);min-width:20px}
     .option-input input[type="radio"]{accent-color:var(--gold-light)}
-    .option-input input[type="text"]{flex:1;background:var(--card);border:1px solid var(--border);
+    .option-input input[type="text"]{flex:1;background:#FFFFFF;border:2px solid var(--border);
       border-radius:6px;padding:8px 10px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif}
     .option-input input[type="text"]:focus{outline:none;border-color:var(--gold)}
     .del-q-btn{position:absolute;top:12px;right:12px;background:rgba(192,57,43,.15);
@@ -202,12 +205,12 @@
 
     /* TABLE */
     table{width:100%;border-collapse:collapse;font-size:13px}
-    th{background:var(--dark);color:var(--muted);font-weight:500;text-align:left;
+    th{background:#FFF8E1;color:var(--muted);font-weight:600;text-align:left;
       padding:10px 14px;text-transform:uppercase;font-size:11px;letter-spacing:.5px}
     td{padding:12px 14px;border-bottom:1px solid var(--border)}
     tr:last-child td{border-bottom:none}
     tr:hover td{background:rgba(255,255,255,.02)}
-    .table-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;
+    .table-wrap{background:#FFFFFF;border:2px solid var(--border);border-radius:16px;
       overflow:hidden;overflow-x:auto}
 
     /* ALERTS */
@@ -235,7 +238,7 @@
     .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
     .empty-state{text-align:center;padding:48px 24px;color:var(--muted)}
     .empty-state .icon{font-size:48px;margin-bottom:12px}
-    .wa-msg-box{background:var(--dark);border:1px solid var(--border);border-radius:10px;
+    .wa-msg-box{background:#F0FFF4;border:2px solid #A8D5B5;border-radius:10px;
       padding:14px;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word;
       color:var(--text);max-height:200px;overflow-y:auto}
     .gift-tag{font-size:11px;background:rgba(184,151,42,.15);border:1px solid var(--gold);
@@ -248,7 +251,7 @@
       .tabs{gap:2px}.tab{padding:7px 12px;font-size:12px}
     }
     ::-webkit-scrollbar{width:6px;height:6px}
-    ::-webkit-scrollbar-track{background:var(--dark)}
+    ::-webkit-scrollbar-track{background:#FFF8E1}
     ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
     ::-webkit-scrollbar-thumb:hover{background:var(--gold)}
     .fade-in{animation:fadeIn .3s ease}
@@ -272,6 +275,12 @@
       <img src="logo.jpeg" class="auth-logo" alt="MY Institute" onerror="this.style.display='none'"/>
       <div class="auth-title">MY Institute</div>
       <div class="auth-sub">Exam & Learning Portal</div>
+      <div class="learn-icons">
+        <div class="learn-icon li-quran">📖</div>
+        <div class="learn-icon li-arabic">ع</div>
+        <div class="learn-icon li-star">⭐</div>
+        <div class="learn-icon li-book">🎓</div>
+      </div>
       <div id="loginAlert"></div>
       <div class="field"><label>Username</label><input type="text" id="loginUsername" placeholder="Enter username" autocomplete="username"/></div>
       <div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="Enter password" autocomplete="current-password"/></div>
@@ -312,9 +321,18 @@
 <!-- ═══ PAGE: HOME ═══ -->
 <div class="page" id="page-home">
   <div class="container fade-in">
-    <div style="margin-bottom:28px">
-      <h1 style="font-family:'Cinzel',serif;font-size:22px;color:var(--gold-light)" id="homeWelcome">Welcome!</h1>
-      <p class="text-muted mt-16" id="homeSubtitle">Your learning portal</p>
+    <!-- Welcome Banner -->
+    <div class="home-banner">
+      <div class="home-banner-icon">🕌</div>
+      <div style="flex:1">
+        <h1 id="homeWelcome">Welcome!</h1>
+        <p id="homeSubtitle">Your learning portal</p>
+        <div class="subject-chips">
+          <span class="chip chip-quran">📖 Quran</span>
+          <span class="chip chip-arabic">✍️ Arabic</span>
+          <span class="chip chip-islamic">☪️ Islamic Studies</span>
+        </div>
+      </div>
     </div>
     <div id="adminStats" style="display:none">
       <div class="stats-row">
@@ -328,6 +346,27 @@
     <div class="leaderboard-section">
       <div class="section-title"><span>🏆</span> Hall of Excellence — Top Students</div>
       <div id="leaderboardList"><div class="empty-state"><div class="icon">🎓</div><p>No results yet. Be the first!</p></div></div>
+    </div>
+    <!-- Learning Tips (student) -->
+    <div id="tipsRow" style="display:none">
+      <div class="tips-row">
+        <div class="tip-card">
+          <div class="tip-icon">📖</div>
+          <div><div class="tip-title">Read carefully</div><div class="tip-desc">Take your time reading each question before answering</div></div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">⏱️</div>
+          <div><div class="tip-title">Watch the timer</div><div class="tip-desc">Keep an eye on remaining time and pace yourself</div></div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">🌟</div>
+          <div><div class="tip-title">Do your best</div><div class="tip-desc">Review your answers before submitting when possible</div></div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">🏆</div>
+          <div><div class="tip-title">Earn certificates</div><div class="tip-desc">Pass exams to earn your MY Institute certificate</div></div>
+        </div>
+      </div>
     </div>
     <!-- Student exams -->
     <div id="studentExamsSection" style="display:none">
@@ -727,6 +766,7 @@ async function afterLogin(){
   }else{
     document.getElementById('adminStats').style.display='none';
     document.getElementById('adminNav').style.display='none';
+    document.getElementById('tipsRow').style.display='block';
     document.getElementById('studentExamsSection').style.display='block';
     renderAvailableExams();
     renderStudentProfile();
@@ -1113,11 +1153,15 @@ function renderAvailableExams(){
     return !hasSched||!!sched; // if no schedule, always show; if schedule exists, only show if open
   });
   if(!active.length){container.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="icon">📝</div><p>No exams available right now.<br><span style="font-size:13px">Check back soon!</span></p></div>';return;}
-  container.innerHTML=active.map(e=>{
+  container.innerHTML=active.map((e,idx)=>{
     const myRes=allResults.filter(r=>r.student_id===currentUser.id&&r.exam_id===e.id);
     const best=myRes.length?Math.max(...myRes.map(r=>r.score)):null;
     const sched=allSchedules.find(s=>s.exam_id===e.id&&new Date(s.opens_at)<=now&&new Date(s.closes_at)>=now);
-    return `<div class="card">
+    const icons=['📖','✍️','☪️','🌙','⭐','📝'];
+    const colors=['#FFF8E1','#E8F5E9','#F3EEFF','#EBF4FF','#FFF0F0','#F0FFF4'];
+    const borders=['#E6A800','#4A7C59','#9B7ED4','#5B9BD5','#E74C3C','#27AE60'];
+    return `<div class="card" style="border-top:4px solid ${borders[idx%6]};background:${colors[idx%6]}">
+      <div style="font-size:36px;margin-bottom:10px">${icons[idx%6]}</div>
       <div class="card-title">${e.title}</div>
       <div class="card-meta">${e.subject||''} • ⏱ ${e.duration_minutes} min • ${(e.questions||[]).length} questions</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:12px">${e.description||''}</div>
