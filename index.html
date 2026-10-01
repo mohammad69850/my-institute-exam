@@ -1863,11 +1863,17 @@ function renderDiscountsTable(){
 }
 
 // ── AVAILABLE EXAMS (student) ─────────────────
+// Test / trial accounts (username or name contains: trial, test, demo, تجريب, تجربة):
+// they can open any active exam, any time, as many times as they like (the old attempt is replaced).
+function isTestAccount(u){return !!u&&/trial|test|demo|تجريب|تجربة/i.test(`${u.username||''} ${u.name||''}`);}
+
 function renderAvailableExams(){
   const container=document.getElementById('availableExamsList');if(!container)return;
   const now=new Date();
+  const test=isTestAccount(currentUser);
   const active=allExams.filter(e=>{
     if(!e.is_active)return false;
+    if(test)return true;
     if(e.assigned_students&&e.assigned_students.length&&!e.assigned_students.includes(currentUser.id))return false;
     const sched=allSchedules.find(s=>s.exam_id===e.id&&new Date(s.opens_at)<=now&&new Date(s.closes_at)>=now);
     const hasSched=allSchedules.some(s=>s.exam_id===e.id);
@@ -1882,8 +1888,9 @@ function renderAvailableExams(){
     const myRes=allResults.filter(r=>r.student_id===currentUser.id&&r.exam_id===e.id);
     const best=myRes.filter(r=>r.graded!==false).length?Math.max(...myRes.filter(r=>r.graded!==false).map(r=>r.score)):null;
     const sched=allSchedules.find(s=>s.exam_id===e.id&&new Date(s.opens_at)<=now&&new Date(s.closes_at)>=now);
-    const doneToday=myRes.length>0;
-    const upcoming=!sched&&allSchedules.filter(s=>s.exam_id===e.id&&new Date(s.opens_at)>now).sort((a,b)=>new Date(a.opens_at)-new Date(b.opens_at))[0];
+    const doneToday=!test&&myRes.length>0;
+    const startedOnly=myRes.length>0&&myRes.every(r=>r.admin_note===STARTED_NOTE);
+    const upcoming=!test&&!sched&&allSchedules.filter(s=>s.exam_id===e.id&&new Date(s.opens_at)>now).sort((a,b)=>new Date(a.opens_at)-new Date(b.opens_at))[0];
     const pendingMine=myRes.some(r=>r.graded===false&&r.admin_note!==STARTED_NOTE);
     return `<div class="card" style="border-top:4px solid ${borders[idx%6]};background:${bgs[idx%6]}">
       <div style="font-size:36px;margin-bottom:10px">${icons[idx%6]}</div>
@@ -1891,10 +1898,11 @@ function renderAvailableExams(){
       <div class="card-meta">${e.subject||''}${e.level?' • '+e.level:''} • ⏱ ${e.duration_minutes} min • ${(e.questions||[]).length} questions</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:12px">${e.description||''}</div>
       ${sched?`<div style="font-size:11px;color:var(--success);margin-bottom:10px">🟢 Open until ${new Date(sched.closes_at).toLocaleString()}</div>`:''}
+      ${test?`<div class="alert alert-info" style="margin-bottom:10px;font-size:12px">🧪 Test account — you can open this exam any time and retake it as many times as you want.</div>`:''}
       ${pendingMine?`<div class="alert alert-info" style="margin-bottom:10px;font-size:12px">⏳ A previous result is pending grading</div>`:''}
       ${best!==null?`<div class="alert alert-info" style="margin-bottom:10px;font-size:12px">Best score: <strong>${Math.round(best)}%</strong></div>`:''}
       ${upcoming&&!doneToday?`<div class="alert alert-info" style="margin-bottom:10px;font-size:12px">🗓️ Opens ${new Date(upcoming.opens_at).toLocaleString()}<br>Closes ${new Date(upcoming.closes_at).toLocaleString()}</div><button class="btn btn-ghost" disabled style="cursor:not-allowed;opacity:.6">🔒 Not open yet</button>`:doneToday
-        ?`<button class="btn btn-ghost" disabled style="cursor:not-allowed;opacity:.6">✅ Already taken</button>`
+        ?`<button class="btn btn-ghost" disabled style="cursor:not-allowed;opacity:.6">${startedOnly?'⚠️ Attempt started, not submitted — ask your teacher for a retake':'✅ Already taken'}</button>`
         :`<button class="btn btn-primary" onclick="startExam('${e.id}')">Start Exam →</button>`
       }
     </div>`;
@@ -1906,13 +1914,22 @@ const STARTED_NOTE='⚠️ Started but not submitted';
 let activeResultId=null;
 async function startExam(examId){
   const exam=allExams.find(e=>e.id===examId);
-  if(!exam||!(exam.questions||[]).length){alert('This exam has no questions yet.');return;}
-  if(allResults.some(r=>r.student_id===currentUser.id&&r.exam_id===examId)){alert('You have already taken this exam. It can only be taken once.');return;}
+  const test=isTestAccount(currentUser);
+  if(!exam||!(exam.questions||[]).length){alert('This exam has no questions yet. Please tell your teacher.');return;}
+  const mine=allResults.filter(r=>r.student_id===currentUser.id&&r.exam_id===examId);
+  if(!test&&mine.length){alert('You have already taken (or started) this exam, so it cannot be opened again.\n\nIf you need another attempt, ask your teacher/admin to press “🔁 Allow retake” for you.');renderAvailableExams();return;}
   const scs=allSchedules.filter(x=>x.exam_id===examId);
-  if(scs.length){const n=new Date();
-    if(!scs.some(x=>new Date(x.opens_at)<=n&&new Date(x.closes_at)>=n)){alert('This exam is not open right now.');renderAvailableExams();return;}}
-  if(!confirm(`Start "${exam.title}"?\n⏱ Duration: ${exam.duration_minutes} minutes\n❓ Questions: ${exam.questions.length}\n\n⚠️ You can enter this exam ONLY ONCE. Do not close or refresh the page until you submit.`))return;
+  if(!test&&scs.length){const n=new Date();
+    if(!scs.some(x=>new Date(x.opens_at)<=n&&new Date(x.closes_at)>=n)){
+      const w=scs.slice().sort((a,b)=>new Date(a.opens_at)-new Date(b.opens_at));const nx=w.find(x=>new Date(x.opens_at)>n)||w[w.length-1];
+      alert('This exam is not open right now.\n\nOpen window: '+new Date(nx.opens_at).toLocaleString()+'  →  '+new Date(nx.closes_at).toLocaleString());renderAvailableExams();return;}}
+  const warn=test?'🧪 Test account: you can retake this exam any time (your previous attempt will be replaced).':'⚠️ You can enter this exam ONLY ONCE. Do not close or refresh the page until you submit.';
+  if(!confirm(`Start "${exam.title}"?\n⏱ Duration: ${exam.duration_minutes} minutes\n❓ Questions: ${exam.questions.length}\n\n${warn}`))return;
   showLoading('Starting exam…');
+  if(test&&mine.length){
+    try{for(const r of mine)await sb(`results?id=eq.${r.id}`,{method:'DELETE',prefer:''});
+      allResults=allResults.filter(r=>!(r.student_id===currentUser.id&&r.exam_id===examId));}catch(e){}
+  }
   try{
     const res=await sb('results',{method:'POST',body:JSON.stringify({student_id:currentUser.id,exam_id:examId,score:null,answers:{},audio_answers:{},time_used_seconds:0,passed:null,graded:false,pending_manual:[],earned_points:0,total_points:0,submitted_at:new Date().toISOString(),attempt_date:todayStr(),admin_note:STARTED_NOTE})});
     const d=await res.json();
