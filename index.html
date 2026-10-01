@@ -206,7 +206,12 @@
     .tip-icon{font-size:22px;flex-shrink:0}
     .tip-title{font-weight:600;font-size:13px;margin-bottom:4px}
     .tip-desc{font-size:12px;color:var(--muted)}
-  </style>
+  #rvBody.only-wrong .rv-ok{display:none}.qtype-note{font-size:12px;color:var(--muted);margin-bottom:6px}.insp-card{background:linear-gradient(135deg,#F0FDF4 0%,#EFF8FF 100%);border:2px solid var(--border);border-radius:18px;padding:22px 26px;margin-bottom:24px;box-shadow:0 4px 20px rgba(21,101,192,.08)}
+.insp-tag{display:inline-block;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold);background:#fff;border:1px solid var(--border);border-radius:20px;padding:3px 12px;margin-bottom:10px}
+.insp-hi{font-size:15px;font-weight:600;color:var(--gold-pale);margin-bottom:8px}
+.insp-text{font-family:'Amiri',serif;font-size:21px;line-height:1.6;color:var(--text)}
+.insp-src{margin-top:8px;font-size:13px;color:var(--muted)}
+</style>
 </head>
 <body>
 
@@ -225,8 +230,8 @@
       <div class="auth-title">MY Institute</div>
       <div class="auth-sub">Exam & Learning Portal</div>
       <div id="loginAlert"></div>
-      <div class="field"><label>Username</label><input type="text" id="loginUsername" placeholder="Enter username" autocomplete="username"/></div>
-      <div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="Enter password" autocomplete="current-password"/></div>
+      <div class="field"><label>Username</label><input type="text" id="loginUsername" placeholder="Enter username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"/></div>
+      <div class="field"><label>Password</label><div style="position:relative"><input type="password" id="loginPassword" placeholder="Enter password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" style="padding-right:64px"/><button type="button" id="pwToggle" onclick="togglePw()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--gold);font-size:12px;font-weight:600;cursor:pointer;padding:6px">Show</button></div></div>
       <button class="btn btn-primary" onclick="login()">Sign In</button>
       <div style="margin-top:20px;font-size:13px;color:var(--muted)">Don't have an account? <a style="color:var(--gold);cursor:pointer" onclick="showPage('page-register')">Request Access</a></div>
     </div>
@@ -248,12 +253,13 @@
 <!-- HEADER -->
 <div id="mainHeader" style="display:none">
   <div class="header">
-    <div class="logo-area">
+    <div class="logo-area" onclick="goHome()" style="cursor:pointer" title="Home">
       <img src="logo.jpeg" alt="MY Institute" onerror="this.style.display='none'"/>
       <div><div class="logo-text">MY Institute</div><div class="logo-sub">Exam Portal</div></div>
     </div>
     <div class="header-right">
       <div class="user-badge" id="headerUser">—</div>
+      <button class="btn-sm" id="headerHomeBtn" onclick="goHome()">🏠 Home</button>
       <button class="btn-sm" id="headerProfileBtn" onclick="showPage('page-profile')" style="display:none">👤 My Profile</button>
       <button class="btn-sm" id="headerTeacherBtn" onclick="showPage('page-teacher')" style="display:none">📚 Teacher Panel</button>
       <button class="btn-sm" id="headerAdminBtn" onclick="showPage('page-admin')" style="display:none">⚙️ Admin</button>
@@ -277,6 +283,7 @@
         </div>
       </div>
     </div>
+    <div id="dailyInspiration" class="insp-card"></div>
     <div id="notifBannerArea"></div>
     <div id="adminStats" style="display:none">
       <div class="stats-row">
@@ -289,6 +296,11 @@
     <div class="leaderboard-section">
       <div class="section-title"><span>🏆</span> Hall of Excellence — Top Students</div>
       <div id="leaderboardList"><div class="empty-state"><div class="icon">🎓</div><p>No results yet. Be the first!</p></div></div>
+    </div>
+    <div id="ratingSection" class="insp-card" style="display:none">
+      <div class="section-title" style="margin-bottom:12px"><span>⭐</span> Rate Your Teacher</div>
+      <div id="rtAlert"></div>
+      <div id="rtBody"></div>
     </div>
     <div id="tipsRow" style="display:none">
       <div class="tips-row">
@@ -314,6 +326,8 @@
         <button class="btn btn-outline" onclick="showAdminTab('results')">📊 Results</button>
         <button class="btn btn-outline" onclick="showAdminTab('discounts')">🎁 Gifts</button>
         <button class="btn btn-outline" onclick="showAdminTab('reports')">📈 Reports</button>
+        <button class="btn btn-outline" onclick="showAdminTab('ratings')">⭐ Ratings</button>
+        <button class="btn btn-outline" onclick="showAdminTab('messages')">💬 Messages</button>
       </div>
     </div>
     <div id="teacherNav" style="display:none">
@@ -322,6 +336,8 @@
         <button class="btn btn-outline" onclick="showTeacherTab('bank')">📚 My Questions</button>
         <button class="btn btn-outline" onclick="showTeacherTab('exams')">📋 My Exams</button>
         <button class="btn btn-outline" onclick="showTeacherTab('results')">📊 Results</button>
+        <button class="btn btn-outline" onclick="showTeacherTab('students')">👥 My Students</button>
+        <button class="btn btn-outline" onclick="showTeacherTab('ratings')">⭐ My Ratings</button>
       </div>
     </div>
   </div>
@@ -338,6 +354,8 @@
       <button class="tab" onclick="switchAdminTab('results')" id="tabBtn-results">📊 Results</button>
       <button class="tab" onclick="switchAdminTab('discounts')" id="tabBtn-discounts">🎁 Gifts</button>
       <button class="tab" onclick="switchAdminTab('reports')" id="tabBtn-reports">📈 Reports</button>
+      <button class="tab" onclick="switchAdminTab('ratings')" id="tabBtn-ratings">⭐ Ratings</button>
+      <button class="tab" onclick="switchAdminTab('messages')" id="tabBtn-messages">💬 Messages</button>
     </div>
 
     <!-- STUDENTS TAB -->
@@ -359,7 +377,7 @@
     <div id="adminTab-bank" style="display:none">
       <div class="section-header">
         <div class="section-title" style="margin:0">📚 Question Bank</div>
-        <button class="btn btn-primary" style="width:auto;padding:10px 18px" onclick="openBankModal()">+ Add Question</button>
+        <button class="btn btn-primary" style="width:auto;padding:10px 18px" onclick="openBankModal()">+ Add Question</button> <button class="btn btn-outline" style="width:auto;padding:10px 18px" onclick="openSectionsModal()">🗂️ Sections</button>
       </div>
       <div class="bank-filters">
         <select id="bankFilterSubject" onchange="renderBankList()"><option value="">All Subjects</option></select>
@@ -441,6 +459,15 @@
     </div>
 
     <!-- REPORTS TAB -->
+    <div id="adminTab-ratings" style="display:none"><div id="adminRatingsList"></div></div>
+    <div id="adminTab-messages" style="display:none">
+      <div class="section-title">💬 Teacher ⇄ Student conversations</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+        <select id="amTeacher" onchange="renderAdminMessages()" style="background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"><option value="">All teachers</option></select>
+        <input type="text" id="amSearch" placeholder="🔍 Search student or text…" oninput="renderAdminMessages()" style="min-width:220px;background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"/>
+      </div>
+      <div id="amBody"></div>
+    </div>
     <div id="adminTab-reports" style="display:none">
       <div class="section-title">📈 Admin Reports</div>
       <div class="grid grid-2" style="max-width:700px">
@@ -467,11 +494,14 @@
       <button class="tab active" onclick="switchTeacherTab('bank')" id="teacherTabBtn-bank">📚 My Questions</button>
       <button class="tab" onclick="switchTeacherTab('exams')" id="teacherTabBtn-exams">📋 My Exams</button>
       <button class="tab" onclick="switchTeacherTab('results')" id="teacherTabBtn-results">📊 Results</button>
+      <button class="tab" onclick="switchTeacherTab('students')" id="teacherTabBtn-students">👥 My Students</button>
+      <button class="tab" onclick="switchTeacherTab('insights')" id="teacherTabBtn-insights">📈 Insights</button>
+      <button class="tab" onclick="switchTeacherTab('ratings')" id="teacherTabBtn-ratings">⭐ My Ratings</button>
     </div>
     <div id="teacherTab-bank">
       <div class="section-header">
         <div class="section-title" style="margin:0">📚 My Question Bank</div>
-        <button class="btn btn-primary" style="width:auto;padding:10px 18px" onclick="openBankModal()">+ Add Question</button>
+        <button class="btn btn-primary" style="width:auto;padding:10px 18px" onclick="openBankModal()">+ Add Question</button> <button class="btn btn-outline" style="width:auto;padding:10px 18px" onclick="openSectionsModal()">🗂️ Sections</button>
       </div>
       <div class="bank-filters">
         <select id="tBankFilterSubject" onchange="renderTeacherBankList()"><option value="">All Subjects</option></select>
@@ -487,6 +517,18 @@
       </div>
       <div class="grid grid-2" id="teacherExamList"></div>
     </div>
+    <div id="teacherTab-students" style="display:none">
+      <div class="section-header">
+        <div class="section-title" style="margin:0">👥 My Students</div>
+        <button class="btn btn-primary" style="width:auto;padding:10px 18px" onclick="openMsgModal('all')">📢 Message all</button>
+      </div>
+      <div id="tsInbox"></div><div id="tsAlerts"></div>
+      <div id="tsStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px"></div>
+      <input type="text" id="tsSearch" placeholder="🔍 Search student…" oninput="renderTeacherStudents()" style="width:100%;max-width:320px;margin-bottom:12px;background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"/>
+      <div class="table-wrap"><table><thead><tr><th>Student</th><th>Exams</th><th>Avg</th><th>Last exam</th><th>Status</th><th>Actions</th></tr></thead><tbody id="tsTable"></tbody></table></div>
+    </div>
+    <div id="teacherTab-insights" style="display:none"><div class="section-title">📈 Question insights — which questions are hard or easy</div><div id="tiBody"></div></div>
+    <div id="teacherTab-ratings" style="display:none"><div id="teacherRatingsList"></div></div>
     <div id="teacherTab-results" style="display:none">
       <div class="section-title">📊 Results for My Exams</div>
       <div class="table-wrap">
@@ -549,7 +591,7 @@
         </div>
       </div>
       <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
-        <button class="btn btn-outline" onclick="showPage('page-home')" style="flex:1">🏠 Home</button>
+        <button class="btn btn-outline" onclick="goHome()" style="flex:1">🏠 Home</button>
         <button class="btn btn-ghost" id="reviewBtn" onclick="startReview()" style="flex:1">📖 Review</button>
       </div>
     </div>
@@ -617,7 +659,7 @@
     <div id="bankQAlert"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="field"><label>Subject</label>
-        <input list="subjectOptionsFull" id="bankQSubject" placeholder="Quran / Arabic / Islamic Studies…"/>
+        <input list="subjectOptionsFull" id="bankQSubject" placeholder="Pick or type a section, e.g. Tajweed › Noon Sakinah"/>
         <datalist id="subjectOptionsFull"><option value="Quran"><option value="Arabic"><option value="Islamic Studies"><option value="Tajweed"><option value="Fiqh"><option value="Aqeedah"><option value="Seerah"></datalist>
       </div>
       <div class="field"><label>Level</label>
@@ -673,6 +715,14 @@
         </select>
       </div>
     </div>
+    <div style="background:#F5FAFF;border:2px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px">🗓️ Availability window (optional)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field" style="margin-bottom:0"><label>Opens (date & time)</label><input type="datetime-local" id="examOpens"/></div>
+        <div class="field" style="margin-bottom:0"><label>Closes (date & time)</label><input type="datetime-local" id="examCloses"/></div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px">Leave both empty = always available. Students can only start the exam inside this window. Saving replaces any existing schedule for this exam.</div>
+    </div>
     <div class="field"><label>Description</label><textarea id="examDesc" placeholder="Brief description…" style="min-height:60px"></textarea></div>
     <hr class="divider"/>
     <div class="field">
@@ -717,7 +767,7 @@
     </div>
     <div class="field"><label>Notes (optional)</label><input type="text" id="schedNotes" placeholder="e.g. Open to Level 1 students only"/></div>
     <div style="background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:var(--muted)">
-      💡 Students can take the exam once per day during the open window.
+      💡 Students can start the exam only during the open window, and only once.
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modalSchedule')">Cancel</button>
@@ -739,6 +789,48 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modalRateTeacher">
+  <div class="modal" style="max-width:440px;text-align:center">
+    <div class="modal-title"><span>⭐ Rate your teacher</span> <button class="close-btn" onclick="closeModal('modalRateTeacher')">✕</button></div>
+    <div style="font-size:14px;margin-bottom:6px">How was your experience with <strong id="mrName"></strong>?</div>
+    <div id="mrStars" style="font-size:38px;cursor:pointer;color:#F59E0B;letter-spacing:4px;user-select:none;margin:8px 0"></div>
+    <div class="field" style="text-align:left"><textarea id="mrComment" placeholder="Comment (optional)"></textarea></div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;margin-bottom:12px;cursor:pointer;text-align:left"><input type="checkbox" id="mrAnon" style="width:auto"/> Send anonymously</label>
+    <div id="mrAlert"></div>
+    <div style="display:flex;gap:8px;justify-content:center"><button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="submitModalRating()">Submit</button><button class="btn btn-ghost" onclick="closeModal('modalRateTeacher')">Skip</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="modalMsg">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title"><span id="tmTitle">💬 Message</span> <button class="close-btn" onclick="closeModal('modalMsg')">✕</button></div>
+    <input type="hidden" id="tmTarget"/>
+    <div class="field"><label>Quick template</label><select id="tmTpl" onchange="if(this.value)document.getElementById('tmText').value=this.value"><option value="">— Choose —</option><option value="Great job! Keep it up 👏">Great job 👏</option><option value="Please review your mistakes in the last exam and ask me if anything is unclear.">Review your mistakes</option><option value="Reminder: you have an upcoming exam. Good luck! 🍀">Exam reminder</option><option value="Your result needs improvement — let's talk about how I can help.">Needs improvement</option></select></div>
+    <div class="field"><label>Message</label><textarea id="tmText" placeholder="Write your message…"></textarea></div>
+    <div id="tmAlert"></div>
+    <button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="sendTeacherMsg()">Send 📨</button>
+  </div>
+</div>
+<div class="modal-overlay" id="modalStudent">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-title"><span id="tdTitle">Student</span> <button class="close-btn" onclick="closeModal('modalStudent')">✕</button></div>
+    <div id="tdBody"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="modalSections"><div class="modal" style="max-width:560px">
+  <div class="modal-title"><span>🗂️ Question Sections</span> <button class="close-btn" onclick="closeModal('modalSections')">✕</button></div>
+  <button class="btn btn-primary" style="width:auto;padding:8px 16px;margin-bottom:12px" onclick="addSection('')">+ New main section</button>
+  <div id="secBody"></div></div></div>
+<div class="modal-overlay" id="modalPractice"><div class="modal" style="max-width:560px">
+  <div class="modal-title"><span>🧠 Practice my mistakes</span> <button class="close-btn" onclick="closeModal('modalPractice')">✕</button></div>
+  <div id="prBody"></div></div></div>
+<div class="modal-overlay" id="modalReview">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-title"><span id="rvTitle">Review</span> <button class="close-btn" onclick="closeModal('modalReview')">✕</button></div>
+    <div id="rvSummary" style="margin-bottom:12px;font-size:13px"></div>
+    <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;margin-bottom:14px;cursor:pointer"><input type="checkbox" style="width:auto" onchange="document.getElementById('rvBody').classList.toggle('only-wrong',this.checked)"/> Show only mistakes / manual</label>
+    <div id="rvBody"></div>
+  </div>
+</div>
 <!-- Manual Grading -->
 <div class="modal-overlay" id="modalGradeManual">
   <div class="modal" style="max-width:640px">
@@ -761,16 +853,23 @@ const sb=(path,opts={})=>fetch(`${SB_URL}/rest/v1/${path}`,{headers:{'apikey':SB
 
 // ── STATE ────────────────────────────────────
 let currentUser=null,allStudents=[],allExams=[],allResults=[],allDiscounts=[],allSchedules=[];
-let allQuestionBank=[],allNotifications=[],allTeachers=[];
+let allQuestionBank=[],allNotifications=[],allTeachers=[],allRatings=[],ratingsOk=true;
 let activeExam=null,answers={},audioAnswers={},timerInterval=null,timeLeft=0,examStartTime=null;
 let questionIndex=0,lastResult=null,questionCount=0;
 let mediaRecorderCurrent=null,mediaChunksCurrent=[],mediaStreamCurrent=null;
 const todayStr=()=>new Date().toISOString().slice(0,10);
 
 // ── INIT ─────────────────────────────────────
+const store={
+  get:k=>{try{return sessionStorage.getItem(k);}catch(e){return null;}},
+  set:(k,v)=>{try{sessionStorage.setItem(k,v);}catch(e){}},
+  del:k=>{try{sessionStorage.removeItem(k);}catch(e){}}
+};
 window.onload=async()=>{
-  const saved=sessionStorage.getItem('mi_user');
-  if(saved){currentUser=JSON.parse(saved);await afterLogin();}
+  try{
+    const saved=store.get('mi_user');
+    if(saved){currentUser=JSON.parse(saved);await afterLogin();}
+  }catch(e){store.del('mi_user');currentUser=null;hideLoading();showPage('page-login');}
   setInterval(updateScheduleCountdowns,1000);
 };
 
@@ -778,21 +877,143 @@ const showLoading=(msg='Loading…')=>{document.getElementById('loadingText').te
 const hideLoading=()=>document.getElementById('loadingOverlay').classList.remove('show');
 
 // ── AUTH ─────────────────────────────────────
+function togglePw(){
+  const i=document.getElementById('loginPassword'),b=document.getElementById('pwToggle');
+  const show=i.type==='password';i.type=show?'text':'password';b.textContent=show?'Hide':'Show';
+}
 async function login(){
   const username=document.getElementById('loginUsername').value.trim();
-  const password=document.getElementById('loginPassword').value;
+  const password=document.getElementById('loginPassword').value.trim();
   const alertEl=document.getElementById('loginAlert');
+  const err=m=>{alertEl.innerHTML='<div class="alert alert-error">'+m+'</div>';hideLoading();};
   alertEl.innerHTML='';
-  if(!username||!password){alertEl.innerHTML='<div class="alert alert-error">Please enter username and password.</div>';return;}
+  if(!username||!password){err('Please enter username and password.');return;}
   showLoading('Signing in…');
+  let user;
   try{
-    const res=await sb(`users?username=eq.${encodeURIComponent(username)}&select=*`);
+    // case-insensitive username lookup (phones often capitalize the first letter)
+    const res=await sb(`users?username=ilike.${encodeURIComponent(username)}&select=*`);
     const users=await res.json();
-    if(!users||!users.length){alertEl.innerHTML='<div class="alert alert-error">User not found.</div>';hideLoading();return;}
-    const user=users[0];
-    if(user.password!==password){alertEl.innerHTML='<div class="alert alert-error">Incorrect password.</div>';hideLoading();return;}
-    currentUser=user;sessionStorage.setItem('mi_user',JSON.stringify(user));await afterLogin();
-  }catch(e){alertEl.innerHTML='<div class="alert alert-error">Connection error.</div>';hideLoading();}
+    if(!res.ok||!Array.isArray(users)){
+      console.error('Login query failed',res.status,users);
+      err('Server error ('+res.status+'). Please tell the administrator.');return;
+    }
+    const cands=users.filter(u=>(u.username||'').trim().toLowerCase()===username.toLowerCase());
+    if(!cands.length){err('User not found.');return;}
+    // several accounts can differ only by letter case: accept the one whose password matches
+    user=cands.find(u=>String(u.password??'').trim()===password);
+    if(!user){err('Incorrect password.');return;}
+  }catch(e){
+    console.error(e);
+    err('Cannot reach the server. Check your internet connection and try again.');return;
+  }
+  try{
+    currentUser=user;store.set('mi_user',JSON.stringify(user));
+    await afterLogin();
+  }catch(e){
+    console.error(e);
+    currentUser=null;store.del('mi_user');
+    err('Signed in, but loading data failed. Please refresh and try again.');
+  }
+}
+
+const INSPIRATION=[
+ {t:'Quran',x:'Indeed, with hardship comes ease.',s:'Surah Ash-Sharh 94:6'},
+ {t:'Quran',x:'And say: My Lord, increase me in knowledge.',s:'Surah Taha 20:114'},
+ {t:'Quran',x:'Allah will raise, by degrees, those among you who believe and those who have been given knowledge.',s:'Surah Al-Mujadila 58:11'},
+ {t:'Quran',x:'Allah does not burden a soul beyond what it can bear.',s:'Surah Al-Baqarah 2:286'},
+ {t:'Quran',x:'Indeed, Allah does not change the condition of a people until they change what is within themselves.',s:'Surah Ar-Ra\u2019d 13:11'},
+ {t:'Quran',x:'Say: Are those who know equal to those who do not know?',s:'Surah Az-Zumar 39:9'},
+ {t:'Quran',x:'Read in the name of your Lord who created.',s:'Surah Al-\u2018Alaq 96:1'},
+ {t:'Quran',x:'And whoever is mindful of Allah, He will make a way out for him.',s:'Surah At-Talaq 65:2'},
+ {t:'Hadith',x:'Whoever follows a path in search of knowledge, Allah will make easy for him a path to Paradise.',s:'Sahih Muslim'},
+ {t:'Hadith',x:'The best among you are those who learn the Quran and teach it.',s:'Sahih al-Bukhari'},
+ {t:'Hadith',x:'Actions are judged by intentions, and everyone will get what they intended.',s:'Bukhari & Muslim'},
+ {t:'Hadith',x:'The most beloved deeds to Allah are those done consistently, even if they are small.',s:'Bukhari & Muslim'},
+ {t:'Hadith',x:'The strong believer is better and more beloved to Allah than the weak believer, and there is good in both.',s:'Sahih Muslim'},
+ {t:'Hadith',x:'Seeking knowledge is an obligation upon every Muslim.',s:'Sunan Ibn Majah'},
+ {t:'Encouragement',x:'Every expert was once a beginner. Keep showing up.',s:''},
+ {t:'Encouragement',x:'Small steps every day lead to big results.',s:''},
+ {t:'Encouragement',x:'A mistake is proof that you are trying \u2014 learn from it and go again.',s:''},
+ {t:'Encouragement',x:'Your effort today is the success you will celebrate tomorrow.',s:''}
+];
+const INSP_ICON={Quran:'\ud83d\udcd6 Ayah',Hadith:'\ud83d\udd4c Hadith',Encouragement:'\ud83d\udca1 Words of encouragement'};
+let inspOffset=0;
+function renderInspiration(shuffle){
+  const el=document.getElementById('dailyInspiration');if(!el||!currentUser)return;
+  if(shuffle)inspOffset++;
+  const day=Math.floor(Date.now()/864e5);
+  let h=0;for(const c of String(currentUser.id))h=(h*31+c.charCodeAt(0))>>>0;
+  const q=INSPIRATION[(day+h+inspOffset)%INSPIRATION.length];
+  const first=String(currentUser.name||'').trim().split(/\s+/)[0]||'Friend';
+  const hi=['Keep going','You can do it','Stay focused','Believe in yourself','Well done for being here'][(day+h+inspOffset)%5];
+  el.innerHTML=`<span class="insp-tag">${INSP_ICON[q.t]}</span>
+    <div class="insp-hi">${hi}, ${esc(first)}! \ud83c\udf1f</div>
+    <div class="insp-text">\u201c${esc(q.x)}\u201d</div>
+    ${q.s?`<div class="insp-src">\u2014 ${esc(q.s)}</div>`:''}
+    <button class="btn-sm" style="margin-top:12px" onclick="renderInspiration(true)">\ud83d\udd04 Another one</button>`;
+}
+// ── TEACHER RATINGS ───────────────────────────
+let rtStars=0;
+const starStr=n=>'★'.repeat(Math.round(n))+'☆'.repeat(5-Math.round(n));
+function renderRatingForm(){
+  const body=document.getElementById('rtBody');if(!body)return;
+  if(!allTeachers.length){body.innerHTML='<div class="text-muted">No teachers available to rate yet.</div>';return;}
+  body.innerHTML=`<div class="field"><label>Teacher</label><select id="rtTeacher" onchange="fillRating()">${allTeachers.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('')}</select></div>
+    <div class="field"><label>Your rating</label><div id="rtStars" style="font-size:34px;cursor:pointer;color:#F59E0B;letter-spacing:4px;user-select:none"></div></div>
+    <div class="field"><label>Comment (optional)</label><textarea id="rtComment" placeholder="Tell us about your experience with this teacher…"></textarea></div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="rtAnon" style="width:auto"/> Send anonymously (the teacher will not see my name)</label>
+    <button class="btn btn-primary" id="rtBtn" style="width:auto;padding:10px 24px" onclick="submitRating()">Submit Rating</button>`;
+  fillRating();
+}
+function drawStars(){document.getElementById('rtStars').innerHTML=[1,2,3,4,5].map(n=>`<span onclick="setStars(${n})">${n<=rtStars?'★':'☆'}</span>`).join('');}
+function setStars(n){rtStars=n;drawStars();}
+function myRating(tid){return allRatings.find(r=>String(r.student_id)===String(currentUser.id)&&String(r.teacher_id)===String(tid));}
+function fillRating(){
+  const ex=myRating(document.getElementById('rtTeacher').value);
+  rtStars=ex?ex.rating:0;drawStars();
+  document.getElementById('rtComment').value=ex?ex.comment||'':'';
+  document.getElementById('rtAnon').checked=!!(ex&&ex.anonymous);
+  document.getElementById('rtBtn').textContent=ex?'Update Rating':'Submit Rating';
+}
+async function submitRating(){
+  const al=document.getElementById('rtAlert');const tid=document.getElementById('rtTeacher').value;
+  if(!rtStars){al.innerHTML='<div class="alert alert-error">Please choose a star rating (1–5).</div>';return;}
+  const ex=myRating(tid);
+  const body={student_id:String(currentUser.id),teacher_id:String(tid),rating:rtStars,comment:document.getElementById('rtComment').value.trim(),anonymous:document.getElementById('rtAnon').checked};
+  showLoading('Sending…');
+  try{
+    const res=await sb(ex?`teacher_ratings?id=eq.${ex.id}`:'teacher_ratings',{method:ex?'PATCH':'POST',body:JSON.stringify(ex?body:{...body,created_at:new Date().toISOString()})});
+    if(!res.ok)throw new Error(res.status);
+    await loadAllData();hideLoading();
+    al.innerHTML='<div class="alert alert-success">Thank you! Your rating was saved. ⭐</div>';fillRating();
+  }catch(e){
+    hideLoading();
+    al.innerHTML='<div class="alert alert-error">'+(!ratingsOk?'Ratings are not set up yet. Please tell the administrator.':'Could not save your rating. Please try again.')+'</div>';
+  }
+}
+function renderRatings(containerId,onlyTeacherId){
+  const box=document.getElementById(containerId);if(!box)return;
+  if(!ratingsOk){box.innerHTML='<div class="alert alert-error">The <b>teacher_ratings</b> table is not created in Supabase yet.</div>';return;}
+  const isAdmin=currentUser.role==='admin';
+  const teachers=onlyTeacherId?allTeachers.filter(t=>String(t.id)===String(onlyTeacherId)):allTeachers;
+  if(!teachers.length){box.innerHTML='<div class="empty-state"><div class="icon">⭐</div><p>No teachers yet</p></div>';return;}
+  box.innerHTML=teachers.map(t=>{
+    const rs=allRatings.filter(r=>String(r.teacher_id)===String(t.id));
+    const avg=rs.length?rs.reduce((a,r)=>a+r.rating,0)/rs.length:0;
+    const items=rs.map(r=>{
+      const st=allStudents.find(x=>String(x.id)===String(r.student_id))||{name:'Unknown'};
+      const who=r.anonymous?(isAdmin?esc(st.name)+' <span class="text-muted">(anonymous to teacher)</span>':'Anonymous'):esc(st.name);
+      let dt='';try{dt=new Date(r.created_at).toLocaleDateString();}catch{}
+      return `<div style="border-top:1px solid var(--border);padding:10px 0"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><div><strong>${who}</strong> <span style="color:#F59E0B">${starStr(r.rating)}</span></div><div class="text-muted" style="font-size:12px">${dt}${isAdmin?` <button class="btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteRating('${r.id}')">🗑</button>`:''}</div></div>${r.comment?`<div style="margin-top:4px;font-size:14px">${esc(r.comment)}</div>`:''}</div>`;
+    }).join('');
+    return `<div class="card" style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><div class="card-title">${esc(t.name)}</div><div><span style="color:#F59E0B;font-size:18px">${rs.length?starStr(avg):'—'}</span> <strong>${rs.length?avg.toFixed(1):''}</strong> <span class="text-muted" style="font-size:12px">(${rs.length} rating${rs.length===1?'':'s'})</span></div></div>${items||'<div class="text-muted" style="margin-top:8px">No ratings yet.</div>'}</div>`;
+  }).join('');
+}
+async function deleteRating(id){
+  if(!confirm('Delete this rating?'))return;
+  showLoading('Deleting…');await sb(`teacher_ratings?id=eq.${id}`,{method:'DELETE',prefer:''});
+  await loadAllData();renderRatings('adminRatingsList');hideLoading();
 }
 
 async function afterLogin(){
@@ -811,6 +1032,7 @@ async function afterLogin(){
     document.getElementById('teacherNav').style.display='none';
     document.getElementById('studentExamsSection').style.display='none';
     document.getElementById('tipsRow').style.display='none';
+    document.getElementById('ratingSection').style.display='none';
   }else if(currentUser.role==='teacher'){
     document.getElementById('adminStats').style.display='none';
     document.getElementById('adminNav').style.display='none';
@@ -824,9 +1046,11 @@ async function afterLogin(){
     document.getElementById('tipsRow').style.display='block';
     document.getElementById('studentExamsSection').style.display='block';
     renderAvailableExams();renderStudentProfile();renderNotifBanner();
+    document.getElementById('ratingSection').style.display='block';renderRatingForm();
   }
   renderLeaderboard();updateAdminStats();showPage('page-home');
   document.getElementById('homeWelcome').textContent=`Welcome, ${currentUser.name}!`;
+  renderInspiration();
   document.getElementById('homeSubtitle').textContent=currentUser.role==='admin'
     ?'Admin Dashboard — Manage students, exams, schedules, and results.'
     :currentUser.role==='teacher'
@@ -835,29 +1059,32 @@ async function afterLogin(){
 }
 
 function logout(){
-  sessionStorage.removeItem('mi_user');currentUser=null;clearInterval(timerInterval);
+  store.del('mi_user');currentUser=null;clearInterval(timerInterval);
   document.getElementById('mainHeader').style.display='none';
-  document.getElementById('loginUsername').value='';document.getElementById('loginPassword').value='';
+  document.getElementById('loginUsername').value='';document.getElementById('loginPassword').value='';document.getElementById('loginPassword').type='password';document.getElementById('pwToggle').textContent='Show';
   document.getElementById('loginAlert').innerHTML='';showPage('page-login');
 }
 
 // ── DATA ─────────────────────────────────────
 async function loadAllData(){
-  const [sR,eR,rR,dR,scR,bR,nR]=await Promise.all([
+  const [sR,eR,rR,dR,scR,bR,nR,tR]=await Promise.all([
     sb('users?select=*&order=name.asc'),
     sb('exams?select=*&order=created_at.desc'),
     sb('results?select=*&order=submitted_at.desc'),
     sb('discounts?select=*&order=created_at.desc'),
     sb('schedules?select=*&order=opens_at.asc'),
     sb('question_bank?select=*&order=created_at.desc'),
-    sb('notifications?select=*&order=created_at.desc')
+    sb('notifications?select=*&order=created_at.desc'),
+    sb('teacher_ratings?select=*&order=created_at.desc')
   ]);
+  ratingsOk=tR.ok;
   const j=async r=>{try{const d=await r.json();return Array.isArray(d)?d:[];}catch{return [];}};
   const allUsers=await j(sR);
   allStudents=allUsers.filter(u=>u.role==='student');
   allTeachers=allUsers.filter(u=>u.role==='teacher');
-  [,allExams,allResults,allDiscounts,allSchedules,allQuestionBank,allNotifications]=
-    await Promise.all([Promise.resolve(allUsers),j(eR),j(rR),j(dR),j(scR),j(bR),j(nR)]);
+  [,allExams,allResults,allDiscounts,allSchedules,allQuestionBank,allNotifications,allRatings]=
+    await Promise.all([Promise.resolve(allUsers),j(eR),j(rR),j(dR),j(scR),j(bR),j(nR),j(tR)]);
+  secRows=allQuestionBank.filter(q=>q.text==='__SECTIONS__');allQuestionBank=allQuestionBank.filter(q=>q.text!=='__SECTIONS__');
 }
 
 // ── LEADERBOARD ──────────────────────────────
@@ -882,8 +1109,18 @@ function renderLeaderboard(){
       <div class="lb-name">${s.name}${allDiscounts.find(d=>d.student_id===s.id)?'<span class="gift-tag">🎁</span>':''}</div>
       <div style="font-size:11px;color:var(--muted)">${ex?ex.title:''}</div>
       <div class="lb-score">${Math.round(r.score)}%</div>
+      ${currentUser&&currentUser.role==='admin'?`<button class="btn-sm" title="Remove from leaderboard" style="color:var(--danger);border-color:var(--danger)" onclick="removeFromLeaderboard('${r.student_id}')">🗑</button>`:''}
     </div>`;
   }).join('');
+}
+async function removeFromLeaderboard(studentId){
+  const s=allStudents.find(x=>x.id===studentId)||{name:'this student'};
+  if(!confirm(`Remove ${s.name} from the leaderboard?\n\nThis deletes ALL of their exam results (scores). Their account stays.\nTo delete the account itself, use the Students tab.`))return;
+  showLoading('Removing…');
+  await sb(`results?student_id=eq.${studentId}`,{method:'DELETE',prefer:''});
+  await loadAllData();renderLeaderboard();updateAdminStats();
+  if(typeof renderResultsTable==='function')renderResultsTable();
+  hideLoading();
 }
 
 function updateAdminStats(){
@@ -1031,7 +1268,7 @@ function renderBankList(){
   const type=document.getElementById('bankFilterType')?.value||'';
   const search=(document.getElementById('bankSearch')?.value||'').toLowerCase();
   let data=allQuestionBank; // admin sees all
-  if(subj)data=data.filter(q=>q.subject===subj);
+  if(subj)data=data.filter(q=>inSec(q.subject,subj));
   if(lvl)data=data.filter(q=>q.level===lvl);
   if(type==='mcq')data=data.filter(q=>!q.audio_required);
   if(type==='audio')data=data.filter(q=>q.audio_required);
@@ -1068,7 +1305,7 @@ function renderTeacherBankList(){
   const lvl=document.getElementById('tBankFilterLevel')?.value||'';
   const search=(document.getElementById('tBankSearch')?.value||'').toLowerCase();
   let data=getBankData();
-  if(subj)data=data.filter(q=>q.subject===subj);
+  if(subj)data=data.filter(q=>inSec(q.subject,subj));
   if(lvl)data=data.filter(q=>q.level===lvl);
   if(search)data=data.filter(q=>(q.text||'').toLowerCase().includes(search));
   if(!data.length){container.innerHTML='<div class="empty-state"><div class="icon">📚</div><p>No questions yet.</p></div>';return;}
@@ -1101,7 +1338,7 @@ function renderBankPicker(){
   const lvl=document.getElementById('pickBankLevel')?.value||'';
   const search=(document.getElementById('pickBankSearch')?.value||'').toLowerCase();
   let data=allQuestionBank;
-  if(subj)data=data.filter(q=>q.subject===subj);
+  if(subj)data=data.filter(q=>inSec(q.subject,subj));
   if(lvl)data=data.filter(q=>q.level===lvl);
   if(search)data=data.filter(q=>(q.text||'').toLowerCase().includes(search));
   if(!data.length){container.innerHTML='<div class="text-muted" style="font-size:12px;padding:8px">No matching questions</div>';return;}
@@ -1128,70 +1365,107 @@ function addSelectedBankQuestions(){
 }
 
 // ── EXAMS ────────────────────────────────────
-function openCreateExamModal(){
-  questionCount=0;
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const normA=s=>String(s??'').toLowerCase().replace(/[\u064B-\u0652\u0640]/g,'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/\s+/g,' ').trim();
+const qType=q=>q.type||'mcq';
+let editingExamId=null;
+const toLocalInput=iso=>{const d=new Date(iso),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;};
+async function saveExamWindow(exId,o,c){
+  if(!exId)return;
+  const old=allSchedules.filter(x=>x.exam_id===exId);
+  if(!o&&!old.length)return;
+  for(const x of old)await sb(`schedules?id=eq.${x.id}`,{method:'DELETE',prefer:''});
+  if(o)await sb('schedules',{method:'POST',body:JSON.stringify({exam_id:exId,opens_at:o,closes_at:c,notes:'',created_at:new Date().toISOString()})});
+}
+function gradeQ(q,a){
+  const max=q.points||1,t=qType(q);
+  if(q.audio_required||t==='short')return{max,earned:0,status:'manual'};
+  if(t==='fill'){const ok=(q.answers||[]).some(x=>normA(x)===normA(a));return{max,earned:ok?max:0,status:ok?'correct':'wrong'};}
+  if(t==='match'){const P=q.pairs||[];const n=P.filter((x,k)=>a&&normA(a[k])===normA(x.r)).length;
+    return{max,earned:P.length?max*n/P.length:0,status:n===P.length?'correct':n?'partial':'wrong'};}
+  const ok=a===q.correct;return{max,earned:ok?max:0,status:ok?'correct':'wrong'};
+}
+const INP='width:100%;background:#fff;border:2px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;margin-top:4px';
+function openCreateExamModal(examId){
+  const ex=examId?allExams.find(e=>e.id===examId):null;
+  if(ex&&allResults.some(r=>r.exam_id===ex.id)&&!confirm('This exam already has student attempts. Editing questions can make old answers not match in the review. Continue?'))return;
+  editingExamId=ex?ex.id:null;questionCount=0;
   document.getElementById('questionsBuilder').innerHTML='';
   document.getElementById('createExamAlert').innerHTML='';
   populateDropdowns();renderBankPicker();
-  document.getElementById('examAssignAll').checked=true;toggleAssignAll();
-  document.getElementById('examTitle').value='';
-  document.getElementById('examSubject').value='';
-  document.getElementById('examLevel').value='';
-  document.getElementById('examDesc').value='';
-  document.getElementById('examDuration').value=30;
-  document.getElementById('examPass').value=60;
-  document.getElementById('examResultMode').value='auto';
-  addQuestion();
+  const set=(id,v)=>document.getElementById(id).value=v;
+  set('examTitle',ex?ex.title:'');set('examSubject',ex?ex.subject||'':'');set('examLevel',ex?ex.level||'':'');
+  set('examDesc',ex?ex.description||'':'');set('examDuration',ex?ex.duration_minutes:30);
+  set('examPass',ex?ex.passing_score:60);set('examResultMode',ex?ex.result_mode||'auto':'auto');
+  const sc=ex?allSchedules.filter(x=>x.exam_id===ex.id).sort((a,b)=>new Date(a.opens_at)-new Date(b.opens_at)):[];
+  const cur=sc.find(x=>new Date(x.closes_at)>=new Date())||sc[0];
+  set('examOpens',cur?toLocalInput(cur.opens_at):'');set('examCloses',cur?toLocalInput(cur.closes_at):'');
+  const assigned=ex?(ex.assigned_students||[]):[];
+  document.getElementById('examAssignAll').checked=!assigned.length;toggleAssignAll();
+  document.querySelectorAll('.examStudentChk').forEach(c=>c.checked=assigned.includes(c.value));
+  if(ex&&(ex.questions||[]).length)ex.questions.forEach(q=>addQuestion(q));else addQuestion();
+  document.querySelector('#modalCreateExam .modal-title').firstChild.textContent=ex?'Edit Exam ':'Create New Exam ';
   openModal('modalCreateExam');
 }
-
-function addQuestion(fromBank){
-  questionCount++;const idx=questionCount;
+function addQuestion(q){
+  q=q||{};questionCount++;const idx=questionCount;const t=qType(q);
   const div=document.createElement('div');div.className='question-builder';div.id=`qb-${idx}`;
-  const bankId=fromBank&&fromBank.id?fromBank.id:'';
-  const qText=fromBank?fromBank.text||'':'';
-  const qPoints=fromBank?(fromBank.points||1):1;
-  const qImage=fromBank?(fromBank.image||''):'';
-  const qAudio=fromBank?!!fromBank.audio_required:false;
-  const qOpts=fromBank?(fromBank.options||['','','','']):['','','',''];
-  const qCorrect=fromBank?(fromBank.correct||0):0;
+  const bankId=q.bank_id||(q.created_by&&q.id?q.id:'');
+  const opts=q.options||['','','',''];
   div.innerHTML=`<div class="q-num">Question ${idx}${bankId?' <span style="color:var(--muted);font-size:10px">(from bank)</span>':''}</div>
     <input type="hidden" id="q-bankid-${idx}" value="${bankId}"/>
     <button class="del-q-btn" onclick="removeQuestion(${idx})">✕ Remove</button>
     <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap">
       <div style="flex:1;min-width:200px"><label style="font-size:11px;color:var(--muted)">QUESTION TEXT</label>
-        <input type="text" id="q-text-${idx}" placeholder="Enter question text…" value="${qText.replace(/"/g,'&quot;')}" style="width:100%;background:#fff;border:2px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;margin-top:4px"/>
-      </div>
+        <input type="text" id="q-text-${idx}" placeholder="Enter question text…" value="${esc(q.text)}" style="${INP}"/></div>
+      <div style="width:170px"><label style="font-size:11px;color:var(--muted)">TYPE</label>
+        <select id="q-type-${idx}" onchange="setQType(${idx})" style="${INP}">
+          <option value="mcq">Multiple choice</option><option value="tf">True / False</option>
+          <option value="fill">Fill in the blank</option><option value="match">Matching</option>
+          <option value="short">Written answer (manual)</option></select></div>
       <div style="width:90px"><label style="font-size:11px;color:var(--muted)">POINTS</label>
-        <input type="number" id="q-points-${idx}" value="${qPoints}" min="0.5" step="0.5" style="width:100%;background:#fff;border:2px solid var(--border);border-radius:6px;padding:8px;font-size:13px;margin-top:4px"/>
-      </div>
+        <input type="number" id="q-points-${idx}" value="${q.points||1}" min="0.5" step="0.5" style="${INP}"/></div>
     </div>
-    <div style="margin-bottom:10px">
-      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer">
-        <input type="checkbox" id="q-audio-${idx}" style="width:auto" ${qAudio?'checked':''} onchange="toggleQuestionAudio(${idx})"/> 🎙️ Audio answer (manual grading)
-      </label>
-    </div>
-    <div style="margin-bottom:10px">
-      <label style="font-size:11px;color:var(--muted)">ATTACH IMAGE (optional)</label>
+    <div style="margin-bottom:10px"><label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer">
+      <input type="checkbox" id="q-audio-${idx}" style="width:auto" ${q.audio_required?'checked':''} onchange="toggleQuestionAudio(${idx})"/> 🎙️ Audio answer (manual grading)</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#B45309;cursor:pointer;margin-top:6px">
+      <input type="checkbox" id="q-bonus-${idx}" style="width:auto" ${q.bonus?'checked':''}/> ⭐ Bonus question (adds points, not counted in the total)</label></div>
+    <div style="margin-bottom:10px"><label style="font-size:11px;color:var(--muted)">ATTACH IMAGE (optional)</label>
       <div style="margin-top:4px"><input type="file" accept="image/*" id="q-imgfile-${idx}" onchange="handleImagePick(this,'q-imgprev-${idx}','q-img-${idx}')"/>
-      <input type="hidden" id="q-img-${idx}" value="${qImage}"/>
-      <img id="q-imgprev-${idx}" class="q-img-preview" src="${qImage}" style="display:${qImage?'block':'none'}"/></div>
-    </div>
-    <div id="q-opts-${idx}">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">SELECT CORRECT ANSWER ☝️</div>
-      ${['A','B','C','D'].map((l,li)=>`<div class="option-input">
-        <input type="radio" name="correct-${idx}" value="${li}" id="r-${idx}-${li}" ${li===qCorrect?'checked':''}/>
-        <label for="r-${idx}-${li}">${l}</label>
-        <input type="text" id="q-opt-${idx}-${li}" placeholder="Option ${l}…" value="${(qOpts[li]||'').replace(/"/g,'&quot;')}"/>
-      </div>`).join('')}
+      <input type="hidden" id="q-img-${idx}" value="${q.image||''}"/>
+      <img id="q-imgprev-${idx}" class="q-img-preview" src="${q.image||''}" style="display:${q.image?'block':'none'}"/></div></div>
+    <div id="q-body-${idx}">
+      <div id="q-sec-mcq-${idx}"><div class="qtype-note">SELECT CORRECT ANSWER ☝️</div>
+        ${['A','B','C','D'].map((l,li)=>`<div class="option-input"><input type="radio" name="correct-${idx}" value="${li}" id="r-${idx}-${li}" ${li===(q.correct||0)&&t!=='tf'?'checked':''}/>
+        <label for="r-${idx}-${li}">${l}</label><input type="text" id="q-opt-${idx}-${li}" placeholder="Option ${l}…" value="${esc(t==='mcq'?opts[li]:'')}"/></div>`).join('')}</div>
+      <div id="q-sec-tf-${idx}"><div class="qtype-note">Correct answer:</div>
+        <label style="margin-right:16px"><input type="radio" name="tf-${idx}" value="0" style="width:auto" ${(q.correct||0)===0?'checked':''}/> True</label>
+        <label><input type="radio" name="tf-${idx}" value="1" style="width:auto" ${q.correct===1?'checked':''}/> False</label></div>
+      <div id="q-sec-fill-${idx}"><div class="qtype-note">Accepted answers — one per line (any of them is correct)</div>
+        <textarea id="q-fill-${idx}" style="${INP};min-height:70px">${esc((q.answers||[]).join('\n'))}</textarea></div>
+      <div id="q-sec-match-${idx}"><div class="qtype-note">Matching pairs: left item ↔ its correct match. Students see the right side shuffled.</div>
+        <div id="q-pairs-${idx}"></div><button class="btn-sm" type="button" onclick="addPairRow(${idx})">+ Add pair</button></div>
+      <div id="q-sec-short-${idx}"><div class="qtype-note">Student types a written answer. You grade it manually.</div></div>
     </div>`;
   document.getElementById('questionsBuilder').appendChild(div);
+  document.getElementById(`q-type-${idx}`).value=t;
+  const pairs=t==='match'&&(q.pairs||[]).length?q.pairs:[{l:'',r:''},{l:'',r:''}];
+  pairs.forEach(x=>addPairRow(idx,x.l,x.r));
+  setQType(idx);
+}
+function addPairRow(idx,l,r){
+  const d=document.createElement('div');d.className='pair-row';d.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:6px';
+  d.innerHTML=`<input type="text" class="pl" placeholder="Left item" value="${esc(l)}" style="${INP};margin:0"/><span>↔</span><input type="text" class="pr" placeholder="Matching item" value="${esc(r)}" style="${INP};margin:0"/><button class="btn-sm" type="button" onclick="this.parentNode.remove()">✕</button>`;
+  document.getElementById(`q-pairs-${idx}`).appendChild(d);
+}
+function setQType(idx){
+  const t=document.getElementById(`q-type-${idx}`).value;
+  ['mcq','tf','fill','match','short'].forEach(k=>document.getElementById(`q-sec-${k}-${idx}`).style.display=k===t?'block':'none');
   toggleQuestionAudio(idx);
 }
-
 function toggleQuestionAudio(idx){
   const on=document.getElementById(`q-audio-${idx}`).checked;
-  document.getElementById(`q-opts-${idx}`).style.opacity=on?'.4':'1';
+  document.getElementById(`q-body-${idx}`).style.opacity=on?'.4':'1';
 }
 function removeQuestion(idx){const el=document.getElementById(`qb-${idx}`);if(el)el.remove();}
 
@@ -1204,47 +1478,58 @@ async function saveExam(){
   const desc=document.getElementById('examDesc').value.trim();
   const resultMode=document.getElementById('examResultMode').value;
   const alertEl=document.getElementById('createExamAlert');
-  if(!title||!duration){alertEl.innerHTML='<div class="alert alert-error">Title and duration are required.</div>';return;}
-  const questions=[];
+  const fail=m=>{alertEl.innerHTML=`<div class="alert alert-error">${m}</div>`;alertEl.scrollIntoView({behavior:'smooth'});};
+  if(!title||!duration){fail('Title and duration are required.');return;}
+  const questions=[];let bad='';
   document.querySelectorAll('.question-builder').forEach(qb=>{
     const idx=qb.id.replace('qb-','');
     const text=document.getElementById(`q-text-${idx}`)?.value.trim();if(!text)return;
-    const options=[0,1,2,3].map(li=>document.getElementById(`q-opt-${idx}-${li}`)?.value.trim()||'');
-    const cr=qb.querySelector(`input[name="correct-${idx}"]:checked`);
-    const points=parseFloat(document.getElementById(`q-points-${idx}`)?.value)||1;
-    const audio_required=document.getElementById(`q-audio-${idx}`)?.checked||false;
-    const image=document.getElementById(`q-img-${idx}`)?.value||null;
-    const bank_id=document.getElementById(`q-bankid-${idx}`)?.value||null;
-    questions.push({text,options,correct:cr?parseInt(cr.value):0,points,audio_required,image,bank_id});
+    const type=document.getElementById(`q-type-${idx}`)?.value||'mcq';
+    const q={type,text,points:parseFloat(document.getElementById(`q-points-${idx}`)?.value)||1,
+      audio_required:document.getElementById(`q-audio-${idx}`)?.checked||false,
+      bonus:document.getElementById(`q-bonus-${idx}`)?.checked||false,
+      image:document.getElementById(`q-img-${idx}`)?.value||null,
+      bank_id:document.getElementById(`q-bankid-${idx}`)?.value||null,options:['','','',''],correct:0};
+    if(type==='mcq'){
+      q.options=[0,1,2,3].map(li=>document.getElementById(`q-opt-${idx}-${li}`)?.value.trim()||'');
+      const cr=qb.querySelector(`input[name="correct-${idx}"]:checked`);q.correct=cr?parseInt(cr.value):0;
+    }else if(type==='tf'){
+      q.options=['True','False'];const cr=qb.querySelector(`input[name="tf-${idx}"]:checked`);q.correct=cr?parseInt(cr.value):0;
+    }else if(type==='fill'){
+      q.answers=document.getElementById(`q-fill-${idx}`).value.split('\n').map(x=>x.trim()).filter(Boolean);
+      if(!q.answers.length)bad=`Question "${text.slice(0,30)}": add at least one accepted answer.`;
+    }else if(type==='match'){
+      q.pairs=[...qb.querySelectorAll('.pair-row')].map(r=>({l:r.querySelector('.pl').value.trim(),r:r.querySelector('.pr').value.trim()})).filter(x=>x.l&&x.r);
+      if(q.pairs.length<2)bad=`Question "${text.slice(0,30)}": matching needs at least 2 pairs.`;
+    }
+    questions.push(q);
   });
-  if(!questions.length){alertEl.innerHTML='<div class="alert alert-error">Add at least one question.</div>';return;}
+  if(bad){fail(bad);return;}
+  if(!questions.length){fail('Add at least one question.');return;}
+  const oV=document.getElementById('examOpens').value,cV=document.getElementById('examCloses').value;
+  if((oV||cV)&&!(oV&&cV)){fail('Fill both Opens and Closes, or leave both empty.');return;}
+  if(oV&&new Date(oV)>=new Date(cV)){fail('Closes time must be after the Opens time.');return;}
+  const opensISO=oV?new Date(oV).toISOString():'',closesISO=cV?new Date(cV).toISOString():'';
   const assignAll=document.getElementById('examAssignAll').checked;
   const assigned_students=assignAll?[]:[...document.querySelectorAll('.examStudentChk:checked')].map(c=>c.value);
-  // auto_grade: false if resultMode=manual OR has audio questions
-  const hasAudio=questions.some(q=>q.audio_required);
-  const auto_grade=resultMode==='auto'&&!hasAudio;
+  const hasManual=questions.some(q=>q.audio_required||q.type==='short');
+  const auto_grade=resultMode==='auto'&&!hasManual;
+  const body={title,subject,level,duration_minutes:duration,passing_score:pass,description:desc,questions,assigned_students,auto_grade,result_mode:resultMode};
   showLoading('Saving exam…');
-  const res=await sb('exams',{method:'POST',body:JSON.stringify({
-    title,subject,level,duration_minutes:duration,passing_score:pass,description:desc,
-    questions,is_active:true,assigned_students,auto_grade,
-    result_mode:resultMode,created_by:currentUser.id,created_at:new Date().toISOString()
-  })});
+  const res=editingExamId
+    ?await sb(`exams?id=eq.${editingExamId}`,{method:'PATCH',body:JSON.stringify(body)})
+    :await sb('exams',{method:'POST',body:JSON.stringify({...body,is_active:true,created_by:currentUser.id,created_at:new Date().toISOString()})});
   const data=await res.json();
-  // Auto-save NEW questions (not from bank) to question bank
   if(res.ok){
-    const newOnes=questions.filter(q=>!q.bank_id);
-    if(newOnes.length){
-      showLoading('Saving new questions to bank…');
-      await Promise.all(newOnes.map(q=>sb('question_bank',{method:'POST',body:JSON.stringify({
-        subject,level,points:q.points,text:q.text,options:q.options,correct:q.correct,
-        audio_required:q.audio_required,image:q.image,created_by:currentUser.id,
-        created_at:new Date().toISOString()
-      })})));
+    await saveExamWindow(editingExamId||(data&&data[0]&&data[0].id),opensISO,closesISO);
+    if(!editingExamId){
+      const newOnes=questions.filter(q=>!q.bank_id&&q.type==='mcq');
+      if(newOnes.length){showLoading('Saving new questions to bank…');
+        await Promise.all(newOnes.map(q=>sb('question_bank',{method:'POST',body:JSON.stringify({subject,level,points:q.points,text:q.text,options:q.options,correct:q.correct,audio_required:q.audio_required,image:q.image,created_by:currentUser.id,created_at:new Date().toISOString()})})));}
     }
-    await loadAllData();hideLoading();
-    renderAdminExams();renderTeacherExamList();updateAdminStats();populateDropdowns();
-    closeModal('modalCreateExam');
-  }else{hideLoading();alertEl.innerHTML=`<div class="alert alert-error">${data.message||'Error saving exam.'}</div>`;}
+    editingExamId=null;await loadAllData();hideLoading();
+    renderAdminExams();renderTeacherExamList();updateAdminStats();populateDropdowns();closeModal('modalCreateExam');
+  }else{hideLoading();fail(data.message||'Error saving exam.');}
 }
 
 function renderAdminExams(){
@@ -1267,6 +1552,7 @@ function renderAdminExams(){
       </div>
       ${sched.length?`<div style="font-size:11px;color:var(--gold);margin-bottom:10px">🗓️ ${sched.length} schedule(s)</div>`:''}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-sm" onclick="openCreateExamModal('${e.id}')">✏️ Edit</button>
         <button class="btn-sm" onclick="toggleExamActive('${e.id}',${!e.is_active})">${e.is_active?'⏸ Deactivate':'▶ Activate'}</button>
         <button class="btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteExam('${e.id}')">🗑</button>
       </div>
@@ -1289,7 +1575,7 @@ function renderTeacherExamList(){
       <div style="font-size:11px;margin-bottom:10px">
         ${e.auto_grade===false||e.result_mode==='manual'?'<span class="badge badge-manual">✏️ Manual grading</span>':'<span class="badge badge-active">⚡ Auto result</span>'}
       </div>
-      <button class="btn-sm" onclick="openTeacherResultsForExam('${e.id}')">📊 View Results</button>
+      <button class="btn-sm" onclick="openCreateExamModal('${e.id}')">✏️ Edit</button> <button class="btn-sm" onclick="openTeacherResultsForExam('${e.id}')">📊 View Results</button>
     </div>`;
   }).join('');
 }
@@ -1313,7 +1599,7 @@ async function saveSchedule(){
   if(!examId||!opensAt||!closesAt){alertEl.innerHTML='<div class="alert alert-error">Please fill all fields.</div>';return;}
   if(new Date(opensAt)>=new Date(closesAt)){alertEl.innerHTML='<div class="alert alert-error">Close time must be after open time.</div>';return;}
   showLoading('Saving schedule…');
-  const res=await sb('schedules',{method:'POST',body:JSON.stringify({exam_id:examId,opens_at:opensAt,closes_at:closesAt,notes,created_at:new Date().toISOString()})});
+  const res=await sb('schedules',{method:'POST',body:JSON.stringify({exam_id:examId,opens_at:new Date(opensAt).toISOString(),closes_at:new Date(closesAt).toISOString(),notes,created_at:new Date().toISOString()})});
   hideLoading();
   if(res.ok){await loadAllData();renderScheduleList();populateDropdowns();closeModal('modalSchedule');alertEl.innerHTML='';}
   else{alertEl.innerHTML='<div class="alert alert-error">Error saving schedule.</div>';}
@@ -1444,6 +1730,8 @@ function renderResultsTable(){
       <td style="font-size:12px;color:var(--gold-pale)">${r.admin_note||'<span style="color:var(--muted)">—</span>'}</td>
       <td style="display:flex;gap:6px;flex-wrap:wrap">
         ${pending?`<button class="btn-sm" style="background:#2980b9;color:#fff;border-color:#2980b9" onclick="openManualGradeModal('${r.id}')">✏️ Grade</button>`:''}
+        <button class="btn-sm" onclick="openReview('${r.id}')">🔍 Review</button>
+        <button class="btn-sm" title="Delete this attempt so the student can retake" style="color:var(--danger);border-color:var(--danger)" onclick="deleteResult('${r.id}')">🔁 Allow retake</button>
         <button class="btn-sm" onclick="openGradeModal('${r.id}','${(r.admin_note||'').replace(/'/g,"\\'")}')">📝 Note</button>
       </td>
     </tr>`;
@@ -1468,7 +1756,7 @@ function renderTeacherResultsTable(filterExamId){
       <td>${pending?'—':`<span style="color:${pct>=60?'var(--success)':'var(--danger)'};font-weight:600">${pct}%</span>`}</td>
       <td>${pending?'—':(getGrade(pct).split(' ')[1]||'')}</td>
       <td style="color:var(--muted);font-size:12px">${dt}</td>
-      <td>${pending?`<button class="btn-sm" style="background:#2980b9;color:#fff;border-color:#2980b9" onclick="openManualGradeModal('${r.id}')">✏️ Grade</button>`:'<span style="color:var(--muted)">—</span>'}</td>
+      <td>${pending?`<button class="btn-sm" style="background:#2980b9;color:#fff;border-color:#2980b9" onclick="openManualGradeModal('${r.id}')">✏️ Grade</button>`:''} <button class="btn-sm" onclick="openReview('${r.id}')">🔍 Review</button></td>
     </tr>`;
   }).join('');
 }
@@ -1491,9 +1779,10 @@ function openManualGradeModal(resultId){
       <div class="q-num">Question ${pm.index+1} — max ${pm.maxPoints} pts</div>
       <div style="margin-bottom:10px;font-weight:500">${q.text||''}</div>
       ${q.image?`<img src="${q.image}" class="q-img-preview"/>`:'' }
-      ${audio?`<audio controls src="${audio}" style="width:100%;margin:8px 0"></audio>`:'<div class="text-muted" style="font-size:12px">No audio recorded.</div>'}
+      ${typeof (r.answers||{})[pm.index]==='string'&&(r.answers||{})[pm.index]?`<div style="background:#F5FAFF;border:2px solid var(--border);border-radius:10px;padding:10px;margin:8px 0">${esc((r.answers||{})[pm.index])}</div>`:''}
+      ${audio?`<audio controls src="${audio}" style="width:100%;margin:8px 0"></audio>`:(q.audio_required?'<div class="text-muted" style="font-size:12px">No audio recorded.</div>':'')}
       <div class="field" style="margin-top:8px"><label>Points awarded</label>
-        <input type="number" class="gmPointsInput" data-idx="${pm.index}" data-max="${pm.maxPoints}" min="0" max="${pm.maxPoints}" step="0.5" value="0"/>
+        <input type="number" class="gmPointsInput" data-idx="${pm.index}" data-max="${pm.maxPoints}" min="0" max="${pm.maxPoints}" step="0.5" value="${pm.awarded??0}"/>
       </div>
     </div>`;
   }).join(''):'<div class="text-muted">No pending questions.</div>';
@@ -1504,17 +1793,18 @@ async function publishManualGrade(){
   const resultId=document.getElementById('gmResultId').value;
   const r=allResults.find(r=>r.id===resultId);if(!r)return;
   const ex=allExams.find(e=>e.id===r.exam_id);if(!ex)return;
-  let manualEarned=0;
+  let manualEarned=0;const awardedMap={};
   document.querySelectorAll('.gmPointsInput').forEach(inp=>{
     let v=parseFloat(inp.value)||0;const max=parseFloat(inp.dataset.max)||0;
-    if(v>max)v=max;if(v<0)v=0;manualEarned+=v;
+    if(v>max)v=max;if(v<0)v=0;manualEarned+=v;awardedMap[inp.dataset.idx]=v;
   });
+  const newPending=(r.pending_manual||[]).map(pm=>({...pm,awarded:awardedMap[pm.index]??pm.awarded??0}));
   const totalPoints=r.total_points||1;
-  const earnedPoints=(r.earned_points||0)+manualEarned;
+  const earnedPoints=(r.graded===false?(r.earned_points||0):(r.earned_points||0)-(r.pending_manual||[]).reduce((a,pm)=>a+(pm.awarded||0),0))+manualEarned;
   const score=(earnedPoints/totalPoints)*100;
   const passed=score>=(ex.passing_score||60);
   showLoading('Publishing result…');
-  await sb(`results?id=eq.${resultId}`,{method:'PATCH',body:JSON.stringify({score,passed,graded:true,earned_points:earnedPoints})});
+  await sb(`results?id=eq.${resultId}`,{method:'PATCH',body:JSON.stringify({score,passed,graded:true,earned_points:earnedPoints,pending_manual:newPending})});
   await sb('notifications',{method:'POST',body:JSON.stringify({
     student_id:r.student_id,exam_id:r.exam_id,
     message:`🎉 Your result for "${ex.title}" is now available! Score: ${Math.round(score)}%`,
@@ -1523,6 +1813,14 @@ async function publishManualGrade(){
   await loadAllData();hideLoading();closeModal('modalGradeManual');renderResultsTable();renderTeacherResultsTable();
 }
 
+async function deleteResult(id){
+  const r=allResults.find(x=>x.id===id);if(!r)return;
+  const st=allStudents.find(x=>x.id===r.student_id)||{name:'this student'};
+  if(!confirm(`Delete ${st.name}'s attempt so they can take the exam again?\nTheir score and answers for this attempt will be permanently removed.`))return;
+  showLoading('Deleting…');
+  await sb(`results?id=eq.${id}`,{method:'DELETE',prefer:''});
+  await loadAllData();renderResultsTable();renderLeaderboard();updateAdminStats();hideLoading();
+}
 function openGradeModal(id,note){document.getElementById('gradeResultId').value=id;document.getElementById('gradeNote').value=note;openModal('modalGrade');}
 
 async function saveGrade(){
@@ -1573,7 +1871,8 @@ function renderAvailableExams(){
     if(e.assigned_students&&e.assigned_students.length&&!e.assigned_students.includes(currentUser.id))return false;
     const sched=allSchedules.find(s=>s.exam_id===e.id&&new Date(s.opens_at)<=now&&new Date(s.closes_at)>=now);
     const hasSched=allSchedules.some(s=>s.exam_id===e.id);
-    return !hasSched||!!sched;
+    const upc=allSchedules.some(s=>s.exam_id===e.id&&new Date(s.opens_at)>now);
+    return !hasSched||!!sched||upc;
   });
   if(!active.length){container.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="icon">📝</div><p>No exams available right now.<br><span style="font-size:13px">Check back soon!</span></p></div>';return;}
   const icons=['📖','✍️','☪️','🌙','⭐','📝'];
@@ -1583,8 +1882,9 @@ function renderAvailableExams(){
     const myRes=allResults.filter(r=>r.student_id===currentUser.id&&r.exam_id===e.id);
     const best=myRes.filter(r=>r.graded!==false).length?Math.max(...myRes.filter(r=>r.graded!==false).map(r=>r.score)):null;
     const sched=allSchedules.find(s=>s.exam_id===e.id&&new Date(s.opens_at)<=now&&new Date(s.closes_at)>=now);
-    const doneToday=myRes.some(r=>(r.submitted_at||'').slice(0,10)===todayStr());
-    const pendingMine=myRes.some(r=>r.graded===false);
+    const doneToday=myRes.length>0;
+    const upcoming=!sched&&allSchedules.filter(s=>s.exam_id===e.id&&new Date(s.opens_at)>now).sort((a,b)=>new Date(a.opens_at)-new Date(b.opens_at))[0];
+    const pendingMine=myRes.some(r=>r.graded===false&&r.admin_note!==STARTED_NOTE);
     return `<div class="card" style="border-top:4px solid ${borders[idx%6]};background:${bgs[idx%6]}">
       <div style="font-size:36px;margin-bottom:10px">${icons[idx%6]}</div>
       <div class="card-title">${e.title}</div>
@@ -1593,8 +1893,8 @@ function renderAvailableExams(){
       ${sched?`<div style="font-size:11px;color:var(--success);margin-bottom:10px">🟢 Open until ${new Date(sched.closes_at).toLocaleString()}</div>`:''}
       ${pendingMine?`<div class="alert alert-info" style="margin-bottom:10px;font-size:12px">⏳ A previous result is pending grading</div>`:''}
       ${best!==null?`<div class="alert alert-info" style="margin-bottom:10px;font-size:12px">Best score: <strong>${Math.round(best)}%</strong></div>`:''}
-      ${doneToday
-        ?`<button class="btn btn-ghost" disabled style="cursor:not-allowed;opacity:.6">✅ Completed today</button>`
+      ${upcoming&&!doneToday?`<div class="alert alert-info" style="margin-bottom:10px;font-size:12px">🗓️ Opens ${new Date(upcoming.opens_at).toLocaleString()}<br>Closes ${new Date(upcoming.closes_at).toLocaleString()}</div><button class="btn btn-ghost" disabled style="cursor:not-allowed;opacity:.6">🔒 Not open yet</button>`:doneToday
+        ?`<button class="btn btn-ghost" disabled style="cursor:not-allowed;opacity:.6">✅ Already taken</button>`
         :`<button class="btn btn-primary" onclick="startExam('${e.id}')">Start Exam →</button>`
       }
     </div>`;
@@ -1602,12 +1902,24 @@ function renderAvailableExams(){
 }
 
 // ── EXAM FLOW ─────────────────────────────────
-function startExam(examId){
+const STARTED_NOTE='⚠️ Started but not submitted';
+let activeResultId=null;
+async function startExam(examId){
   const exam=allExams.find(e=>e.id===examId);
   if(!exam||!(exam.questions||[]).length){alert('This exam has no questions yet.');return;}
-  const doneToday=allResults.some(r=>r.student_id===currentUser.id&&r.exam_id===examId&&(r.submitted_at||'').slice(0,10)===todayStr());
-  if(doneToday){alert('You have already taken this exam today. You can try again tomorrow.');return;}
-  if(!confirm(`Start "${exam.title}"?\n⏱ Duration: ${exam.duration_minutes} minutes\n❓ Questions: ${exam.questions.length}\n\nYou can only take this exam once today.`))return;
+  if(allResults.some(r=>r.student_id===currentUser.id&&r.exam_id===examId)){alert('You have already taken this exam. It can only be taken once.');return;}
+  const scs=allSchedules.filter(x=>x.exam_id===examId);
+  if(scs.length){const n=new Date();
+    if(!scs.some(x=>new Date(x.opens_at)<=n&&new Date(x.closes_at)>=n)){alert('This exam is not open right now.');renderAvailableExams();return;}}
+  if(!confirm(`Start "${exam.title}"?\n⏱ Duration: ${exam.duration_minutes} minutes\n❓ Questions: ${exam.questions.length}\n\n⚠️ You can enter this exam ONLY ONCE. Do not close or refresh the page until you submit.`))return;
+  showLoading('Starting exam…');
+  try{
+    const res=await sb('results',{method:'POST',body:JSON.stringify({student_id:currentUser.id,exam_id:examId,score:null,answers:{},audio_answers:{},time_used_seconds:0,passed:null,graded:false,pending_manual:[],earned_points:0,total_points:0,submitted_at:new Date().toISOString(),attempt_date:todayStr(),admin_note:STARTED_NOTE})});
+    const d=await res.json();
+    if(!res.ok||!d[0])throw new Error(d.message||'save failed');
+    activeResultId=d[0].id;allResults.unshift(d[0]);
+  }catch(e){hideLoading();alert('Could not start the exam. Check your connection and try again.');return;}
+  hideLoading();
   activeExam=exam;answers={};audioAnswers={};questionIndex=0;lastResult=null;
   timeLeft=exam.duration_minutes*60;examStartTime=Date.now();
   document.getElementById('examName').textContent=exam.title;
@@ -1637,7 +1949,7 @@ function renderQuestion(){
   const hasOptions=(q.options||[]).some(o=>o);
   document.getElementById('questionContainer').innerHTML=`<div class="question-card fade-in">
     <div class="question-num">Question ${questionIndex+1} of ${total}</div>
-    <div class="points-chip">${q.points||1} point${(q.points||1)>1?'s':''}</div>
+    <div class="points-chip">${q.bonus?'⭐ Bonus · ':''}${q.points||1} point${(q.points||1)>1?'s':''}</div>
     <div class="question-text">${q.text}</div>
     ${q.image?`<img src="${q.image}" style="max-width:100%;max-height:260px;border-radius:8px;margin-bottom:16px;border:1px solid var(--border)"/>`:'' }
     ${q.audio_required?`
@@ -1646,10 +1958,7 @@ function renderQuestion(){
         <button class="btn btn-outline" id="recBtn-${questionIndex}" onclick="toggleRecording(${questionIndex})" style="width:auto">⏺️ Start Recording</button>
         <div id="recPlayback-${questionIndex}" style="margin-top:10px">${audioAnswers[questionIndex]?`<audio controls src="${audioAnswers[questionIndex]}" style="width:100%"></audio>`:''}</div>
       </div>`:''}
-    ${hasOptions?`<div class="options" style="margin-top:16px">${q.options.map((opt,i)=>opt?`
-      <div class="option ${ans===i?'selected':''}" onclick="selectAnswer(${i})">
-        <div class="option-letter">${letters[i]}</div><span>${opt}</span>
-      </div>`:''  ).join('')}</div>`:''}
+    ${answerArea(q)}
   </div>`;
 }
 
@@ -1683,6 +1992,22 @@ async function toggleRecording(qIndex){
   }catch(e){alert('Microphone access denied. Please allow microphone in browser settings.');}
 }
 
+function answerArea(q){
+  const t=qType(q),a=answers[questionIndex],L=['A','B','C','D'];
+  const box='width:100%;margin-top:16px;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;font-family:inherit';
+  if(t==='fill')return `<input type="text" value="${esc(a)}" placeholder="Type your answer…" oninput="answers[questionIndex]=this.value" style="${box}"/>`;
+  if(t==='short')return `<textarea placeholder="Write your answer…" oninput="answers[questionIndex]=this.value" style="${box};min-height:120px">${esc(a)}</textarea>`;
+  if(t==='match'){
+    const P=q.pairs||[];if(!q._shuf)q._shuf=P.map(x=>x.r).sort(()=>Math.random()-.5);
+    return `<div style="margin-top:16px">${P.map((x,k)=>`<div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+      <div style="flex:1;min-width:120px;padding:10px 12px;background:#EFF8FF;border:2px solid var(--border);border-radius:10px">${esc(x.l)}</div><span>↔</span>
+      <select onchange="setMatch(${k},this.value)" style="flex:1;min-width:120px;padding:10px;border:2px solid var(--border);border-radius:10px"><option value="">Choose…</option>
+      ${q._shuf.map(r=>`<option value="${esc(r)}" ${a&&a[k]===r?'selected':''}>${esc(r)}</option>`).join('')}</select></div>`).join('')}</div>`;
+  }
+  if(!(q.options||[]).some(o=>o))return '';
+  return `<div class="options" style="margin-top:16px">${q.options.map((opt,i)=>opt?`<div class="option ${a===i?'selected':''}" onclick="selectAnswer(${i})"><div class="option-letter">${L[i]}</div><span>${esc(opt)}</span></div>`:'').join('')}</div>`;
+}
+function setMatch(k,v){const a=Array.isArray(answers[questionIndex])?answers[questionIndex]:(answers[questionIndex]=[]);a[k]=v;}
 function selectAnswer(i){answers[questionIndex]=i;renderQuestion();}
 
 function nextQuestion(){
@@ -1700,9 +2025,9 @@ async function submitExam(timeUp){
   let correct=0,earnedPoints=0,totalPoints=0;
   const pendingManual=[];
   activeExam.questions.forEach((q,i)=>{
-    const pts=q.points||1;totalPoints+=pts;
-    if(q.audio_required){pendingManual.push({index:i,maxPoints:pts});return;}
-    if(answers[i]===q.correct){correct++;earnedPoints+=pts;}
+    const g=gradeQ(q,answers[i]);if(!q.bonus)totalPoints+=g.max;
+    if(g.status==='manual'){pendingManual.push({index:i,maxPoints:g.max});return;}
+    earnedPoints+=g.earned;if(g.status==='correct')correct++;
   });
   const total=activeExam.questions.length;
   // Grading mode: auto_grade=true AND no audio = instant result
@@ -1712,15 +2037,16 @@ async function submitExam(timeUp){
   const score=graded?(totalPoints?(earnedPoints/totalPoints)*100:0):null;
   const passed=graded?score>=(activeExam.passing_score||60):null;
   showLoading('Submitting…');
-  await sb('results',{method:'POST',body:JSON.stringify({
-    student_id:currentUser.id,exam_id:activeExam.id,score,answers,audio_answers:audioAnswers,
+  const payload={student_id:currentUser.id,exam_id:activeExam.id,score,answers,audio_answers:audioAnswers,
     time_used_seconds:timeUsed,passed,graded,pending_manual:pendingManual,
     earned_points:earnedPoints,total_points:totalPoints,
-    submitted_at:new Date().toISOString(),attempt_date:todayStr()
-  })});
+    submitted_at:new Date().toISOString(),attempt_date:todayStr(),admin_note:null};
+  await sb(activeResultId?`results?id=eq.${activeResultId}`:'results',{method:activeResultId?'PATCH':'POST',body:JSON.stringify(payload)});
+  activeResultId=null;
   lastResult={score,correct,total,passed,timeUsed,graded,examTitle:activeExam.title};
   await loadAllData();hideLoading();
   showResultPage(score,correct,total,passed,graded);
+  promptTeacherRating(activeExam);
 }
 
 function showResultPage(score,correct,total,passed,graded=true){
@@ -1756,23 +2082,274 @@ function showResultPage(score,correct,total,passed,graded=true){
   if(currentUser.role==='student')renderStudentProfile();
 }
 
+function reviewHTML(ex,ans,audio,pmList){
+  const L=['A','B','C','D'];const pmMap={};(pmList||[]).forEach(p=>pmMap[p.index]=p);
+  const sideCol={correct:'var(--success)',wrong:'var(--danger)',partial:'#D97706',manual:'#2980b9'};
+  const badge={correct:['✓ Correct','var(--success)'],wrong:['✗ Wrong','var(--danger)'],partial:['◐ Partial','#D97706'],manual:['✏️ Manual','#2980b9']};
+  return (ex.questions||[]).map((q,i)=>{
+    const a=ans[i],g=gradeQ(q,a),t=qType(q),b=badge[g.status];let body='';
+    if(t==='fill')body=`<div>Student: <strong style="color:${g.status==='correct'?'var(--success)':'var(--danger)'}">${esc(a)||'— no answer —'}</strong></div><div style="color:var(--muted);font-size:13px">Accepted: ${(q.answers||[]).map(esc).join(' / ')}</div>`;
+    else if(t==='short')body=`<div style="background:#F5FAFF;border:2px solid var(--border);border-radius:10px;padding:10px">${esc(a)||'— no answer —'}</div>`;
+    else if(t==='match')body=(q.pairs||[]).map((x,k)=>{const ok=a&&normA(a[k])===normA(x.r);return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:4px 0"><span>${esc(x.l)}</span><span>↔</span><strong style="color:${ok?'var(--success)':'var(--danger)'}">${esc(a&&a[k])||'—'}</strong>${ok?'':`<span style="color:var(--muted)">(correct: ${esc(x.r)})</span>`}</div>`;}).join('');
+    else if((q.options||[]).some(o=>o))body='<div class="options">'+q.options.map((o,oi)=>o?`<div class="option ${oi===q.correct?'correct':oi===a?'wrong':''}"><div class="option-letter">${L[oi]}</div><span>${esc(o)}</span>${oi===q.correct?'<span style="color:var(--success);font-size:12px;margin-left:auto">✓ Correct</span>':''}${oi===a&&a!==q.correct?'<span style="color:var(--danger);font-size:12px;margin-left:auto">✗ Student answer</span>':''}</div>`:'').join('')+'</div>'+((a===undefined||a===null)&&g.status!=='manual'?'<div style="color:var(--danger);font-size:12px;margin-top:6px">No answer given</div>':'');
+    if(audio&&audio[i])body+=`<audio controls src="${audio[i]}" style="width:100%;margin-top:8px"></audio>`;
+    return `<div id="rvq-${i}" class="question-card ${g.status==='correct'?'rv-ok':''}" style="margin-bottom:14px;border-inline-start:5px solid ${sideCol[g.status]}"><div style="display:flex;justify-content:space-between;gap:8px"><div class="question-num">Question ${i+1}${q.bonus?' ⭐ Bonus':''}</div><div style="color:${b[1]};font-weight:600;font-size:13px">${b[0]} · ${g.status==='manual'?((pmMap[i]&&pmMap[i].awarded!=null)?+pmMap[i].awarded:'?'):+g.earned.toFixed(2)}/${g.max}</div></div><div class="question-text">${esc(q.text)}</div>${q.image?`<img src="${q.image}" style="max-width:100%;max-height:200px;border-radius:8px;margin-bottom:10px"/>`:''}${body}</div>`;
+  }).join('');
+}
+function openReview(id){
+  const r=allResults.find(x=>x.id===id);if(!r)return;
+  const ex=allExams.find(e=>e.id===r.exam_id);if(!ex){alert('Exam not found (deleted?).');return;}
+  const st=allStudents.find(x=>x.id===r.student_id)||{name:'Unknown'};
+  const G=(ex.questions||[]).map((q,i)=>gradeQ(q,(r.answers||{})[i]).status);
+  const c=k=>G.filter(x=>x===k).length;
+  const mistakes=G.map((x,i)=>x==='wrong'||x==='partial'?i:-1).filter(i=>i>=0);
+  const notSubmitted=r.admin_note===STARTED_NOTE;
+  document.getElementById('rvTitle').textContent=`${st.name} — ${ex.title}`;
+  document.getElementById('rvSummary').innerHTML=`${r.graded===false?'⏳ Pending':'Score: <strong>'+Math.round(r.score)+'%</strong>'} • ✓ ${c('correct')} correct • ✗ ${c('wrong')} wrong • ◐ ${c('partial')} partial • ✏️ ${c('manual')} manual`
+    +(notSubmitted?'<div style="margin-top:8px;color:var(--danger)">⚠️ The student started this exam but never submitted — no answers were saved.</div>':'')
+    +(mistakes.length&&!notSubmitted?`<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span style="color:var(--danger);font-weight:600">Mistakes in:</span>${mistakes.map(i=>`<button class="btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="document.getElementById('rvq-${i}').scrollIntoView({behavior:'smooth',block:'center'})">Q${i+1}</button>`).join('')}</div>`:'');
+  const rb=document.getElementById('rvBody');rb.classList.remove('only-wrong');
+  rb.innerHTML=reviewHTML(ex,r.answers||{},r.audio_answers||{},r.pending_manual||[]);
+  document.querySelector('#modalReview input[type=checkbox]').checked=false;
+  openModal('modalReview');
+}
 function startReview(){
   const sec=document.getElementById('reviewSection');sec.style.display='block';
-  const letters=['A','B','C','D'];
-  sec.innerHTML=activeExam.questions.map((q,i)=>{
-    const ua=answers[i];const ca=q.correct;
-    return `<div class="question-card" style="margin-bottom:16px">
-      <div class="question-num">Question ${i+1} — ${q.points||1} pt${(q.points||1)>1?'s':''}</div>
-      <div class="question-text">${q.text}</div>
-      <div class="options">${(q.options||[]).map((opt,oi)=>opt?`
-        <div class="option ${oi===ca?'correct':oi===ua&&ua!==ca?'wrong':''}">
-          <div class="option-letter">${letters[oi]}</div><span>${opt}</span>
-          ${oi===ca?'<span style="color:var(--success);font-size:12px;margin-left:auto">✓ Correct</span>':''}
-          ${oi===ua&&ua!==ca?'<span style="color:var(--danger);font-size:12px;margin-left:auto">✗ Your answer</span>':''}
-        </div>`:''  ).join('')}</div>
-    </div>`;
-  }).join('');
+  sec.innerHTML=reviewHTML(activeExam,answers,audioAnswers);
   sec.scrollIntoView({behavior:'smooth'});
+}
+
+
+// ── TEACHER: STUDENTS & MESSAGES ──────────────
+function teacherScope(tid){
+  const exams=allExams.filter(e=>String(e.created_by)===String(tid));const ids=new Set();let all=false;
+  exams.forEach(e=>{const a=e.assigned_students||[];if(!a.length)all=true;a.forEach(i=>ids.add(String(i)));
+    allResults.filter(r=>r.exam_id===e.id).forEach(r=>ids.add(String(r.student_id)));});
+  return{exams,students:allStudents.filter(s=>all||ids.has(String(s.id)))};
+}
+function studentStats(sid,examIds){
+  const rs=allResults.filter(r=>String(r.student_id)===String(sid)&&examIds.includes(r.exam_id)&&r.admin_note!==STARTED_NOTE);
+  const g=rs.filter(r=>r.graded!==false);
+  const avg=g.length?g.reduce((a,r)=>a+r.score,0)/g.length:null;
+  const last=rs.map(r=>new Date(r.submitted_at)).sort((a,b)=>b-a)[0];
+  return{rs,g,avg,last,pending:rs.length-g.length};
+}
+function renderTeacherStudents(){
+  const tb=document.getElementById('tsTable');if(!tb)return;
+  const {exams,students}=teacherScope(currentUser.id);const ids=exams.map(e=>e.id);
+  const q=(document.getElementById('tsSearch').value||'').toLowerCase();
+  const rows=students.map(s=>({s,st:studentStats(s.id,ids)}));
+  const withAvg=rows.filter(r=>r.st.avg!==null);
+  const classAvg=withAvg.length?withAvg.reduce((a,r)=>a+r.st.avg,0)/withAvg.length:null;
+  const passRate=withAvg.length?Math.round(withAvg.filter(r=>r.st.avg>=60).length/withAvg.length*100):null;
+  const pend=rows.reduce((a,r)=>a+r.st.pending,0);
+  const card=(i,v,l)=>`<div class="card" style="padding:14px;text-align:center"><div style="font-size:22px">${i}</div><div style="font-size:20px;font-weight:700">${v}</div><div class="text-muted" style="font-size:12px">${l}</div></div>`;
+  document.getElementById('tsStats').innerHTML=card('👥',students.length,'Students')+card('📊',classAvg===null?'—':Math.round(classAvg)+'%','Class average')+card('✅',passRate===null?'—':passRate+'%','Passing')+card('⏳',pend,'Awaiting grading');
+  renderTeacherInbox();
+  const low=rows.filter(r=>{const g=gradedOf(r.st.rs).pop();return g&&g.score<50;});
+  document.getElementById('tsAlerts').innerHTML=low.length?`<div class="alert alert-error" style="margin-bottom:14px">⚠️ Latest score below 50%: ${low.map(r=>`<strong>${esc(r.s.name)}</strong> <button class="btn-sm" onclick="openMsgModal('${r.s.id}')">💬</button>`).join(' · ')}</div>`:'';
+  const f=rows.filter(r=>r.s.name.toLowerCase().includes(q));
+  if(!f.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:28px">No students yet</td></tr>';return;}
+  tb.innerHTML=f.map(({s,st})=>{
+    const risk=st.avg!==null&&st.avg<60,none=!st.rs.length;
+    const badge=none?'<span class="badge badge-draft">No exams yet</span>':risk?'<span class="badge badge-pending">⚠️ Needs help</span>':'<span class="badge badge-active">👍 On track</span>';
+    return `<tr><td><strong>${esc(s.name)}</strong></td><td>${st.rs.length}</td><td>${st.avg===null?'—':`<span style="color:${st.avg>=60?'var(--success)':'var(--danger)'};font-weight:600">${Math.round(st.avg)}%</span>`}</td><td class="text-muted" style="font-size:12px">${st.last?st.last.toLocaleDateString():'—'}</td><td>${badge}</td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn-sm" onclick="openStudentDetail('${s.id}')">👁 Details</button><button class="btn-sm" onclick="openMsgModal('${s.id}')">💬 Message</button>${s.whatsapp?`<a class="btn-sm" style="text-decoration:none;color:#25D366;border-color:#25D366" target="_blank" href="https://wa.me/${s.whatsapp.replace(/\D/g,'')}">📲</a>`:''}</td></tr>`;
+  }).join('');
+}
+function openStudentDetail(sid){
+  const s=allStudents.find(x=>String(x.id)===String(sid));if(!s)return;
+  const ids=allExams.filter(e=>String(e.created_by)===String(currentUser.id)).map(e=>e.id);
+  const rs=allResults.filter(r=>String(r.student_id)===String(sid)&&ids.includes(r.exam_id)&&r.admin_note!==STARTED_NOTE).sort((a,b)=>new Date(b.submitted_at)-new Date(a.submitted_at));
+  document.getElementById('tdTitle').textContent='👤 '+s.name;
+  document.getElementById('tdBody').innerHTML=badgesHTML(rs)+sparkSVG(rs)+(rs.length?rs.map(r=>{
+    const ex=allExams.find(e=>e.id===r.exam_id)||{title:'?'};const pend=r.graded===false;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--border)"><div><strong>${esc(ex.title)}</strong><div class="text-muted" style="font-size:11px">${r.submitted_at?new Date(r.submitted_at).toLocaleString():''}</div></div><div style="display:flex;gap:6px;align-items:center">${pend?'<span class="badge badge-pending">⏳ Pending</span>':`<strong style="color:${r.score>=60?'var(--success)':'var(--danger)'}">${Math.round(r.score)}%</strong>`}${pend?`<button class="btn-sm" onclick="openManualGradeModal('${r.id}')">✏️ Grade</button>`:''}<button class="btn-sm" onclick="openReview('${r.id}')">🔍 Review</button></div></div>`;
+  }).join(''):'<div class="text-muted">No attempts on your exams yet.</div>')+`<div style="margin-top:14px"><button class="btn btn-primary" style="width:auto;padding:10px 20px" onclick="closeModal('modalStudent');openMsgModal('${s.id}')">💬 Send message</button></div>`;
+  openModal('modalStudent');
+}
+function openMsgModal(target){
+  const s=target==='all'?null:allStudents.find(x=>String(x.id)===String(target));
+  document.getElementById('tmTarget').value=target;
+  document.getElementById('tmTitle').textContent=s?'💬 Message to '+s.name:'📢 Message to all my students';
+  document.getElementById('tmText').value='';document.getElementById('tmTpl').value='';document.getElementById('tmAlert').innerHTML='';
+  openModal('modalMsg');
+}
+async function sendTeacherMsg(){
+  const al=document.getElementById('tmAlert'),text=document.getElementById('tmText').value.trim(),t=document.getElementById('tmTarget').value;
+  if(!text){al.innerHTML='<div class="alert alert-error">Write a message first.</div>';return;}
+  const {students,exams}=teacherScope(currentUser.id);
+  const targets=t==='all'?students:students.filter(x=>String(x.id)===String(t));
+  if(!targets.length){al.innerHTML='<div class="alert alert-error">No students to message.</div>';return;}
+  const msg=`⟦${currentUser.id}⟧💬 ${esc(currentUser.name)}: ${esc(text)}`,now=new Date().toISOString();
+  const mk=extra=>JSON.stringify(targets.map(x=>({student_id:x.id,message:msg,read:false,created_at:now,...extra})));
+  showLoading('Sending…');
+  let res=await sb('notifications',{method:'POST',body:mk({}),prefer:'return=minimal'});
+  if(!res.ok&&exams[0])res=await sb('notifications',{method:'POST',body:mk({exam_id:exams[0].id}),prefer:'return=minimal'});
+  hideLoading();
+  if(res.ok){closeModal('modalMsg');alert(`Message sent to ${targets.length} student${targets.length>1?'s':''} ✅`);}
+  else al.innerHTML='<div class="alert alert-error">Could not send. Please try again.</div>';
+}
+
+// ── STUDENT: RATE TEACHER AFTER EXAM ──────────
+let mrStars=0,mrTeacher=null;
+function drawMrStars(){document.getElementById('mrStars').innerHTML=[1,2,3,4,5].map(n=>`<span onclick="mrStars=${n};drawMrStars()">${n<=mrStars?'★':'☆'}</span>`).join('');}
+function promptTeacherRating(exam){
+  if(!ratingsOk||!currentUser||currentUser.role!=='student'||!exam)return;
+  const t=allTeachers.find(x=>String(x.id)===String(exam.created_by));
+  if(!t||myRating(t.id))return;
+  mrTeacher=t.id;mrStars=0;
+  document.getElementById('mrName').textContent=t.name;document.getElementById('mrComment').value='';
+  document.getElementById('mrAnon').checked=false;document.getElementById('mrAlert').innerHTML='';
+  drawMrStars();setTimeout(()=>openModal('modalRateTeacher'),700);
+}
+async function submitModalRating(){
+  const al=document.getElementById('mrAlert');
+  if(!mrStars){al.innerHTML='<div class="alert alert-error">Please choose 1–5 stars.</div>';return;}
+  showLoading('Sending…');
+  try{
+    const res=await sb('teacher_ratings',{method:'POST',body:JSON.stringify({student_id:String(currentUser.id),teacher_id:String(mrTeacher),rating:mrStars,comment:document.getElementById('mrComment').value.trim(),anonymous:document.getElementById('mrAnon').checked,created_at:new Date().toISOString()})});
+    if(!res.ok)throw 0;
+    await loadAllData();hideLoading();closeModal('modalRateTeacher');renderRatingForm();
+  }catch(e){hideLoading();al.innerHTML='<div class="alert alert-error">Could not save your rating. Try again or skip.</div>';}
+}
+
+// ── QUESTION BANK SECTIONS ────────────────────
+const SEP=' › ';let secRows=[];
+const inSec=(sub,f)=>!f||sub===f||(sub||'').startsWith(f+SEP);
+const mySecRow=()=>secRows.find(r=>String(r.created_by)===String(currentUser.id));
+function mySecPaths(){try{return JSON.parse(mySecRow().subject)||[];}catch{return [];}}
+function allSectionPaths(){
+  const set=new Set();
+  (currentUser&&currentUser.role==='admin'?secRows:secRows.filter(r=>String(r.created_by)===String(currentUser&&currentUser.id))).forEach(r=>{try{JSON.parse(r.subject).forEach(x=>set.add(x));}catch{}});
+  (currentUser?getBankData():allQuestionBank).forEach(q=>q.subject&&set.add(q.subject));
+  [...set].forEach(x=>{const a=x.split(SEP);for(let i=1;i<a.length;i++)set.add(a.slice(0,i).join(SEP));});
+  return [...set].sort((a,b)=>a.localeCompare(b,'ar'));
+}
+async function saveMySections(paths){
+  showLoading('Saving…');const body={text:'__SECTIONS__',subject:JSON.stringify(paths),options:['','','',''],correct:0,points:1,created_by:currentUser.id,created_at:new Date().toISOString()};
+  const r=mySecRow();await sb(r?`question_bank?id=eq.${r.id}`:'question_bank',{method:r?'PATCH':'POST',body:JSON.stringify(r?{subject:body.subject}:body),prefer:'return=minimal'});
+  await loadAllData();hideLoading();populateDropdowns();openSectionsModal();
+}
+function openSectionsModal(){
+  const P=allSectionPaths(),data=currentUser.role==='admin'?allQuestionBank:getBankData();
+  document.getElementById('secBody').innerHTML=P.length?P.map(x=>{
+    const d=x.split(SEP).length-1,c=data.filter(q=>inSec(q.subject,x)).length,e=x.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0 8px ${d*22}px;border-bottom:1px solid var(--border)"><span>${d?'↳':'📁'}</span><strong style="flex:1">${esc(x.split(SEP).pop())}</strong><span class="text-muted" style="font-size:12px">${c} Q</span><button class="btn-sm" onclick="addSection('${e}')">＋ Sub</button><button class="btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="delSection('${e}')">🗑</button></div>`;
+  }).join(''):'<div class="text-muted">No sections yet. Create one, e.g. "Tajweed", then add sub-sections like "Noon Sakinah & Tanween".</div>';
+  openModal('modalSections');
+}
+function addSection(parent){
+  const n=(prompt(parent?`New sub-section inside "${parent}":`:'New main section name:')||'').trim().replace(/›/g,'-');if(!n)return;
+  const path=parent?parent+SEP+n:n;if(allSectionPaths().includes(path)){alert('Already exists.');return;}
+  saveMySections([...new Set([...mySecPaths(),path])]);
+}
+function delSection(path){
+  const data=currentUser.role==='admin'?allQuestionBank:getBankData();
+  if(data.some(q=>inSec(q.subject,path))){alert('This section still has questions. Move or delete them first.');return;}
+  if(!confirm(`Delete section "${path}"?`))return;
+  saveMySections(mySecPaths().filter(x=>!inSec(x,path)));
+}
+
+// ── PROGRESS, BADGES, ALERTS, INSIGHTS ────────
+const gradedOf=rs=>rs.filter(r=>r.graded!==false&&r.score!=null&&r.admin_note!==STARTED_NOTE).sort((a,b)=>new Date(a.submitted_at)-new Date(b.submitted_at));
+function badgesHTML(rs){
+  const g=gradedOf(rs),B=[];
+  if(g.length)B.push('🎯 First exam');if(g.some(r=>r.score>=100))B.push('💯 Perfect score');
+  if(g.length>=3&&g.slice(-3).every(r=>r.score>=60))B.push('🔥 3 passes in a row');
+  if(g.length>=2&&g[g.length-1].score>g[g.length-2].score)B.push('📈 Improved');if(g.length>=5)B.push('🏅 5 exams done');
+  return B.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">${B.map(x=>`<span class="badge badge-active">${x}</span>`).join('')}</div>`:'';
+}
+function sparkSVG(rs){
+  const g=gradedOf(rs);if(g.length<2)return '';const W=300,H=80,n=g.length;
+  const pts=g.map((r,i)=>[10+i*(W-20)/(n-1),H-10-(Math.min(r.score,100)/100)*(H-20)]);
+  return `<div class="text-muted" style="font-size:12px">📈 Score progress</div><svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:340px"><line x1="10" x2="${W-10}" y1="${H-10-0.6*(H-20)}" y2="${H-10-0.6*(H-20)}" stroke="#C7E3F0" stroke-dasharray="4"/><polyline fill="none" stroke="#1565C0" stroke-width="2.5" points="${pts.map(p=>p.join(',')).join(' ')}"/>${pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#16A34A"/>`).join('')}</svg>`;
+}
+function renderInsights(){
+  const box=document.getElementById('tiBody');if(!box)return;
+  const ex=allExams.filter(e=>String(e.created_by)===String(currentUser.id));
+  box.innerHTML=ex.length?ex.map(e=>{
+    const rs=gradedOf(allResults.filter(r=>r.exam_id===e.id));
+    const rows=rs.length?(e.questions||[]).map((q,i)=>{
+      const gs=rs.map(r=>gradeQ(q,(r.answers||{})[i])).filter(g=>g.status!=='manual');if(!gs.length)return '';
+      const pct=Math.round(gs.reduce((a,g)=>a+g.earned/g.max,0)/gs.length*100),col=pct<40?'var(--danger)':pct>90?'#D97706':'var(--success)';
+      return `<div style="margin:8px 0"><div style="font-size:13px;display:flex;justify-content:space-between;gap:8px"><span>Q${i+1}. ${esc((q.text||'').slice(0,70))}</span><strong style="color:${col}">${pct}%${pct<40?' 🔥 hard':pct>90?' 😴 easy':''}</strong></div><div style="height:8px;background:#E9F5FB;border-radius:6px"><div style="height:8px;width:${pct}%;background:${col};border-radius:6px"></div></div></div>`;
+    }).join(''):'<div class="text-muted">No graded attempts yet.</div>';
+    return `<div class="card" style="margin-bottom:14px"><div class="card-title">${esc(e.title)} <span class="text-muted" style="font-size:12px">· ${rs.length} attempts</span></div>${rows}</div>`;
+  }).join(''):'<div class="empty-state"><div class="icon">📈</div><p>Create an exam to see question insights</p></div>';
+}
+function renderTeacherInbox(){
+  const box=document.getElementById('tsInbox');if(!box)return;
+  const L=allNotifications.filter(n=>String(n.student_id)===String(currentUser.id)&&!n.read&&/^⟦.*?⟧↩️/.test(n.message||''));
+  box.innerHTML=L.length?`<div class="card" style="margin-bottom:14px"><div class="card-title">📥 Student replies (${L.length})</div>${L.map(n=>{const sid=n.message.match(/^⟦(.*?)⟧/)[1];return `<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--border)"><div>${n.message.replace(/^⟦.*?⟧/,'')}</div><div style="display:flex;gap:6px"><button class="btn-sm" onclick="openMsgModal('${sid}')">💬 Reply</button><button class="btn-sm" onclick="markReplyRead('${n.id}')">✔ Read</button></div></div>`;}).join('')}</div>`:'';
+}
+async function markReplyRead(id){await sb(`notifications?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({read:true}),prefer:'return=minimal'});const n=allNotifications.find(x=>x.id===id);if(n)n.read=true;renderTeacherInbox();}
+async function replyTo(tid){
+  const t=(prompt('Write your reply:')||'').trim();if(!t)return;
+  showLoading('Sending…');
+  const res=await sb('notifications',{method:'POST',body:JSON.stringify([{student_id:tid,message:`⟦${currentUser.id}⟧↩️ ${esc(currentUser.name)}: ${esc(t)}`,read:false,created_at:new Date().toISOString()}]),prefer:'return=minimal'});
+  hideLoading();alert(res.ok?'Reply sent ✅':'Could not send your reply.');
+}
+let prQ=[],prI=0,prOk=0;
+function openPractice(){
+  prQ=[];allResults.filter(r=>String(r.student_id)===String(currentUser.id)&&r.graded!==false&&r.admin_note!==STARTED_NOTE).forEach(r=>{
+    const ex=allExams.find(e=>e.id===r.exam_id);if(!ex)return;
+    (ex.questions||[]).forEach((q,i)=>{const t=qType(q);if(q.audio_required||t==='short'||t==='match')return;if(gradeQ(q,(r.answers||{})[i]).status==='wrong')prQ.push(q);});
+  });
+  prQ=prQ.sort(()=>Math.random()-.5).slice(0,20);prI=0;prOk=0;drawPractice();openModal('modalPractice');
+}
+function drawPractice(){
+  const b=document.getElementById('prBody');
+  if(!prQ.length){b.innerHTML='<div class="text-muted">No mistakes to practice — great work! 🎉</div>';return;}
+  if(prI>=prQ.length){b.innerHTML=`<div style="text-align:center;font-size:18px;padding:20px">Done! ${prOk}/${prQ.length} correct 🎯</div>`;return;}
+  const q=prQ[prI],t=qType(q);
+  b.innerHTML=`<div class="text-muted" style="font-size:12px">${prI+1} / ${prQ.length}</div><div class="question-text">${esc(q.text)}</div>`+(t==='fill'?`<input id="prIn" style="width:100%;border:2px solid var(--border);border-radius:8px;padding:10px;margin:8px 0"/><button class="btn btn-ghost" onclick="prCheck(document.getElementById('prIn').value)">Check</button>`:'<div class="options">'+(q.options||[]).map((o,oi)=>o?`<div class="option" onclick="prCheck(${oi})"><div class="option-letter">${'ABCD'[oi]}</div><span>${esc(o)}</span></div>`:'').join('')+'</div>')+'<div id="prFb" style="margin-top:10px"></div>';
+}
+function prCheck(a){
+  const fb=document.getElementById('prFb');if(fb.innerHTML)return;const q=prQ[prI],ok=gradeQ(q,a).status==='correct';if(ok)prOk++;
+  const ans=qType(q)==='fill'?(q.answers||[]).join(' / '):(q.options||[])[q.correct];
+  fb.innerHTML=`<div class="alert ${ok?'alert-success':'alert-error'}">${ok?'✓ Correct!':'✗ Correct answer: '+esc(ans)}</div><button class="btn btn-primary" style="width:auto;padding:10px 20px" onclick="prI++;drawPractice()">Next →</button>`;
+}
+const _rsp=renderStudentProfile;
+renderStudentProfile=function(){
+  _rsp();if(!currentUser||currentUser.role!=='student')return;
+  const ms=document.getElementById('myScores');if(!ms)return;
+  let b=document.getElementById('myExtra');if(!b){b=document.createElement('div');b.id='myExtra';b.style.marginBottom='14px';ms.parentNode.insertBefore(b,ms);}
+  const mine=allResults.filter(r=>String(r.student_id)===String(currentUser.id));
+  b.innerHTML=badgesHTML(mine)+sparkSVG(mine)+'<div style="margin-top:8px"><button class="btn btn-outline" style="width:auto;padding:8px 16px" onclick="openPractice()">🧠 Practice my mistakes</button></div>';
+};
+
+// ── ADMIN: MESSAGES OVERVIEW ──────────────────
+function parseMsg(n){
+  const m=n.message||'',mk=m.match(/^⟦(.*?)⟧/),body=m.replace(/^⟦.*?⟧/,''),isReply=body.startsWith('↩️');
+  if(!isReply&&!body.startsWith('💬'))return null;
+  const other=mk?mk[1]:null;
+  return{n,body,isReply,teacherId:isReply?n.student_id:other,studentId:isReply?other:n.student_id};
+}
+async function deleteMessage(id){
+  if(!confirm('Delete this message?'))return;
+  showLoading('Deleting…');await sb(`notifications?id=eq.${id}`,{method:'DELETE',prefer:''});
+  await loadAllData();hideLoading();renderAdminMessages();
+}
+function renderAdminMessages(){
+  const box=document.getElementById('amBody');if(!box)return;
+  const sel=document.getElementById('amTeacher'),tv=sel.value,q=(document.getElementById('amSearch').value||'').toLowerCase();
+  sel.innerHTML='<option value="">All teachers</option>'+allTeachers.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');sel.value=tv;
+  const nm=(L,id)=>(L.find(x=>String(x.id)===String(id))||{}).name;
+  const groups={};
+  allNotifications.map(parseMsg).filter(Boolean).forEach(m=>{
+    if(tv&&String(m.teacherId)!==tv)return;
+    const k=m.teacherId+'|'+m.studentId;(groups[k]=groups[k]||{teacherId:m.teacherId,studentId:m.studentId,list:[]}).list.push(m);
+  });
+  const G=Object.values(groups).map(g=>{
+    g.tName=nm(allTeachers,g.teacherId)||'Unknown teacher (older message)';g.sName=nm(allStudents,g.studentId)||'Unknown student';
+    g.list.sort((a,b)=>new Date(a.n.created_at)-new Date(b.n.created_at));return g;
+  }).filter(g=>!q||g.tName.toLowerCase().includes(q)||g.sName.toLowerCase().includes(q)||g.list.some(m=>m.body.toLowerCase().includes(q)))
+    .sort((a,b)=>new Date(b.list[b.list.length-1].n.created_at)-new Date(a.list[a.list.length-1].n.created_at));
+  box.innerHTML=G.length?G.map(g=>`<div class="card" style="margin-bottom:14px"><div class="card-title" style="margin-bottom:10px">📚 ${esc(g.tName)} ⇄ 🎓 ${esc(g.sName)} <span class="text-muted" style="font-size:12px">· ${g.list.length} message${g.list.length>1?'s':''}</span></div>${g.list.map(m=>{
+    let dt='';try{dt=new Date(m.n.created_at).toLocaleString();}catch{}
+    return `<div style="display:flex;justify-content:${m.isReply?'flex-end':'flex-start'};margin:6px 0"><div style="max-width:80%;background:${m.isReply?'#DCFCE7':'#EAF6FF'};border:1px solid var(--border);border-radius:12px;padding:8px 12px"><div style="font-size:13px">${m.body}</div><div class="text-muted" style="font-size:11px;margin-top:4px;display:flex;gap:8px;align-items:center">${dt} · ${m.n.read?'✔ read':'● unread'}<button class="btn-sm" style="color:var(--danger);border-color:var(--danger);padding:1px 6px" onclick="deleteMessage('${m.n.id}')">🗑</button></div></div></div>`;
+  }).join('')}</div>`).join(''):'<div class="empty-state"><div class="icon">💬</div><p>No teacher–student messages yet</p></div>';
 }
 
 // ── CERTIFICATE ───────────────────────────────
@@ -1932,8 +2509,8 @@ function renderNotifBanner(){
   if(!mine.length){area.innerHTML='';return;}
   area.innerHTML=mine.map(n=>`
     <div class="notif-banner">
-      <div>🔔 ${n.message}</div>
-      <button class="btn-sm" onclick="markNotificationRead('${n.id}')">Mark read ✔</button>
+      <div>🔔 ${(n.message||'').replace(/^⟦.*?⟧/,'')}</div>
+      <div style="display:flex;gap:6px">${/^⟦.*?⟧💬/.test(n.message||'')?`<button class="btn-sm" onclick="replyTo('${n.message.match(/^⟦(.*?)⟧/)[1]}')">↩️ Reply</button>`:''}<button class="btn-sm" onclick="markNotificationRead('${n.id}')">Mark read ✔</button></div>
     </div>`).join('');
 }
 async function markNotificationRead(id){
@@ -2006,9 +2583,9 @@ function populateDropdowns(){
   const repEx=document.getElementById('reportExamSelect');
   if(repEx)repEx.innerHTML='<option value="">All Exams</option>'+allExams.map(e=>`<option value="${e.id}">${e.title}</option>`).join('');
   // Bank filter dropdowns
-  const subjects=[...new Set(allQuestionBank.map(q=>q.subject).filter(Boolean))];
+  const subjects=allSectionPaths();const dl=document.getElementById('subjectOptionsFull');if(dl)dl.innerHTML=subjects.map(x=>`<option value="${esc(x)}">`).join('');
   const levels=[...new Set(allQuestionBank.map(q=>q.level).filter(Boolean))];
-  const subjHtml='<option value="">All Subjects</option>'+subjects.map(s=>`<option value="${s}">${s}</option>`).join('');
+  const subjHtml='<option value="">All Subjects</option>'+subjects.map(s=>`<option value="${esc(s)}">${'\u00A0\u00A0'.repeat(s.split(SEP).length-1)}${esc(s.split(SEP).pop())}</option>`).join('');
   const lvlHtml='<option value="">All Levels</option>'+levels.map(l=>`<option value="${l}">${l}</option>`).join('');
   ['bankFilterSubject','pickBankSubject','tBankFilterSubject'].forEach(id=>{const el=document.getElementById(id);if(el){const v=el.value;el.innerHTML=subjHtml;el.value=v;}});
   ['bankFilterLevel','pickBankLevel','tBankFilterLevel'].forEach(id=>{const el=document.getElementById(id);if(el){const v=el.value;el.innerHTML=lvlHtml;el.value=v;}});
@@ -2025,7 +2602,7 @@ function toggleAssignAll(){
 // ── TABS ──────────────────────────────────────
 function showAdminTab(tab){showPage('page-admin');switchAdminTab(tab);}
 function switchAdminTab(tab){
-  const tabs=['students','bank','exams','schedule','results','discounts','reports'];
+  const tabs=['students','bank','exams','schedule','results','discounts','reports','ratings','messages'];
   tabs.forEach(t=>{
     const el=document.getElementById(`adminTab-${t}`);if(el)el.style.display=t===tab?'block':'none';
     const b=document.getElementById(`tabBtn-${t}`);if(b)b.classList.toggle('active',t===tab);
@@ -2037,11 +2614,13 @@ function switchAdminTab(tab){
   if(tab==='results'){populateDropdowns();renderResultsTable();}
   if(tab==='discounts'){populateDropdowns();renderDiscountsTable();}
   if(tab==='reports')populateDropdowns();
+  if(tab==='ratings')renderRatings('adminRatingsList');
+  if(tab==='messages')renderAdminMessages();
 }
 
 function showTeacherTab(tab){showPage('page-teacher');switchTeacherTab(tab);}
 function switchTeacherTab(tab){
-  const tabs=['bank','exams','results'];
+  const tabs=['bank','exams','results','students','insights','ratings'];
   tabs.forEach(t=>{
     const el=document.getElementById(`teacherTab-${t}`);if(el)el.style.display=t===tab?'block':'none';
     const b=document.getElementById(`teacherTabBtn-${t}`);if(b)b.classList.toggle('active',t===tab);
@@ -2049,9 +2628,18 @@ function switchTeacherTab(tab){
   if(tab==='bank'){populateDropdowns();renderTeacherBankList();}
   if(tab==='exams'){populateDropdowns();renderTeacherExamList();}
   if(tab==='results')renderTeacherResultsTable();
+  if(tab==='students')renderTeacherStudents();
+  if(tab==='insights')renderInsights();
+  if(tab==='ratings')renderRatings('teacherRatingsList',currentUser.id);
 }
 
 // ── NAVIGATION & MODALS ───────────────────────
+function goHome(){
+  if(!currentUser)return;
+  if(document.getElementById('page-exam').classList.contains('active')){alert('Please finish and submit your exam first.');return;}
+  showPage('page-home');renderLeaderboard();updateAdminStats();
+  if(currentUser.role==='student'){renderNotifBanner();renderAvailableExams();}
+}
 function showPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');window.scrollTo(0,0);
