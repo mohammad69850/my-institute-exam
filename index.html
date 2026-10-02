@@ -2422,22 +2422,22 @@ html,body{background:#2b2924;overflow:hidden}
 .title{font-family:'Playfair Display',serif;font-size:46px;letter-spacing:9px;text-transform:uppercase;margin-top:20px;padding-left:9px;line-height:1.1}
 .sub{font-family:Cinzel,serif;font-size:13px;letter-spacing:6px;color:#b8902a;margin-top:4px;font-weight:600}
 .sub span{font-family:Amiri,serif;letter-spacing:0;font-size:19px;margin:0 6px}
-.pre{font-size:21px;font-style:italic;color:#5b4a1c;margin-top:22px}
+.pre{font-size:21px;font-style:italic;color:#5b4a1c;margin-top:16px}
 .name{font-size:${isAr?'56px':'70px'};font-family:${isAr?"Amiri,serif;font-weight:700":"'Great Vibes',cursive"};line-height:1.15;margin-top:2px;max-width:900px}
 .nl{width:640px;height:2px;background:linear-gradient(90deg,transparent,#b8902a 20%,#b8902a 80%,transparent);margin-top:2px;position:relative}
 .nl::after{content:"";position:absolute;left:50%;top:-4px;width:9px;height:9px;background:#b8902a;transform:translateX(-50%) rotate(45deg)}
-.mid{font-size:20px;font-style:italic;color:#5b4a1c;margin-top:20px}
+.mid{font-size:20px;font-style:italic;color:#5b4a1c;margin-top:14px}
 .exam{font-family:Cinzel,serif;font-weight:700;font-size:19px;letter-spacing:2px;background:#0d0b07;color:#e3be58;padding:10px 40px;margin-top:14px;border:1.5px solid #b8902a;box-shadow:0 0 0 3px #f6ecd0,0 0 0 4.5px #b8902a;max-width:860px}
-.stats{display:flex;margin-top:28px}
+.stats{display:flex;margin-top:20px}
 .stats div{padding:0 30px;border-left:1px solid #b8902a}.stats div:first-child{border:none}
 .stats small{display:block;font-family:Cinzel,serif;font-size:8.5px;letter-spacing:3px;color:#8a6a14}
 .stats b{font-family:'Playfair Display',serif;font-size:19px}
-.q{margin-top:30px;max-width:760px}
+.q{margin-top:20px;max-width:760px}
 .q .e{font-size:22px;font-style:italic;font-weight:600;color:#3b2f10}
 .q .a{font-family:Amiri,serif;font-size:19px;color:#8a6a14;margin-top:2px}
 .foot{position:absolute;left:96px;right:96px;bottom:46px;display:flex;justify-content:space-between;align-items:flex-end}
 .col{width:270px;text-align:center}
-.sig{white-space:nowrap;font-family:'Great Vibes','Brush Script MT',cursive;font-size:44px;line-height:1;transform:rotate(-4deg);padding-bottom:2px}
+.sig{white-space:nowrap;font-family:'Great Vibes','Brush Script MT',cursive;font-size:44px;line-height:1;transform:rotate(-4deg);padding-bottom:8px}
 .sigimg{height:56px}
 .line{border-top:1.5px solid #b8902a;padding-top:5px}
 .col b{display:block;font-family:Cinzel,serif;font-size:11.5px;letter-spacing:1.5px}
@@ -2453,7 +2453,7 @@ html,body{background:#2b2924;overflow:hidden}
 <div class="abs cn" style="top:30px;left:30px">${corner}</div><div class="abs cn" style="top:30px;right:30px;transform:scaleX(-1)">${corner}</div>
 <div class="abs cn" style="bottom:30px;left:30px;transform:scaleY(-1)">${corner}</div><div class="abs cn" style="bottom:30px;right:30px;transform:scale(-1,-1)">${corner}</div>
 <div class="c">
- <div class="ayah" dir="rtl">﴾ وَقُل رَّبِّ زِدْنِي عِلْمًا ﴿</div>
+ <div class="ayah" dir="rtl" style="direction:rtl;unicode-bidi:isolate">﴿ وَقُل رَّبِّ زِدْنِي عِلْمًا ﴾</div>
  <img class="emb" src="${CERT_EMBLEM}">
  <div class="inst">${esc(C.institute)}</div><div class="tag">${esc(C.tagline)}</div>
  <div class="title">Certificate</div>
@@ -2473,7 +2473,7 @@ html,body{background:#2b2924;overflow:hidden}
   <circle cx="60" cy="60" r="25" fill="#0d0b07"/><image href="${CERT_EMBLEM}" x="43" y="43" width="34" height="34"/></svg>
  <div class="col">${sig}<div class="line"><b>${esc(C.institute)}</b><span>Official Signature</span></div></div>
 </div></div>
-<script>function lay(){var c=document.querySelector('.c'),f=document.querySelector('.foot'),k=f.querySelector('.seal');c.style.transform='';c.style.transformOrigin='top center';var lim=f.offsetTop+f.offsetHeight-104-12,h=c.offsetHeight,t=c.offsetTop;if(t+h>lim)c.style.transform='scale('+Math.max(.6,(lim-t)/h)+')'}lay();if(document.fonts&&document.fonts.ready)document.fonts.ready.then(lay);function fit(){var s=Math.min(innerWidth/1122,innerHeight/793),st=document.getElementById('st');st.style.transform='scale('+s+')';st.style.marginLeft=(innerWidth-1122*s)/2+'px';st.style.marginTop=(innerHeight-793*s)/2+'px'}addEventListener('resize',fit);fit();<\/script>
+<script>function lay(){var c=document.querySelector('.c'),f=document.querySelector('.foot'),k=f.querySelector('.seal');c.style.transform='';c.style.transformOrigin='top center';var lim=f.offsetTop+f.offsetHeight-104-22,h=c.offsetHeight,t=c.offsetTop;if(t+h>lim)c.style.transform='scale('+Math.max(.6,(lim-t)/h)+')'}lay();if(document.fonts){document.fonts.ready.then(lay);document.fonts.addEventListener&&document.fonts.addEventListener('loadingdone',lay)}addEventListener('load',lay);setTimeout(lay,400);setTimeout(lay,1200);setTimeout(lay,2500);function fit(){var s=Math.min(innerWidth/1122,innerHeight/793),st=document.getElementById('st');st.style.transform='scale('+s+')';st.style.marginLeft=(innerWidth-1122*s)/2+'px';st.style.marginTop=(innerHeight-793*s)/2+'px'}addEventListener('resize',fit);fit();<\/script>
 </body></html>`;
 }
 function downloadCertificate(){
