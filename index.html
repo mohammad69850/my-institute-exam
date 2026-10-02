@@ -587,7 +587,7 @@
       <div id="certSection" style="display:none;margin-top:16px">
         <div style="background:linear-gradient(135deg,rgba(21,101,192,.15) 0%,rgba(21,101,192,.03) 100%);border:1px solid var(--gold);border-radius:12px;padding:16px;text-align:center">
           <div style="font-size:13px;color:var(--gold-pale);margin-bottom:10px">🎓 Congratulations! Download your certificate</div>
-          <button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="downloadCertificate()">📜 Download Certificate</button>
+          <button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="downloadCertificate()">📜 View & Download Certificate</button>
         </div>
       </div>
       <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
@@ -2097,6 +2097,7 @@ function showResultPage(score,correct,total,passed,graded=true){
   document.getElementById('reviewSection').style.display='none';
   showPage('page-result');renderLeaderboard();
   if(currentUser.role==='student')renderStudentProfile();
+  if(passed&&graded&&currentUser.role==='student'&&lastResult&&lastResult.graded)setTimeout(downloadCertificate,700);
 }
 
 function reviewHTML(ex,ans,audio,pmList){
@@ -2408,7 +2409,7 @@ function buildCertificateHTML(){
 html,body{background:#2b2924;overflow:hidden}
 .stage{position:absolute;top:0;left:0;width:1122px;height:793px;transform-origin:0 0;background:radial-gradient(circle at 50% 45%,#fffdf5 0%,#f6ecd0 100%);overflow:hidden;font-family:'Cormorant Garamond',serif;color:#1a1408}
 .abs{position:absolute}
-.f1{inset:0;border:16px solid #0d0b07}.f2{inset:16px;border:3px solid #b8902a}.f3{inset:26px;border:1px solid #b8902a}
+.f1{inset:0;background:linear-gradient(#0d0b07,#0d0b07) top/100% 16px no-repeat,linear-gradient(#0d0b07,#0d0b07) bottom/100% 16px no-repeat,linear-gradient(#0d0b07,#0d0b07) left/16px 100% no-repeat,linear-gradient(#0d0b07,#0d0b07) right/16px 100% no-repeat}.f2{inset:16px;border:3px solid #b8902a}.f3{inset:26px;border:1px solid #b8902a}
 .pat{inset:27px;background:${pat}}
 .pat::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(255,252,240,.95) 38%,rgba(255,252,240,0) 82%)}
 .wm{left:50%;top:48%;width:420px;transform:translate(-50%,-50%);opacity:.07}
@@ -2427,7 +2428,7 @@ html,body{background:#2b2924;overflow:hidden}
 .nl{width:640px;height:2px;background:linear-gradient(90deg,transparent,#b8902a 20%,#b8902a 80%,transparent);margin-top:2px;position:relative}
 .nl::after{content:"";position:absolute;left:50%;top:-4px;width:9px;height:9px;background:#b8902a;transform:translateX(-50%) rotate(45deg)}
 .mid{font-size:20px;font-style:italic;color:#5b4a1c;margin-top:14px}
-.exam{font-family:Cinzel,serif;font-weight:700;font-size:19px;letter-spacing:2px;background:#0d0b07;color:#e3be58;padding:10px 40px;margin-top:14px;border:1.5px solid #b8902a;box-shadow:0 0 0 3px #f6ecd0,0 0 0 4.5px #b8902a;max-width:860px}
+.exam{font-family:Cinzel,serif;font-weight:700;font-size:19px;letter-spacing:2px;background:#0d0b07;color:#e3be58;padding:10px 40px;margin-top:14px;border:6px double #b8902a;max-width:860px}
 .stats{display:flex;margin-top:20px}
 .stats div{padding:0 30px;border-left:1px solid #b8902a}.stats div:first-child{border:none}
 .stats small{display:block;font-family:Cinzel,serif;font-size:8.5px;letter-spacing:3px;color:#8a6a14}
@@ -2476,17 +2477,45 @@ html,body{background:#2b2924;overflow:hidden}
 <script>function lay(){var c=document.querySelector('.c'),f=document.querySelector('.foot'),k=f.querySelector('.seal');c.style.transform='';c.style.transformOrigin='top center';var lim=f.offsetTop+f.offsetHeight-104-22,h=c.offsetHeight,t=c.offsetTop;if(t+h>lim)c.style.transform='scale('+Math.max(.6,(lim-t)/h)+')'}lay();if(document.fonts){document.fonts.ready.then(lay);document.fonts.addEventListener&&document.fonts.addEventListener('loadingdone',lay)}addEventListener('load',lay);setTimeout(lay,400);setTimeout(lay,1200);setTimeout(lay,2500);function fit(){var s=Math.min(innerWidth/1122,innerHeight/793),st=document.getElementById('st');st.style.transform='scale('+s+')';st.style.marginLeft=(innerWidth-1122*s)/2+'px';st.style.marginTop=(innerHeight-793*s)/2+'px'}addEventListener('resize',fit);fit();<\/script>
 </body></html>`;
 }
+function loadH2C(){return new Promise((res,rej)=>{if(window.html2canvas)return res();const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';s.onload=res;s.onerror=()=>rej(new Error('html2canvas load failed'));document.head.appendChild(s);});}
+async function certToCanvas(){
+  const f=document.getElementById('certFrame'),d=f.contentDocument,st=d.getElementById('st');
+  await loadH2C();if(d.fonts&&d.fonts.ready)await d.fonts.ready;
+  const t=st.style.transform,ml=st.style.marginLeft,mt=st.style.marginTop;
+  st.style.transform='none';st.style.marginLeft='0';st.style.marginTop='0';
+  try{return await window.html2canvas(st,{scale:2.5,backgroundColor:'#ffffff',width:1122,height:793,windowWidth:1122,windowHeight:793,scrollX:0,scrollY:0,useCORS:true});}
+  finally{st.style.transform=t;st.style.marginLeft=ml;st.style.marginTop=mt;}
+}
+function certFileName(ext){return `Certificate_${(currentUser.name||'Student').replace(/\s+/g,'_')}_${(activeExam.title||'Exam').replace(/\s+/g,'_')}.${ext}`;}
+async function certDownload(kind,btn){
+  const old=btn.innerHTML;btn.disabled=true;btn.innerHTML='⏳ Preparing…';
+  try{
+    const cv=await certToCanvas();
+    if(kind==='pdf'){
+      const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+      doc.addImage(cv.toDataURL('image/jpeg',0.96),'JPEG',0,0,297,210);doc.save(certFileName('pdf'));
+    }else{
+      const a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download=certFileName('png');document.body.appendChild(a);a.click();a.remove();
+    }
+  }catch(e){console.error(e);alert('Could not create the file. Please use the Print button and choose "Save as PDF".');}
+  btn.disabled=false;btn.innerHTML=old;
+}
 function downloadCertificate(){
   if(!lastResult||!activeExam)return;
   let ov=document.getElementById('certOverlay');if(ov)ov.remove();
   ov=document.createElement('div');ov.id='certOverlay';
-  ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(15,15,15,.9);display:flex;flex-direction:column';
-  ov.innerHTML=`<div style="display:flex;gap:10px;justify-content:center;align-items:center;padding:10px;flex-wrap:wrap">
-    <button class="btn btn-primary" style="width:auto;padding:10px 22px" id="certPrintBtn">🖨️ Print / Save as PDF</button>
+  ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(15,15,15,.92);display:flex;flex-direction:column';
+  ov.innerHTML=`<div style="color:#f3d77a;text-align:center;padding:10px 10px 0;font-size:15px;font-weight:600">🎓 Congratulations! Your certificate is ready</div>
+    <div style="display:flex;gap:10px;justify-content:center;align-items:center;padding:10px;flex-wrap:wrap">
+    <button class="btn btn-primary" style="width:auto;padding:10px 20px" id="certPdfBtn">⬇️ Download PDF</button>
+    <button class="btn btn-success" style="padding:10px 20px" id="certImgBtn">🖼️ Download Image</button>
+    <button class="btn btn-outline" style="padding:10px 20px;background:#fff" id="certPrintBtn">🖨️ Print</button>
     <button class="btn btn-ghost" style="padding:10px 18px" onclick="document.getElementById('certOverlay').remove()">✖ Close</button></div>
     <iframe id="certFrame" style="flex:1;border:0;width:100%"></iframe>`;
   document.body.appendChild(ov);
   const f=document.getElementById('certFrame');f.srcdoc=buildCertificateHTML();
+  document.getElementById('certPdfBtn').onclick=e=>certDownload('pdf',e.currentTarget);
+  document.getElementById('certImgBtn').onclick=e=>certDownload('png',e.currentTarget);
   document.getElementById('certPrintBtn').onclick=()=>{f.contentWindow.focus();f.contentWindow.print();};
 }
 
