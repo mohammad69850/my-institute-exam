@@ -2375,46 +2375,154 @@ function downloadCertificate(){
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   const W=297,H=210;
-  doc.setFillColor(10,10,10);doc.rect(0,0,W,H,'F');
-  doc.setDrawColor(14,165,233);doc.setLineWidth(1.5);doc.rect(8,8,W-16,H-16);
-  doc.setDrawColor(21,101,192);doc.setLineWidth(0.5);doc.rect(12,12,W-24,H-24);
-  doc.setTextColor(14,165,233);doc.setFontSize(22);doc.setFont('helvetica','bold');
-  doc.text('MY INSTITUTE',W/2,30,{align:'center'});
-  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(21,101,192);
-  doc.text('Quran  •  Arabic Language  •  Islamic Studies',W/2,37,{align:'center'});
-  doc.setDrawColor(14,165,233);doc.setLineWidth(0.8);doc.line(22,40,W-22,40);
-  doc.setTextColor(220,220,220);doc.setFontSize(11);
-  doc.text('CERTIFICATE OF ACHIEVEMENT',W/2,55,{align:'center'});
-  doc.setTextColor(14,165,233);doc.setFontSize(14);doc.text('✦  ✦  ✦',W/2,66,{align:'center'});
-  doc.setTextColor(180,180,180);doc.setFontSize(10);doc.setFont('helvetica','normal');
-  doc.text('This is to certify that',W/2,80,{align:'center'});
-  doc.setTextColor(14,165,233);doc.setFontSize(28);doc.setFont('helvetica','bold');
-  doc.text(currentUser.name,W/2,98,{align:'center'});
-  const nw=doc.getTextWidth(currentUser.name);
-  doc.setDrawColor(21,101,192);doc.setLineWidth(0.5);doc.line(W/2-nw/2,100,W/2+nw/2,100);
-  doc.setTextColor(180,180,180);doc.setFontSize(10);doc.setFont('helvetica','normal');
-  doc.text('has successfully completed the examination:',W/2,112,{align:'center'});
-  doc.setTextColor(235,235,235);doc.setFontSize(16);doc.setFont('helvetica','bold');
-  doc.text(activeExam.title,W/2,124,{align:'center'});
-  const bx=W/2-30,bw=52,bh=22;
-  doc.setFillColor(26,20,0);doc.setDrawColor(14,165,233);doc.setLineWidth(0.8);
-  doc.roundedRect(bx,132,bw,bh,3,3,'FD');
-  doc.setTextColor(14,165,233);doc.setFontSize(18);doc.setFont('helvetica','bold');
-  doc.text(`${Math.round(lastResult.score)}%`,W/2,145,{align:'center'});
-  doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(21,101,192);
-  doc.text('SCORE',W/2,152,{align:'center'});
-  const dt=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
-  doc.setTextColor(150,150,150);doc.setFontSize(9);
-  doc.text(`Date of Completion: ${dt}`,W/2,164,{align:'center'});
-  doc.setDrawColor(21,101,192);doc.setLineWidth(0.5);doc.line(W/2-35,178,W/2+35,178);
-  doc.setTextColor(14,165,233);doc.setFontSize(10);doc.setFont('helvetica','bold');
-  doc.text('Sheikh Muhammad Yusuf',W/2,183,{align:'center'});
-  doc.setTextColor(130,130,130);doc.setFontSize(8);doc.setFont('helvetica','normal');
-  doc.text('Director – MY Institute',W/2,188,{align:'center'});
-  [[20,20],[W-20,20],[20,H-20],[W-20,H-20]].forEach(([x,y])=>{
-    doc.setTextColor(14,165,233);doc.setFontSize(12);doc.text('✦',x,y,{align:'center'});
+
+  // ── BACKGROUND ──────────────────────────────
+  // Cream/ivory background
+  doc.setFillColor(255,253,240);doc.rect(0,0,W,H,'F');
+
+  // Outer dark border
+  doc.setFillColor(15,12,5);doc.rect(0,0,W,12,'F');doc.rect(0,H-12,W,12,'F');
+  doc.setFillColor(15,12,5);doc.rect(0,0,12,H,'F');doc.rect(W-12,0,12,H,'F');
+
+  // Gold outer border lines
+  doc.setDrawColor(184,147,32);doc.setLineWidth(2);doc.rect(12,12,W-24,H-24);
+  doc.setLineWidth(0.5);doc.rect(15,15,W-30,H-30);
+
+  // Gold corner ornaments (diamond shapes)
+  const corners=[[18,18],[W-18,18],[18,H-18],[W-18,H-18]];
+  corners.forEach(([cx,cy])=>{
+    doc.setFillColor(184,147,32);
+    doc.setDrawColor(184,147,32);
+    // Diamond
+    doc.lines([[4,-4],[4,4],[-4,4],[-4,-4]],cx-4,cy,'F');
   });
-  doc.save(`Certificate_${currentUser.name.replace(/\s+/g,'_')}_${activeExam.title.replace(/\s+/g,'_')}.pdf`);
+
+  // ── TOP SECTION ─────────────────────────────
+  // Logo area background
+  doc.setFillColor(15,12,5);doc.roundedRect(W/2-30,16,60,28,3,3,'F');
+  doc.setDrawColor(184,147,32);doc.setLineWidth(0.8);doc.roundedRect(W/2-30,16,60,28,3,3,'S');
+
+  // Load logo image
+  try{
+    const logoImg=document.querySelector('img[alt="MY Institute"]');
+    if(logoImg&&logoImg.complete){
+      const cv=document.createElement('canvas');cv.width=60;cv.height=60;
+      const ctx2=cv.getContext('2d');ctx2.drawImage(logoImg,0,0,60,60);
+      const imgData=cv.toDataURL('image/jpeg');
+      doc.addImage(imgData,'JPEG',W/2-8,17,16,16);
+    }
+  }catch(e){}
+
+  // Institute name in logo box
+  doc.setTextColor(184,147,32);doc.setFontSize(9);doc.setFont('helvetica','bold');
+  doc.text('MY INSTITUTE',W/2,37,{align:'center'});
+  doc.setFontSize(5);doc.setFont('helvetica','normal');doc.setTextColor(150,120,50);
+  doc.text('www.my-institute.com',W/2,41,{align:'center'});
+
+  // ── DECORATIVE HEADER LINE ───────────────────
+  doc.setDrawColor(184,147,32);doc.setLineWidth(0.3);
+  doc.line(20,48,W/2-38,48);doc.line(W/2+38,48,W-20,48);
+  // Small diamonds on line
+  doc.setFillColor(184,147,32);
+  doc.circle(W/2-38,48,1,'F');doc.circle(W/2+38,48,1,'F');
+
+  // ── CERTIFICATE TITLE ────────────────────────
+  doc.setTextColor(15,12,5);doc.setFontSize(8);doc.setFont('helvetica','normal');
+  doc.text('— CERTIFICATE OF ACHIEVEMENT —',W/2,56,{align:'center'});
+
+  // Subtitle with subject
+  const subj=activeExam.subject||'Islamic Studies';
+  doc.setTextColor(184,147,32);doc.setFontSize(6.5);
+  doc.text(`${subj}  •  MY Institute`,W/2,62,{align:'center'});
+
+  // Thin gold divider
+  doc.setDrawColor(184,147,32);doc.setLineWidth(0.5);
+  doc.line(W/2-60,65,W/2+60,65);
+
+  // ── BODY ─────────────────────────────────────
+  doc.setTextColor(80,60,20);doc.setFontSize(9);doc.setFont('helvetica','italic');
+  doc.text('This is to certify with honour that',W/2,74,{align:'center'});
+
+  // Student name - large and prominent
+  doc.setTextColor(15,12,5);doc.setFontSize(32);doc.setFont('helvetica','bold');
+  const sName=currentUser.name||'Student Name';
+  doc.text(sName,W/2,92,{align:'center'});
+
+  // Elegant underline under name
+  const nameW=doc.getTextWidth(sName);
+  const lineStart=W/2-nameW/2;const lineEnd=W/2+nameW/2;
+  doc.setDrawColor(184,147,32);doc.setLineWidth(1.2);
+  doc.line(lineStart,94,lineEnd,94);
+  doc.setLineWidth(0.3);
+  doc.line(lineStart+3,96,lineEnd-3,96);
+
+  // Text below name
+  doc.setTextColor(80,60,20);doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.text('has successfully completed and passed the examination of:',W/2,105,{align:'center'});
+
+  // Exam title box
+  doc.setFillColor(15,12,5);doc.roundedRect(W/2-70,109,140,14,2,2,'F');
+  doc.setDrawColor(184,147,32);doc.setLineWidth(0.6);doc.roundedRect(W/2-70,109,140,14,2,2,'S');
+  doc.setTextColor(184,147,32);doc.setFontSize(13);doc.setFont('helvetica','bold');
+  doc.text(activeExam.title,W/2,119,{align:'center'});
+
+  // ── SCORE & GRADE ROW ───────────────────────
+  const score=Math.round(lastResult.score||0);
+  const grade=score>=95?'A+':score>=85?'A':score>=75?'B':score>=65?'C':'D';
+  const gradeColor=score>=75?[30,132,73]:[192,57,43];
+
+  // Score box
+  doc.setFillColor(255,248,220);doc.setDrawColor(184,147,32);doc.setLineWidth(0.6);
+  doc.roundedRect(W/2-55,127,50,22,3,3,'FD');
+  doc.setTextColor(184,147,32);doc.setFontSize(18);doc.setFont('helvetica','bold');
+  doc.text(`${score}%`,W/2-30,141,{align:'center'});
+  doc.setFontSize(6);doc.setFont('helvetica','normal');doc.setTextColor(120,90,30);
+  doc.text('SCORE',W/2-30,147,{align:'center'});
+
+  // Grade box
+  doc.setFillColor(255,248,220);doc.setDrawColor(...gradeColor);doc.setLineWidth(0.6);
+  doc.roundedRect(W/2+5,127,50,22,3,3,'FD');
+  doc.setTextColor(...gradeColor);doc.setFontSize(18);doc.setFont('helvetica','bold');
+  doc.text(grade,W/2+30,141,{align:'center'});
+  doc.setFontSize(6);doc.setFont('helvetica','normal');
+  doc.text('GRADE',W/2+30,147,{align:'center'});
+
+  // ── DATE ─────────────────────────────────────
+  const dt=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  doc.setTextColor(100,80,30);doc.setFontSize(8);doc.setFont('helvetica','normal');
+  doc.text(`Date of Completion: ${dt}`,W/2,158,{align:'center'});
+
+  // ── SIGNATURES ───────────────────────────────
+  // Left signature
+  doc.setDrawColor(184,147,32);doc.setLineWidth(0.4);
+  doc.line(40,170,100,170);
+  doc.setTextColor(15,12,5);doc.setFontSize(8);doc.setFont('helvetica','bold');
+  doc.text('Dr. Muhammad Yusuf',70,175,{align:'center'});
+  doc.setFontSize(6.5);doc.setFont('helvetica','normal');doc.setTextColor(100,80,30);
+  doc.text('Director & Founder',70,179,{align:'center'});
+  doc.text('MY Institute',70,183,{align:'center'});
+
+  // Right signature - seal area
+  doc.setDrawColor(184,147,32);doc.setLineWidth(0.4);
+  doc.line(197,170,257,170);
+  doc.setTextColor(15,12,5);doc.setFontSize(8);doc.setFont('helvetica','bold');
+  doc.text('Academic Seal',227,175,{align:'center'});
+  doc.setFontSize(6.5);doc.setFont('helvetica','normal');doc.setTextColor(100,80,30);
+  doc.text('www.my-institute.com',227,179,{align:'center'});
+  doc.text('Online Islamic Education',227,183,{align:'center'});
+
+  // Seal circle
+  doc.setDrawColor(184,147,32);doc.setLineWidth(0.5);doc.circle(W/2,173,10,'S');
+  doc.setFontSize(5);doc.setTextColor(184,147,32);
+  doc.text('MY',W/2,172,{align:'center'});
+  doc.text('INST',W/2,176,{align:'center'});
+
+  // ── BOTTOM STRIP ─────────────────────────────
+  doc.setFillColor(15,12,5);doc.rect(12,H-14,W-24,2,'F');
+  doc.setTextColor(184,147,32);doc.setFontSize(6);
+  doc.text('MY Institute  •  Online Quran, Arabic & Islamic Studies  •  www.my-institute.com',W/2,H-7,{align:'center'});
+
+  doc.save(`Certificate_${(currentUser.name||'Student').replace(/\s+/g,'_')}_${activeExam.title.replace(/\s+/g,'_')}.pdf`);
 }
 
 function downloadCertForResult(resultId){
