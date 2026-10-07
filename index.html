@@ -299,11 +299,6 @@
       <div class="section-title"><span>🏆</span> Hall of Excellence — Top Students</div>
       <div id="leaderboardList"><div class="empty-state"><div class="icon">🎓</div><p>No results yet. Be the first!</p></div></div>
     </div>
-    <div id="ratingSection" class="insp-card" style="display:none">
-      <div class="section-title" style="margin-bottom:12px"><span>⭐</span> Rate Your Teacher</div>
-      <div id="rtAlert"></div>
-      <div id="rtBody"></div>
-    </div>
     <div id="tipsRow" style="display:none">
       <div class="tips-row">
         <div class="tip-card"><div class="tip-icon">📖</div><div><div class="tip-title">Read carefully</div><div class="tip-desc">Take your time reading each question</div></div></div>
@@ -328,7 +323,6 @@
         <button class="btn btn-outline" onclick="showAdminTab('results')">📊 Results</button>
         <button class="btn btn-outline" onclick="showAdminTab('discounts')">🎁 Gifts</button>
         <button class="btn btn-outline" onclick="showAdminTab('reports')">📈 Reports</button>
-        <button class="btn btn-outline" onclick="showAdminTab('ratings')">⭐ Ratings</button>
         <button class="btn btn-outline" onclick="showAdminTab('messages')">💬 Messages</button>
       </div>
     </div>
@@ -339,7 +333,6 @@
         <button class="btn btn-outline" onclick="showTeacherTab('exams')">📋 My Exams</button>
         <button class="btn btn-outline" onclick="showTeacherTab('results')">📊 Results</button>
         <button class="btn btn-outline" onclick="showTeacherTab('students')">👥 My Students</button>
-        <button class="btn btn-outline" onclick="showTeacherTab('ratings')">⭐ My Ratings</button>
       </div>
     </div>
   </div>
@@ -356,7 +349,6 @@
       <button class="tab" onclick="switchAdminTab('results')" id="tabBtn-results">📊 Results</button>
       <button class="tab" onclick="switchAdminTab('discounts')" id="tabBtn-discounts">🎁 Gifts</button>
       <button class="tab" onclick="switchAdminTab('reports')" id="tabBtn-reports">📈 Reports</button>
-      <button class="tab" onclick="switchAdminTab('ratings')" id="tabBtn-ratings">⭐ Ratings</button>
       <button class="tab" onclick="switchAdminTab('messages')" id="tabBtn-messages">💬 Messages</button>
     </div>
 
@@ -464,7 +456,6 @@
     </div>
 
     <!-- REPORTS TAB -->
-    <div id="adminTab-ratings" style="display:none"><div id="adminRatingsList"></div></div>
     <div id="adminTab-messages" style="display:none">
       <div class="section-title">💬 Teacher ⇄ Student conversations</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
@@ -705,6 +696,16 @@
       <img id="bankQImagePreview" class="q-img-preview" style="display:none"/>
       <input type="hidden" id="bankQImageData"/>
     </div>
+    <div class="field">
+      <label>🔊 Audio to listen to (optional — recitation / Tajweed clip)</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input type="file" id="bankQAudioFile" accept="audio/*" onchange="handleAudioPick(this,'bankQAudioPreview','bankQAudioData')"/>
+        <button class="btn-sm" type="button" onclick="recordPrompt('bankQAudioData','bankQAudioPreview',this)">🎙️ Record</button>
+        <button class="btn-sm" type="button" onclick="clearPrompt('bankQAudioData','bankQAudioPreview','bankQAudioFile')">✕ Remove</button>
+      </div>
+      <audio id="bankQAudioPreview" controls style="display:none;width:100%;margin-top:6px"></audio>
+      <input type="hidden" id="bankQAudioData"/>
+    </div>
     <div class="field" style="display:flex;align-items:center;gap:8px">
       <input type="checkbox" id="bankQAudio" style="width:auto" onchange="toggleBankOptionsVisibility()"/>
       <label style="margin:0">🎙️ Audio answer required (manual grading)</label>
@@ -825,17 +826,6 @@
   </div>
 </div>
 
-<div class="modal-overlay" id="modalRateTeacher">
-  <div class="modal" style="max-width:440px;text-align:center">
-    <div class="modal-title"><span>⭐ Rate your teacher</span> <button class="close-btn" onclick="closeModal('modalRateTeacher')">✕</button></div>
-    <div style="font-size:14px;margin-bottom:6px">How was your experience with <strong id="mrName"></strong>?</div>
-    <div id="mrStars" style="font-size:38px;cursor:pointer;color:#F59E0B;letter-spacing:4px;user-select:none;margin:8px 0"></div>
-    <div class="field" style="text-align:left"><textarea id="mrComment" placeholder="Comment (optional)"></textarea></div>
-    <label style="display:flex;align-items:center;gap:6px;font-size:13px;margin-bottom:12px;cursor:pointer;text-align:left"><input type="checkbox" id="mrAnon" style="width:auto"/> Send anonymously</label>
-    <div id="mrAlert"></div>
-    <div style="display:flex;gap:8px;justify-content:center"><button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="submitModalRating()">Submit</button><button class="btn btn-ghost" onclick="closeModal('modalRateTeacher')">Skip</button></div>
-  </div>
-</div>
 <div class="modal-overlay" id="modalMsg">
   <div class="modal" style="max-width:480px">
     <div class="modal-title"><span id="tmTitle">💬 Message</span> <button class="close-btn" onclick="closeModal('modalMsg')">✕</button></div>
@@ -889,7 +879,7 @@ const sb=(path,opts={})=>fetch(`${SB_URL}/rest/v1/${path}`,{headers:{'apikey':SB
 
 // ── STATE ────────────────────────────────────
 let currentUser=null,allStudents=[],allExams=[],allResults=[],allDiscounts=[],allSchedules=[];
-let allQuestionBank=[],allNotifications=[],allTeachers=[],allRatings=[],ratingsOk=true;
+let allQuestionBank=[],allNotifications=[],allTeachers=[];
 let activeExam=null,answers={},audioAnswers={},timerInterval=null,timeLeft=0,examStartTime=null;
 let questionIndex=0,lastResult=null,questionCount=0;
 let mediaRecorderCurrent=null,mediaChunksCurrent=[],mediaStreamCurrent=null;
@@ -990,69 +980,6 @@ function renderInspiration(shuffle){
     ${q.s?`<div class="insp-src">\u2014 ${esc(q.s)}</div>`:''}
     <button class="btn-sm" style="margin-top:12px" onclick="renderInspiration(true)">\ud83d\udd04 Another one</button>`;
 }
-// ── TEACHER RATINGS ───────────────────────────
-let rtStars=0;
-const starStr=n=>'★'.repeat(Math.round(n))+'☆'.repeat(5-Math.round(n));
-function renderRatingForm(){
-  const body=document.getElementById('rtBody');if(!body)return;
-  if(!allTeachers.length){body.innerHTML='<div class="text-muted">No teachers available to rate yet.</div>';return;}
-  body.innerHTML=`<div class="field"><label>Teacher</label><select id="rtTeacher" onchange="fillRating()">${allTeachers.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('')}</select></div>
-    <div class="field"><label>Your rating</label><div id="rtStars" style="font-size:34px;cursor:pointer;color:#F59E0B;letter-spacing:4px;user-select:none"></div></div>
-    <div class="field"><label>Comment (optional)</label><textarea id="rtComment" placeholder="Tell us about your experience with this teacher…"></textarea></div>
-    <label style="display:flex;align-items:center;gap:6px;font-size:13px;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="rtAnon" style="width:auto"/> Send anonymously (the teacher will not see my name)</label>
-    <button class="btn btn-primary" id="rtBtn" style="width:auto;padding:10px 24px" onclick="submitRating()">Submit Rating</button>`;
-  fillRating();
-}
-function drawStars(){document.getElementById('rtStars').innerHTML=[1,2,3,4,5].map(n=>`<span onclick="setStars(${n})">${n<=rtStars?'★':'☆'}</span>`).join('');}
-function setStars(n){rtStars=n;drawStars();}
-function myRating(tid){return allRatings.find(r=>String(r.student_id)===String(currentUser.id)&&String(r.teacher_id)===String(tid));}
-function fillRating(){
-  const ex=myRating(document.getElementById('rtTeacher').value);
-  rtStars=ex?ex.rating:0;drawStars();
-  document.getElementById('rtComment').value=ex?ex.comment||'':'';
-  document.getElementById('rtAnon').checked=!!(ex&&ex.anonymous);
-  document.getElementById('rtBtn').textContent=ex?'Update Rating':'Submit Rating';
-}
-async function submitRating(){
-  const al=document.getElementById('rtAlert');const tid=document.getElementById('rtTeacher').value;
-  if(!rtStars){al.innerHTML='<div class="alert alert-error">Please choose a star rating (1–5).</div>';return;}
-  const ex=myRating(tid);
-  const body={student_id:String(currentUser.id),teacher_id:String(tid),rating:rtStars,comment:document.getElementById('rtComment').value.trim(),anonymous:document.getElementById('rtAnon').checked};
-  showLoading('Sending…');
-  try{
-    const res=await sb(ex?`teacher_ratings?id=eq.${ex.id}`:'teacher_ratings',{method:ex?'PATCH':'POST',body:JSON.stringify(ex?body:{...body,created_at:new Date().toISOString()})});
-    if(!res.ok)throw new Error(res.status);
-    await loadAllData();hideLoading();
-    al.innerHTML='<div class="alert alert-success">Thank you! Your rating was saved. ⭐</div>';fillRating();
-  }catch(e){
-    hideLoading();
-    al.innerHTML='<div class="alert alert-error">'+(!ratingsOk?'Ratings are not set up yet. Please tell the administrator.':'Could not save your rating. Please try again.')+'</div>';
-  }
-}
-function renderRatings(containerId,onlyTeacherId){
-  const box=document.getElementById(containerId);if(!box)return;
-  if(!ratingsOk){box.innerHTML='<div class="alert alert-error">The <b>teacher_ratings</b> table is not created in Supabase yet.</div>';return;}
-  const isAdmin=currentUser.role==='admin';
-  const teachers=onlyTeacherId?allTeachers.filter(t=>String(t.id)===String(onlyTeacherId)):allTeachers;
-  if(!teachers.length){box.innerHTML='<div class="empty-state"><div class="icon">⭐</div><p>No teachers yet</p></div>';return;}
-  box.innerHTML=teachers.map(t=>{
-    const rs=allRatings.filter(r=>String(r.teacher_id)===String(t.id));
-    const avg=rs.length?rs.reduce((a,r)=>a+r.rating,0)/rs.length:0;
-    const items=rs.map(r=>{
-      const st=allStudents.find(x=>String(x.id)===String(r.student_id))||{name:'Unknown'};
-      const who=r.anonymous?(isAdmin?esc(st.name)+' <span class="text-muted">(anonymous to teacher)</span>':'Anonymous'):esc(st.name);
-      let dt='';try{dt=new Date(r.created_at).toLocaleDateString();}catch{}
-      return `<div style="border-top:1px solid var(--border);padding:10px 0"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><div><strong>${who}</strong> <span style="color:#F59E0B">${starStr(r.rating)}</span></div><div class="text-muted" style="font-size:12px">${dt}${isAdmin?` <button class="btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteRating('${r.id}')">🗑</button>`:''}</div></div>${r.comment?`<div style="margin-top:4px;font-size:14px">${esc(r.comment)}</div>`:''}</div>`;
-    }).join('');
-    return `<div class="card" style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><div class="card-title">${esc(t.name)}</div><div><span style="color:#F59E0B;font-size:18px">${rs.length?starStr(avg):'—'}</span> <strong>${rs.length?avg.toFixed(1):''}</strong> <span class="text-muted" style="font-size:12px">(${rs.length} rating${rs.length===1?'':'s'})</span></div></div>${items||'<div class="text-muted" style="margin-top:8px">No ratings yet.</div>'}</div>`;
-  }).join('');
-}
-async function deleteRating(id){
-  if(!confirm('Delete this rating?'))return;
-  showLoading('Deleting…');await sb(`teacher_ratings?id=eq.${id}`,{method:'DELETE',prefer:''});
-  await loadAllData();renderRatings('adminRatingsList');hideLoading();
-}
-
 async function afterLogin(){
   showLoading('Loading data…');
   document.getElementById('mainHeader').style.display='block';
@@ -1069,7 +996,6 @@ async function afterLogin(){
     document.getElementById('teacherNav').style.display='none';
     document.getElementById('studentExamsSection').style.display='none';
     document.getElementById('tipsRow').style.display='none';
-    document.getElementById('ratingSection').style.display='none';
   }else if(currentUser.role==='teacher'){
     document.getElementById('adminStats').style.display='none';
     document.getElementById('adminNav').style.display='none';
@@ -1083,7 +1009,6 @@ async function afterLogin(){
     document.getElementById('tipsRow').style.display='block';
     document.getElementById('studentExamsSection').style.display='block';
     renderAvailableExams();renderStudentProfile();renderNotifBanner();
-    document.getElementById('ratingSection').style.display='block';renderRatingForm();
   }
   renderLeaderboard();updateAdminStats();showPage('page-home');
   document.getElementById('homeWelcome').textContent=`Welcome, ${currentUser.name}!`;
@@ -1104,23 +1029,22 @@ function logout(){
 
 // ── DATA ─────────────────────────────────────
 async function loadAllData(){
-  const [sR,eR,rR,dR,scR,bR,nR,tR]=await Promise.all([
+  const [sR,eR,rR,dR,scR,bR,nR]=await Promise.all([
     sb('users?select=*&order=name.asc'),
     sb('exams?select=*&order=created_at.desc'),
     sb('results?select=*&order=submitted_at.desc'),
     sb('discounts?select=*&order=created_at.desc'),
     sb('schedules?select=*&order=opens_at.asc'),
     sb('question_bank?select=*&order=created_at.desc'),
-    sb('notifications?select=*&order=created_at.desc'),
-    (currentUser&&currentUser.role==='teacher')?Promise.resolve({ok:true,json:async()=>[]}):sb('teacher_ratings?select=*&order=created_at.desc')
+    sb('notifications?select=*&order=created_at.desc')
   ]);
-  ratingsOk=tR.ok;
   const j=async r=>{try{const d=await r.json();return Array.isArray(d)?d:[];}catch{return [];}};
   const allUsers=await j(sR);
   allStudents=allUsers.filter(u=>u.role==='student');
+  if(currentUser&&currentUser.role==='teacher')allStudents.forEach(u=>{delete u.whatsapp;delete u.email;});
   allTeachers=allUsers.filter(u=>u.role==='teacher');
-  [,allExams,allResults,allDiscounts,allSchedules,allQuestionBank,allNotifications,allRatings]=
-    await Promise.all([Promise.resolve(allUsers),j(eR),j(rR),j(dR),j(scR),j(bR),j(nR),j(tR)]);
+  [,allExams,allResults,allDiscounts,allSchedules,allQuestionBank,allNotifications]=
+    await Promise.all([Promise.resolve(allUsers),j(eR),j(rR),j(dR),j(scR),j(bR),j(nR)]);
   secRows=allQuestionBank.filter(q=>q.text==='__SECTIONS__');linkRow=allQuestionBank.find(q=>q.text==='__LINKS__')||null;try{links=JSON.parse(linkRow.subject)||{};}catch{links={};}allQuestionBank=allQuestionBank.filter(q=>q.text!=='__SECTIONS__'&&q.text!=='__LINKS__');
 }
 
@@ -1228,6 +1152,24 @@ function handleAudioPick(input,prevId,hidId){
   const f=input.files&&input.files[0];if(!f)return;
   if(f.size>1.5*1024*1024){alert('This audio is '+(f.size/1048576).toFixed(1)+' MB. Please use a clip under 1.5 MB (shorter, or compress it as mp3).');input.value='';return;}
   const r=new FileReader();r.onload=()=>{document.getElementById(hidId).value=r.result;const a=document.getElementById(prevId);a.src=r.result;a.style.display='block';};r.readAsDataURL(f);
+}
+function clearPrompt(hidId,prevId,fileId){document.getElementById(hidId).value='';const a=document.getElementById(prevId);a.removeAttribute('src');a.style.display='none';const f=fileId&&document.getElementById(fileId);if(f)f.value='';}
+let promptRec=null;
+async function recordPrompt(hidId,prevId,btn){
+  if(promptRec){promptRec.stop();return;}
+  if(!navigator.mediaDevices||!window.MediaRecorder){alert('Recording is not supported in this browser. Please upload an audio file instead.');return;}
+  let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:true});}catch(e){alert('Microphone access denied. Please allow the microphone in the browser settings.');return;}
+  const chunks=[],rec=new MediaRecorder(stream,{audioBitsPerSecond:32000}),label=btn.textContent;
+  let timer;
+  rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
+  rec.onstop=()=>{
+    clearTimeout(timer);stream.getTracks().forEach(t=>t.stop());promptRec=null;btn.textContent=label;btn.style.color='';
+    const blob=new Blob(chunks,{type:rec.mimeType||'audio/webm'});
+    if(blob.size>1.5*1024*1024){alert('This recording is too long ('+(blob.size/1048576).toFixed(1)+' MB). Please keep it under about 5 minutes.');return;}
+    const r=new FileReader();r.onload=()=>{document.getElementById(hidId).value=r.result;const a=document.getElementById(prevId);a.src=r.result;a.style.display='block';};r.readAsDataURL(blob);
+  };
+  promptRec=rec;rec.start();btn.textContent='⏹ Stop recording';btn.style.color='var(--danger)';
+  timer=setTimeout(()=>{if(promptRec)promptRec.stop();},300000);
 }
 function clearAudio(idx){document.getElementById('q-aud-'+idx).value='';const a=document.getElementById('q-audprev-'+idx);a.removeAttribute('src');a.style.display='none';}
 function renderMyProgress(){
@@ -1395,9 +1337,15 @@ async function deleteUser(id){
 function handleImagePick(input,previewId,hiddenId){
   const file=input.files&&input.files[0];if(!file)return;
   const reader=new FileReader();
+  const done=url=>{document.getElementById(hiddenId).value=url;const img=document.getElementById(previewId);img.src=url;img.style.display='block';};
   reader.onload=()=>{
-    document.getElementById(hiddenId).value=reader.result;
-    const img=document.getElementById(previewId);img.src=reader.result;img.style.display='block';
+    if(/gif|svg/i.test(file.type)){done(reader.result);return;}
+    // shrink big photos (max 1200px, JPEG) so the question stays light in the database
+    const im=new Image();
+    im.onload=()=>{const k=Math.min(1,1200/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+      const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);done(c.toDataURL('image/jpeg',0.82));};
+    im.onerror=()=>done(reader.result);
+    im.src=reader.result;
   };
   reader.readAsDataURL(file);
 }
@@ -1420,6 +1368,8 @@ function openBankModal(id){
     const prev=document.getElementById('bankQImagePreview');
     if(q.image){prev.src=q.image;prev.style.display='block';document.getElementById('bankQImageData').value=q.image;}
     else{prev.style.display='none';document.getElementById('bankQImageData').value='';}
+    clearPrompt('bankQAudioData','bankQAudioPreview','bankQAudioFile');
+    if(q.audio_prompt){const ap=document.getElementById('bankQAudioPreview');ap.src=q.audio_prompt;ap.style.display='block';document.getElementById('bankQAudioData').value=q.audio_prompt;}
   }else{
     document.getElementById('bankQSubject').value='';document.getElementById('bankQLevel').value='';
     document.getElementById('bankQPoints').value=1;document.getElementById('bankQText').value='';
@@ -1429,6 +1379,7 @@ function openBankModal(id){
     document.getElementById('bankQImagePreview').style.display='none';
     document.getElementById('bankQImageData').value='';
     document.getElementById('bankQImageFile').value='';
+    clearPrompt('bankQAudioData','bankQAudioPreview','bankQAudioFile');
   }
   toggleBankOptionsVisibility();
   openModal('modalBankQuestion');
@@ -1452,11 +1403,14 @@ async function saveBankQuestion(){
   const cr=document.querySelector('input[name="bankQCorrect"]:checked');
   if(!audio_required&&!options.some(o=>o)){alertEl.innerHTML='<div class="alert alert-error">Add answer options or enable audio answer.</div>';return;}
   const payload={subject,level,points,text,options,correct:cr?parseInt(cr.value):0,audio_required,image,created_by:currentUser.id};
+  const audio_prompt=document.getElementById('bankQAudioData').value||null,hadAudio=!!(id&&(allQuestionBank.find(x=>String(x.id)===String(id))||{}).audio_prompt);
+  if(audio_prompt||hadAudio)payload.audio_prompt=audio_prompt;
   showLoading('Saving…');
-  let res;
-  if(id)res=await sb(`question_bank?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(payload)});
-  else res=await sb('question_bank',{method:'POST',body:JSON.stringify({...payload,created_at:new Date().toISOString()})});
+  const send=pl=>id?sb(`question_bank?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(pl)}):sb('question_bank',{method:'POST',body:JSON.stringify({...pl,created_at:new Date().toISOString()})});
+  let res=await send(payload),audioLost=false;
+  if(!res.ok&&'audio_prompt' in payload){const {audio_prompt:_a,...rest}=payload;res=await send(rest);audioLost=res.ok&&!!audio_prompt;}
   hideLoading();
+  if(audioLost)alert('Question saved, but its audio could not be stored: the question_bank table has no audio_prompt column yet.\nAsk the admin to run in Supabase:\nalter table question_bank add column audio_prompt text;');
   if(res.ok){await loadAllData();renderBankList();renderTeacherBankList();populateDropdowns();closeModal('modalBankQuestion');}
   else{alertEl.innerHTML='<div class="alert alert-error">Error saving question.</div>';}
 }
@@ -1493,6 +1447,7 @@ function renderBankList(){
       </div>
       <div style="font-size:14px;margin-bottom:8px;font-weight:500">${q.text}</div>
       ${q.image?`<img src="${q.image}" class="q-img-preview"/>`:'' }
+      ${q.audio_prompt?`<audio controls src="${q.audio_prompt}" style="width:100%;max-width:340px;margin-top:6px;display:block"></audio>`:''}
       ${!q.audio_required&&q.options?`<div style="font-size:12px;color:var(--muted);margin-top:6px">${q.options.filter(o=>o).map((o,i)=>`<span style="margin-right:12px">${['A','B','C','D'][i]}. ${o}${i===q.correct?' ✅':''}</span>`).join('')}</div>`:''}
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
         <span style="font-size:11px;color:var(--muted)">By: ${creator.name}</span>
@@ -1525,6 +1480,7 @@ function renderTeacherBankList(){
       </div>
       <div style="font-size:14px;margin-bottom:8px">${q.text}</div>
       ${q.image?`<img src="${q.image}" class="q-img-preview"/>`:'' }
+      ${q.audio_prompt?`<audio controls src="${q.audio_prompt}" style="width:100%;max-width:340px;margin-top:6px;display:block"></audio>`:''}
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn-sm" onclick="openBankModal('${q.id}')">✏️ Edit</button>
         <button class="btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteBankQuestion('${q.id}')">🗑</button>
@@ -1646,7 +1602,7 @@ function addQuestion(q){
       <input type="hidden" id="q-img-${idx}" value="${q.image||''}"/>
       <img id="q-imgprev-${idx}" class="q-img-preview" src="${q.image||''}" style="display:${q.image?'block':'none'}"/></div></div>
     <div style="margin-bottom:10px"><label style="font-size:11px;color:var(--muted)">🔊 ATTACH AUDIO TO LISTEN TO (optional — recitation / Tajweed clip, max 1.5 MB)</label>
-      <div style="margin-top:4px"><input type="file" accept="audio/*" onchange="handleAudioPick(this,'q-audprev-${idx}','q-aud-${idx}')"/> <button class="btn-sm" type="button" onclick="clearAudio(${idx})">✕ Remove audio</button>
+      <div style="margin-top:4px"><input type="file" accept="audio/*" onchange="handleAudioPick(this,'q-audprev-${idx}','q-aud-${idx}')"/> <button class="btn-sm" type="button" onclick="recordPrompt('q-aud-${idx}','q-audprev-${idx}',this)">🎙️ Record</button> <button class="btn-sm" type="button" onclick="clearAudio(${idx})">✕ Remove audio</button>
       <input type="hidden" id="q-aud-${idx}" value="${q.audio_prompt||''}"/>
       <audio id="q-audprev-${idx}" controls ${q.audio_prompt?`src="${q.audio_prompt}"`:''} style="display:${q.audio_prompt?'block':'none'};width:100%;margin-top:6px"></audio></div></div>
     <div id="q-body-${idx}">
@@ -1748,7 +1704,7 @@ async function saveExam(publish=true){
       const toBank=questions.filter(q=>!q.bank_id&&q.type==='mcq'&&(!editingExamId||q.unbanked));
       const flagged=questions.some(q=>q.unbanked);
       if(toBank.length){showLoading('Saving new questions to bank…');
-        await Promise.all(toBank.map(async q=>{const r=await sb('question_bank',{method:'POST',body:JSON.stringify({subject,level,points:q.points,text:q.text,options:q.options,correct:q.correct,audio_required:q.audio_required,image:q.image,created_by:currentUser.id,created_at:new Date().toISOString()})});try{const d=await r.json();if(r.ok&&d&&d[0])q.bank_id=d[0].id;}catch(e){}}));}
+        await Promise.all(toBank.map(async q=>{const base={subject,level,points:q.points,text:q.text,options:q.options,correct:q.correct,audio_required:q.audio_required,image:q.image,created_by:currentUser.id,created_at:new Date().toISOString()};let r=q.audio_prompt?await sb('question_bank',{method:'POST',body:JSON.stringify({...base,audio_prompt:q.audio_prompt})}):null;if(!r||!r.ok)r=await sb('question_bank',{method:'POST',body:JSON.stringify(base)});try{const d=await r.json();if(r.ok&&d&&d[0])q.bank_id=d[0].id;}catch(e){}}));}
       if(exId&&(toBank.length||flagged)){questions.forEach(q=>delete q.unbanked);await sb(`exams?id=eq.${exId}`,{method:'PATCH',body:JSON.stringify({questions}),prefer:'return=minimal'});}
     }
     editingExamId=null;await loadAllData();hideLoading();
@@ -2296,7 +2252,6 @@ async function submitExam(timeUp){
   lastResult={score,correct,total,passed,timeUsed,graded,examTitle:activeExam.title};
   await loadAllData();hideLoading();
   showResultPage(score,correct,total,passed,graded);
-  promptTeacherRating(activeExam);
 }
 
 function showResultPage(score,correct,total,passed,graded=true){
@@ -2406,7 +2361,7 @@ function renderTeacherStudents(){
     const risk=st.avg!==null&&st.avg<60,none=!st.rs.length;
     const badge=none?'<span class="badge badge-draft">No exams yet</span>':risk?'<span class="badge badge-pending">⚠️ Needs help</span>':'<span class="badge badge-active">👍 On track</span>';
     return `<tr><td><strong>${esc(s.name)}</strong></td><td>${st.rs.length}</td><td>${st.avg===null?'—':`<span style="color:${st.avg>=60?'var(--success)':'var(--danger)'};font-weight:600">${Math.round(st.avg)}%</span>`}</td><td class="text-muted" style="font-size:12px">${st.last?st.last.toLocaleDateString():'—'}</td><td>${badge}</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn-sm" onclick="openStudentDetail('${s.id}')">👁 Details</button><button class="btn-sm" onclick="openMsgModal('${s.id}')">💬 Message</button>${s.whatsapp?`<a class="btn-sm" style="text-decoration:none;color:#25D366;border-color:#25D366" target="_blank" href="https://wa.me/${s.whatsapp.replace(/\D/g,'')}">📲</a>`:''}</td></tr>`;
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn-sm" onclick="openStudentDetail('${s.id}')">👁 Details</button><button class="btn-sm" onclick="openMsgModal('${s.id}')">💬 Message</button></td></tr>`;
   }).join('');
 }
 function openStudentDetail(sid){
@@ -2443,28 +2398,6 @@ async function sendTeacherMsg(){
   else al.innerHTML='<div class="alert alert-error">Could not send. Please try again.</div>';
 }
 
-// ── STUDENT: RATE TEACHER AFTER EXAM ──────────
-let mrStars=0,mrTeacher=null;
-function drawMrStars(){document.getElementById('mrStars').innerHTML=[1,2,3,4,5].map(n=>`<span onclick="mrStars=${n};drawMrStars()">${n<=mrStars?'★':'☆'}</span>`).join('');}
-function promptTeacherRating(exam){
-  if(!ratingsOk||!currentUser||currentUser.role!=='student'||!exam)return;
-  const t=allTeachers.find(x=>String(x.id)===String(exam.created_by));
-  if(!t||myRating(t.id))return;
-  mrTeacher=t.id;mrStars=0;
-  document.getElementById('mrName').textContent=t.name;document.getElementById('mrComment').value='';
-  document.getElementById('mrAnon').checked=false;document.getElementById('mrAlert').innerHTML='';
-  drawMrStars();setTimeout(()=>openModal('modalRateTeacher'),700);
-}
-async function submitModalRating(){
-  const al=document.getElementById('mrAlert');
-  if(!mrStars){al.innerHTML='<div class="alert alert-error">Please choose 1–5 stars.</div>';return;}
-  showLoading('Sending…');
-  try{
-    const res=await sb('teacher_ratings',{method:'POST',body:JSON.stringify({student_id:String(currentUser.id),teacher_id:String(mrTeacher),rating:mrStars,comment:document.getElementById('mrComment').value.trim(),anonymous:document.getElementById('mrAnon').checked,created_at:new Date().toISOString()})});
-    if(!res.ok)throw 0;
-    await loadAllData();hideLoading();closeModal('modalRateTeacher');renderRatingForm();
-  }catch(e){hideLoading();al.innerHTML='<div class="alert alert-error">Could not save your rating. Try again or skip.</div>';}
-}
 
 // ── QUESTION BANK SECTIONS ────────────────────
 const SEP=' › ';let secRows=[];
@@ -2959,7 +2892,7 @@ function populateDropdowns(){
 // ── TABS ──────────────────────────────────────
 function showAdminTab(tab){showPage('page-admin');switchAdminTab(tab);}
 function switchAdminTab(tab){
-  const tabs=['students','bank','exams','schedule','results','discounts','reports','ratings','messages'];
+  const tabs=['students','bank','exams','schedule','results','discounts','reports','messages'];
   tabs.forEach(t=>{
     const el=document.getElementById(`adminTab-${t}`);if(el)el.style.display=t===tab?'block':'none';
     const b=document.getElementById(`tabBtn-${t}`);if(b)b.classList.toggle('active',t===tab);
@@ -2971,7 +2904,6 @@ function switchAdminTab(tab){
   if(tab==='results'){populateDropdowns();renderResultsTable();}
   if(tab==='discounts'){populateDropdowns();renderDiscountsTable();}
   if(tab==='reports')populateDropdowns();
-  if(tab==='ratings')renderRatings('adminRatingsList');
   if(tab==='messages')renderAdminMessages();
 }
 
