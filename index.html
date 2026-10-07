@@ -268,6 +268,8 @@
     .home-sub{color:var(--muted);font-size:14px;margin:-6px 0 22px}
   </style>
 <link href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;700&family=Scheherazade+New:wght@500;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet"/>
+<meta name="theme-color" content="#0B1B33"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style id="fx-style">
 .section-title,.ph-lvl .t{font-family:'Cinzel','Reem Kufi',serif}
 .ph-ayah{font-family:'Scheherazade New','Amiri',serif;font-size:20px;transition:opacity .6s,transform .6s}
@@ -307,6 +309,39 @@ body.ramadan .ph-in::after{content:"🏮";position:absolute;bottom:10px;inset-in
 .fx-b.on:hover{transform:translateY(-3px) scale(1.05)}
 .fx-b.off{opacity:.38;filter:grayscale(1);border-style:dashed}
 @keyframes fxpop{from{transform:scale(.4);opacity:0}}
+
+/* v3 */
+.page.active{animation:fxpg .38s cubic-bezier(.2,.8,.2,1)}@keyframes fxpg{from{opacity:0;transform:translateY(10px)}}
+.auth-title,.ph-name{background:linear-gradient(100deg,#B8923A 20%,#F6E3A1 45%,#B8923A 70%) 0 0/250% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:fxshine 6s linear infinite}
+.ph-name{background-image:linear-gradient(100deg,#fff 20%,#F6E3A1 45%,#fff 70%)}
+@keyframes fxshine{to{background-position:-250% 0}}
+.fx-bism{font:700 22px 'Aref Ruqaa','Amiri',serif;color:#B8923A;margin-bottom:10px;direction:rtl}
+#page-login .auth-wrap,#page-register .auth-wrap{position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 120%,#1d3d6e,#0B1B33 60%,#060f1e)}
+#page-login .auth-wrap::before,#page-register .auth-wrap::before,body.dark::before{content:"";position:fixed;inset:0;pointer-events:none;background-image:radial-gradient(1.5px 1.5px at 12% 20%,#fff,transparent),radial-gradient(1px 1px at 33% 70%,#fff,transparent),radial-gradient(1.5px 1.5px at 58% 30%,#F6E3A1,transparent),radial-gradient(1px 1px at 77% 62%,#fff,transparent),radial-gradient(1.5px 1.5px at 90% 15%,#fff,transparent),radial-gradient(1px 1px at 45% 88%,#F6E3A1,transparent),radial-gradient(1px 1px at 8% 80%,#fff,transparent);animation:fxtw 4s ease-in-out infinite alternate}
+#page-login .auth-wrap::before,#page-register .auth-wrap::before{position:absolute}
+body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
+#page-login .auth-card,#page-register .auth-card{position:relative;border-color:#C9A84C;box-shadow:0 0 0 6px rgba(201,168,76,.12),0 20px 60px rgba(0,0,0,.45);animation:fxzoom .8s cubic-bezier(.2,.8,.2,1)}
+@keyframes fxzoom{from{opacity:0;transform:scale(.88) translateY(24px)}}
+.fx-moon{position:absolute;top:6%;inset-inline-end:10%;font-size:54px;filter:drop-shadow(0 0 22px rgba(246,227,161,.8));animation:fxfloat 6s ease-in-out infinite}
+.fx-lan{position:absolute;top:-6px;font-size:44px;transform-origin:top center;animation:fxsway 3.2s ease-in-out infinite;filter:drop-shadow(0 6px 14px rgba(255,190,70,.6))}
+.fx-lan::before{content:"";position:absolute;left:50%;bottom:100%;width:1px;height:90px;background:#C9A84C}
+.fx-meteor{position:fixed;z-index:-1;width:120px;height:2px;background:linear-gradient(90deg,#fff,transparent);transform:rotate(-35deg);pointer-events:none;animation:fxmet 1.3s ease-in forwards}
+@keyframes fxmet{from{opacity:1;transform:translate(0,0) rotate(-35deg)}to{opacity:0;transform:translate(-420px,300px) rotate(-35deg)}}
+.fx-trail{position:fixed;z-index:9999;pointer-events:none;color:#C9A84C;font-size:12px;animation:fxtr .8s forwards}@keyframes fxtr{to{opacity:0;transform:translateY(14px) scale(.2) rotate(90deg)}}
+.fx-pat{position:absolute;inset:-30px;pointer-events:none;opacity:.14;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg fill='none' stroke='%23E6CC85' stroke-width='1'%3E%3Cpath d='M40 6l9 22 22-9-9 22 22 9-22 9 9 22-22-9-9 22-9-22-22 9 9-22-22-9 22-9-9-22 22 9z'/%3E%3C/g%3E%3C/svg%3E");transform:translate(var(--px,0),var(--py,0));transition:transform .25s ease-out}
+.ph{position:relative;overflow:hidden}.ph-in,.fx-badges{z-index:1}
+#fxCd{margin:14px 0;padding:14px 18px;border-radius:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:linear-gradient(135deg,#0B1B33,#16315a);color:#fff;border:1px solid rgba(201,168,76,.45)}
+#fxCd.soon{border-color:#F6E3A1;box-shadow:0 0 22px rgba(246,227,161,.45)}
+#fxCd .t{flex:1;min-width:160px;font:600 14px Inter,sans-serif}#fxCd .t small{display:block;color:#E6CC85;font-weight:400}
+#fxCd .u{display:flex;gap:8px}#fxCd .u div{min-width:54px;text-align:center;padding:6px;border-radius:10px;background:rgba(255,255,255,.08)}#fxCd .u b{display:block;font:700 20px Cinzel,serif;color:#F6E3A1}#fxCd .u small{font-size:10px;color:#C9D4E6}
+#fxRes{margin-top:16px;text-align:center}
+#fxRes .msg{font:700 22px 'Aref Ruqaa','Amiri',serif;color:#B8923A;direction:rtl;margin-bottom:12px}
+#fxRes .cmp{display:grid;gap:6px;max-width:320px;margin:0 auto 14px;text-align:start;font-size:12px}
+#fxRes .bar{height:10px;border-radius:9px;background:rgba(21,101,192,.12);overflow:hidden}#fxRes .bar i{display:block;height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,#C9A84C,#F6E3A1);transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+#fxK{position:fixed;inset:0;z-index:10000;background:rgba(6,15,30,.65);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;padding-top:12vh}
+#fxK.on{display:flex}#fxK>div{width:min(520px,92vw);background:#0B1B33;border:1px solid #C9A84C;border-radius:16px;overflow:hidden;color:#fff;animation:fxzoom .25s}
+#fxK input{width:100%;padding:16px 18px;background:transparent;border:0;border-bottom:1px solid rgba(201,168,76,.4);color:#fff;font-size:16px;outline:0}
+#fxK ul{list-style:none;margin:0;padding:6px;max-height:50vh;overflow:auto}#fxK li{padding:10px 14px;border-radius:10px;cursor:pointer;font-size:14px;display:flex;justify-content:space-between}#fxK li.sel,#fxK li:hover{background:rgba(201,168,76,.18)}#fxK li small{color:#E6CC85}
 </style>
 </head>
 <body>
@@ -3135,18 +3170,114 @@ function badges(root){
     BD.forEach(function(b){var on=b[4](m);if(on)got.push(b[0]);
       h+='<div class="fx-b '+(on?'on':'off')+'" title="'+b[3]+'"><i>'+b[1]+'</i><b>'+b[2]+'</b><small>'+b[3]+'</small></div>'});
     var d=document.createElement('div');d.className='fx-badges';d.innerHTML=h;ph.appendChild(d);
-    if(got.some(function(x){return seen.indexOf(x)<0})&&seen.length){var r=d.getBoundingClientRect();burst(r.left+r.width/2,r.top+20)}
+    if(got.some(function(x){return seen.indexOf(x)<0})&&seen.length){var r=d.getBoundingClientRect();burst(r.left+r.width/2,r.top+20);vib([40,30,40])}
     try{localStorage.setItem('mi_badges_'+currentUser.id,JSON.stringify(got))}catch(e){}
   });
 }
+
+/* v3 */
+try{var ic=document.querySelector('link[rel=icon]').href,mf={name:'MY Institute',short_name:'MY Institute',start_url:location.href,display:'standalone',background_color:'#0B1B33',theme_color:'#0B1B33',icons:[{src:ic,sizes:'192x192',type:'image/png'}]};
+var ml=document.createElement('link');ml.rel='manifest';ml.href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/manifest+json'}));document.head.appendChild(ml)}catch(e){}
+var RM=matchMedia('(prefers-reduced-motion:reduce)').matches;
+function vib(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+function login(){
+  document.querySelectorAll('#page-login .auth-wrap,#page-register .auth-wrap').forEach(function(w){
+    if(w.dataset.fx)return;w.dataset.fx=1;
+    w.insertAdjacentHTML('afterbegin','<span class="fx-moon">🌙</span><span class="fx-lan" style="inset-inline-start:12%">🏮</span><span class="fx-lan" style="inset-inline-end:14%;animation-delay:-1.4s">🏮</span>');
+    var c=w.querySelector('.auth-card');if(c)c.insertAdjacentHTML('afterbegin','<div class="fx-bism">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>');
+  });
+}
+function hero(){
+  document.querySelectorAll('.ph').forEach(function(ph){if(!ph.querySelector('.fx-pat')){var d=document.createElement('div');d.className='fx-pat';ph.prepend(d)}});
+}
+if(!RM){
+  addEventListener('mousemove',function(e){document.querySelectorAll('.fx-pat').forEach(function(p){p.style.setProperty('--px',(e.clientX/innerWidth-.5)*-26+'px');p.style.setProperty('--py',(e.clientY/innerHeight-.5)*-18+'px')})});
+  addEventListener('deviceorientation',function(e){if(e.gamma==null)return;document.querySelectorAll('.fx-pat').forEach(function(p){p.style.setProperty('--px',(e.gamma/90)*-24+'px');p.style.setProperty('--py',(e.beta/180)*-18+'px')})});
+  var lt=0;if(matchMedia('(pointer:fine)').matches)addEventListener('mousemove',function(e){var n=Date.now();if(n-lt<55)return;lt=n;var t=document.createElement('span');t.className='fx-trail';t.textContent='✦';t.style.left=e.clientX+4+'px';t.style.top=e.clientY+4+'px';document.body.appendChild(t);setTimeout(function(){t.remove()},800)});
+  setInterval(function(){if(!document.body.classList.contains('dark'))return;var m=document.createElement('div');m.className='fx-meteor';m.style.left=40+Math.random()*55+'vw';m.style.top=Math.random()*35+'vh';document.body.appendChild(m);setTimeout(function(){m.remove()},1400)},16000);
+}
+function countdown(){
+  var cd=document.getElementById('fxCd'),h=document.getElementById('homeHero');
+  if(typeof currentUser==='undefined'||!currentUser||currentUser.role!=='student'||!h||!h.querySelector('.ph')){if(cd)cd.remove();return}
+  var now=new Date(),nx=null;
+  try{allSchedules.forEach(function(x){var o=new Date(x.opens_at),e=allExams.find(function(e){return e.id===x.exam_id&&e.is_active});
+    if(e&&o>now&&(!e.assigned_students||!e.assigned_students.length||e.assigned_students.includes(currentUser.id))&&(!nx||o<nx.o))nx={o:o,e:e}})}catch(e){}
+  if(!nx){if(cd)cd.remove();return}
+  var fresh=!cd;if(fresh){cd=document.createElement('div');cd.id='fxCd';h.after(cd)}
+  cd.nx=nx;if(fresh)tick();
+}
+function tick(){
+  var cd=document.getElementById('fxCd');if(!cd||!cd.nx)return;
+  var ms=cd.nx.o-new Date();if(ms<=0){cd.remove();return}
+  var d=Math.floor(ms/864e5),hh=Math.floor(ms%864e5/36e5),m=Math.floor(ms%36e5/6e4),sc=Math.floor(ms%6e4/1e3);
+  cd.classList.toggle('soon',ms<864e5);
+  cd.innerHTML='<div style="font-size:28px">⏳</div><div class="t">Next exam · الامتحان القادم<small>'+cd.nx.e.title.replace(/</g,'&lt;')+'</small></div><div class="u"><div><b>'+d+'</b><small>يوم</small></div><div><b>'+hh+'</b><small>ساعة</small></div><div><b>'+m+'</b><small>دقيقة</small></div><div><b>'+sc+'</b><small>ثانية</small></div></div>';
+}
+setInterval(tick,1000);
+function msgFor(p){return p>=90?'ما شاء الله، بارك الله فيك! أداء مبهر ✨':p>=70?'أحسنت، واصل التقدّم بإذن الله 🌟':p>=50?'جيد، وبقليل من المراجعة تصل للتميّز 📖':'المحاولة القادمة أقرب إن شاء الله، لا تيأس 🤍'}
+function result(){
+  var pg=document.getElementById('page-result');if(!pg||!pg.classList.contains('active'))return;
+  var pn=document.getElementById('pendingNote');if(pn&&pn.style.display!=='none')return;
+  var pct=parseInt(document.getElementById('resultPct').textContent,10);if(isNaN(pct))return;
+  var key=pct+'|'+document.getElementById('resultGrade').textContent,ex=document.getElementById('fxRes');
+  if(ex&&ex.dataset.k===key)return;if(ex)ex.remove();
+  var prev=null;try{var g=gradedOf(allResults.filter(function(r){return String(r.student_id)===String(currentUser.id)&&r.admin_note!==STARTED_NOTE})).slice().sort(function(a,b){return new Date(a.submitted_at)-new Date(b.submitted_at)});
+    if(g.length>1){var o=g.slice(0,-1);prev=o.reduce(function(a,r){return a+r.score},0)/o.length}}catch(e){}
+  var d=document.createElement('div');d.id='fxRes';d.dataset.k=key;
+  d.innerHTML='<div class="msg">'+msgFor(pct)+'</div>'+(prev==null?'':'<div class="cmp"><span>متوسطك السابق · '+Math.round(prev)+'%</span><div class="bar"><i data-w="'+prev+'"></i></div><span>هذه المرة · '+pct+'%</span><div class="bar"><i data-w="'+pct+'"></i></div></div>')+'<button class="btn btn-outline" id="fxShare">📤 شارك إنجازي</button>';
+  document.getElementById('resultDetail').after(d);
+  setTimeout(function(){d.querySelectorAll('.bar i').forEach(function(i){i.style.width=i.dataset.w+'%'})},60);
+  document.getElementById('fxShare').onclick=function(){shareImg(pct)};
+  if(pct>=50){vib([60,40,90]);var r=d.getBoundingClientRect();burst(innerWidth/2,Math.max(120,r.top))}
+}
+async function shareImg(pct){
+  try{await document.fonts.load("700 60px 'Aref Ruqaa'");await document.fonts.load("700 50px 'Scheherazade New'")}catch(e){}
+  var W=1080,H=1350,c=document.createElement('canvas');c.width=W;c.height=H;var x=c.getContext('2d');
+  var gr=x.createLinearGradient(0,0,W,H);gr.addColorStop(0,'#0B1B33');gr.addColorStop(1,'#1d3d6e');x.fillStyle=gr;x.fillRect(0,0,W,H);
+  for(var i=0;i<90;i++){x.fillStyle='rgba(246,227,161,'+(.2+Math.random()*.6)+')';x.beginPath();x.arc(Math.random()*W,Math.random()*H,Math.random()*2+.5,0,7);x.fill()}
+  x.strokeStyle='#C9A84C';x.lineWidth=6;x.strokeRect(36,36,W-72,H-72);x.lineWidth=2;x.strokeRect(56,56,W-112,H-112);
+  x.textAlign='center';x.fillStyle='#E6CC85';x.direction='rtl';x.font="700 56px 'Scheherazade New',serif";x.fillText(V[0],W/2,180);
+  x.direction='ltr';x.fillStyle='#fff';x.font="700 64px 'Cinzel',serif";x.fillText('MY Institute',W/2,320);
+  x.strokeStyle='#C9A84C';x.lineWidth=10;x.beginPath();x.arc(W/2,640,200,0,7);x.stroke();
+  x.strokeStyle='#F6E3A1';x.lineWidth=14;x.beginPath();x.arc(W/2,640,200,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,pct/100));x.stroke();
+  x.fillStyle='#F6E3A1';x.font="700 130px 'Cinzel',serif";x.fillText(pct+'%',W/2,685);
+  x.fillStyle='#fff';x.font="700 58px 'Amiri',serif";x.fillText(currentUser.name||'',W/2,950);
+  x.direction='rtl';x.fillStyle='#E6CC85';x.font="700 60px 'Aref Ruqaa',serif";x.fillText(msgFor(pct).replace(/[^\u0600-\u06FF\s،!]/g,'').trim(),W/2,1060);
+  try{var m=metrics(),n=BD.filter(function(b){return b[4](m)});x.direction='ltr';x.font='54px serif';x.fillText(n.map(function(b){return b[1]}).join(' '),W/2,1160)}catch(e){}
+  x.direction='ltr';x.fillStyle='#C9D4E6';x.font="400 30px Inter,sans-serif";x.fillText('my-institute.com',W/2,1250);
+  c.toBlob(async function(b){var f=new File([b],'my-institute-achievement.png',{type:'image/png'});
+    try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'MY Institute',text:'الحمد لله، حققت '+pct+'% في MY Institute'});return}}catch(e){if(e&&e.name==='AbortError')return}
+    var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=f.name;a.click()},'image/png');
+}
+/* command palette */
+var K=document.createElement('div');K.id='fxK';K.innerHTML='<div><input placeholder="ابحث عن طالب أو امتحان…  Search" autocomplete="off"><ul></ul></div>';document.body.appendChild(K);
+var kin=K.querySelector('input'),kul=K.querySelector('ul'),kitems=[],ksel=0;
+function kopen(){if(typeof currentUser==='undefined'||!currentUser||currentUser.role==='student')return;K.classList.add('on');kin.value='';krender();kin.focus()}
+function kclose(){K.classList.remove('on')}
+function krender(){
+  var q=kin.value.trim().toLowerCase(),L=[];
+  [['students','👥 الطلاب','Students'],['exams','📋 الامتحانات','Exams'],['bank','📚 بنك الأسئلة','Question Bank'],['schedule','🗓️ الجدول','Schedule'],['results','📊 النتائج','Results']].forEach(function(t){if(!q||(t[1]+t[2]).toLowerCase().indexOf(q)>-1)L.push([t[1],'تبويب',function(){showAdminTab(t[0])}])});
+  if(q){try{allStudents.forEach(function(u){if((u.name+' '+u.username).toLowerCase().indexOf(q)>-1)L.push(['🎓 '+u.name,'@'+u.username,function(){openStudentDetail(u.id)}])});
+    allExams.forEach(function(e){if((e.title||'').toLowerCase().indexOf(q)>-1)L.push(['📝 '+e.title,'Exam',function(){openExamAnalysis(e.id)}])})}catch(e){}}
+  kitems=L.slice(0,40);ksel=0;kul.innerHTML=kitems.map(function(i,n){return '<li data-i="'+n+'" class="'+(n?'':'sel')+'"><span>'+i[0].replace(/</g,'&lt;')+'</span><small>'+i[1]+'</small></li>'}).join('')||'<li>لا نتائج</li>';
+}
+function kgo(n){var it=kitems[n];if(it){kclose();try{it[2]()}catch(e){}}}
+kin.oninput=krender;kul.onclick=function(e){var l=e.target.closest('li');if(l&&l.dataset.i!=null)kgo(+l.dataset.i)};K.onclick=function(e){if(e.target===K)kclose()};
+addEventListener('keydown',function(e){
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();K.classList.contains('on')?kclose():kopen();return}
+  if(!K.classList.contains('on'))return;
+  if(e.key==='Escape')kclose();
+  else if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();ksel=(ksel+(e.key==='ArrowDown'?1:-1)+kitems.length)%kitems.length;kul.querySelectorAll('li').forEach(function(l,n){l.classList.toggle('sel',n===ksel)})}
+  else if(e.key==='Enter')kgo(ksel);
+});
 function scan(root){
   if(!root.querySelectorAll)return;
-  badges(root);
+  login();hero();countdown();result();badges(root);
   root.querySelectorAll('.ph-chip b,.stat-num').forEach(count);
   root.querySelectorAll('.ph-ring svg').forEach(ring);
   root.querySelectorAll('.ph-ayah').forEach(verse);
   root.querySelectorAll('.ph-greet').forEach(function(g){if(hStr&&!g.nextElementSibling.classList.contains('ph-hijri')){var d=document.createElement('div');d.className='ph-hijri';d.textContent=hStr;g.after(d)}});
-  root.querySelectorAll('.result-card').forEach(function(r){if(!r.dataset.fxb){r.dataset.fxb=1;var b=r.getBoundingClientRect();burst(b.left+b.width/2,b.top+80)}});
+  root.querySelectorAll('.result-card').forEach(function(r){if(!r.dataset.fxb&&r.offsetParent){r.dataset.fxb=1;var b=r.getBoundingClientRect();burst(b.left+b.width/2,b.top+80)}});
 }
 var q=0;new MutationObserver(function(){if(q)return;q=1;requestAnimationFrame(function(){q=0;scan(document)})}).observe(document.body,{childList:true,subtree:true,characterData:true});
 scan(document);
