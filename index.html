@@ -363,14 +363,15 @@
       <div class="section-header">
         <div class="section-title" style="margin:0">👥 User Management</div>
         <div class="flex gap-10">
-          <label class="btn btn-outline" style="width:auto;padding:10px 18px;cursor:pointer" title="CSV columns: name, username, password, email, whatsapp">📥 Import CSV<input type="file" accept=".csv,.txt" style="display:none" onchange="importStudentsCSV(this)"/></label>
+          <label id="uvImport" class="btn btn-outline" style="width:auto;padding:10px 18px;cursor:pointer" title="CSV columns: name, username, password, email, whatsapp">📥 Import CSV<input type="file" accept=".csv,.txt" style="display:none" onchange="importStudentsCSV(this)"/></label>
           <select id="usersFilter" onchange="renderStudentsTable()" style="padding:9px 12px;border:2px solid var(--border);border-radius:10px;background:#F5FAFF;font-size:13px"></select>
-          <button class="btn btn-outline" style="width:auto;padding:10px 18px" onclick="openModal('modalAddTeacher')">+ Add Teacher</button>
-          <button class="btn btn-primary" style="width:auto;padding:10px 18px" onclick="openModal('modalAddStudent')">+ Add Student</button>
+          <button id="uvAddT" class="btn btn-primary" style="width:auto;padding:10px 18px" onclick="openModal('modalAddTeacher')">+ Add Teacher</button>
+          <button id="uvAddS" class="btn btn-primary" style="width:auto;padding:10px 18px" onclick="openModal('modalAddStudent')">+ Add Student</button>
         </div>
       </div>
+      <div class="tabs" style="margin-bottom:16px"><button class="tab active" id="uvBtn-students" onclick="setUsersView('students')">🎓 Students</button><button class="tab" id="uvBtn-teachers" onclick="setUsersView('teachers')">👨‍🏫 Teachers</button></div>
       <div class="table-wrap">
-        <table><thead><tr><th>Name</th><th>Role</th><th>Username</th><th>Email</th><th>WhatsApp</th><th>Teacher / Students</th><th>Joined</th><th>Actions</th></tr></thead>
+        <table><thead id="usersHead"></thead>
         <tbody id="studentsTable"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px">No users yet</td></tr></tbody></table>
       </div>
     </div>
@@ -1281,37 +1282,49 @@ async function addUser(role){
   hideLoading();
   if(res.ok){
     if(pickedTeachers.length&&data&&data[0]){links[data[0].id]=pickedTeachers;await saveLinks();}
-    await loadAllData();renderStudentsTable();updateAdminStats();populateDropdowns();closeModal(modalId);
+    await loadAllData();setUsersView(isTeacher?'teachers':'students');updateAdminStats();populateDropdowns();closeModal(modalId);
     [nameId,userIdEl,passId,emailId,waId].forEach(id=>document.getElementById(id).value='');
     alertEl.innerHTML='';
   }else{alertEl.innerHTML=`<div class="alert alert-error">${esc((data&&(data.message||data.error))||'Error ('+res.status+')')}${data&&data.hint?' — '+esc(data.hint):''}${data&&data.details?' ('+esc(data.details)+')':''}</div>`;}
 }
 
+let usersView='students';
+function setUsersView(v){
+  usersView=v;
+  ['students','teachers'].forEach(k=>document.getElementById('uvBtn-'+k).classList.toggle('active',k===v));
+  document.getElementById('uvImport').style.display=v==='students'?'inline-flex':'none';
+  document.getElementById('uvAddS').style.display=v==='students'?'inline-flex':'none';
+  document.getElementById('uvAddT').style.display=v==='teachers'?'inline-flex':'none';
+  document.getElementById('usersFilter').style.display=v==='students'?'':'none';
+  renderStudentsTable();
+}
 function renderStudentsTable(){
-  const tbody=document.getElementById('studentsTable');
+  const tbody=document.getElementById('studentsTable'),isT=usersView==='teachers';
+  document.getElementById('usersHead').innerHTML=isT
+    ?'<tr><th>Name</th><th>Subject</th><th>Username</th><th>Email</th><th>WhatsApp</th><th>Students</th><th>Joined</th><th>Actions</th></tr>'
+    :'<tr><th>Name</th><th>Username</th><th>Email</th><th>WhatsApp</th><th>Teachers</th><th>Joined</th><th>Actions</th></tr>';
   const fs=document.getElementById('usersFilter');
-  if(fs){const v=fs.value;fs.innerHTML='<option value="">All users</option><option value="__students">Students only</option><option value="__teachers">Teachers only</option><option value="__none">Students without a teacher</option>'+allTeachers.map(x=>`<option value="${x.id}">Students of ${esc(x.name)}</option>`).join('');fs.value=[...fs.options].some(o=>o.value===v)?v:'';}
-  const f=fs?fs.value:'';
-  let list=[...allStudents,...allTeachers].sort((a,b)=>a.name.localeCompare(b.name));
-  if(f==='__students')list=list.filter(u=>u.role==='student');
-  else if(f==='__teachers')list=list.filter(u=>u.role==='teacher');
-  else if(f==='__none')list=list.filter(u=>u.role==='student'&&!teachersOf(u.id).length);
-  else if(f)list=list.filter(u=>u.role==='student'&&teachersOf(u.id).includes(String(f)));
-  if(!list.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px">No users</td></tr>';return;}
+  if(fs){const v=fs.value;fs.innerHTML='<option value="">All students</option><option value="__none">Students without a teacher</option>'+allTeachers.map(x=>`<option value="${x.id}">Students of ${esc(x.name)}</option>`).join('');fs.value=[...fs.options].some(o=>o.value===v)?v:'';}
+  const f=!isT&&fs?fs.value:'';
+  let list=(isT?allTeachers:allStudents).slice().sort((a,b)=>a.name.localeCompare(b.name));
+  if(f==='__none')list=list.filter(u=>!teachersOf(u.id).length);
+  else if(f)list=list.filter(u=>teachersOf(u.id).includes(String(f)));
+  const cols=isT?8:7;
+  if(!list.length){tbody.innerHTML=`<tr><td colspan="${cols}" style="text-align:center;color:var(--muted);padding:32px">${isT?'No teachers yet':'No students'}</td></tr>`;return;}
   tbody.innerHTML=list.map(s=>{
-    const roleBadge=s.role==='teacher'?'<span class="teacher-badge">📚 Teacher</span>':s.role==='admin'?'<span class="badge badge-sched">⚙️ Admin</span>':'<span class="badge badge-active">🎓 Student</span>';
-    const link=s.role==='teacher'?`<span class="text-muted" style="font-size:12px">${studentIdsOf(s.id).length} students</span>`
+    const wa=s.whatsapp?`<a href="https://wa.me/${s.whatsapp.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-size:12px">📲 ${s.whatsapp}</a>`:'<span style="color:var(--muted)">—</span>';
+    const mid=isT?`<td>${s.subject?esc(s.subject):'<span style="color:var(--muted)">—</span>'}</td>`:'';
+    const link=isT?`<span class="text-muted" style="font-size:12px">${studentIdsOf(s.id).length} students</span>`
       :(teachersOf(s.id).length?teachersOf(s.id).map(x=>`<span class="teacher-badge">${esc(tName(x))}</span>`).join(' '):'<span style="color:var(--muted)">—</span>');
-    const act=s.role==='teacher'?`<button class="btn-sm" onclick="openLinksModal('teacher','${s.id}')">👥 Students</button> `:s.role==='student'?`<button class="btn-sm" onclick="openLinksModal('student','${s.id}')">👨‍🏫 Teachers</button> `:'';
+    const act=`<button class="btn-sm" onclick="openLinksModal('${isT?'teacher':'student'}','${s.id}')">${isT?'👥 Students':'👨‍🏫 Teachers'}</button> `;
     return `<tr>
-      <td><strong>${s.name}</strong>${s.subject?`<div style="font-size:11px;color:var(--muted)">${s.subject}</div>`:''}  </td>
-      <td>${roleBadge}</td>
-      <td><code style="background:var(--dark);padding:2px 6px;border-radius:4px;font-size:12px">${s.username}</code></td>
-      <td style="color:var(--muted)">${s.email||'—'}</td>
-      <td>${s.whatsapp?`<a href="https://wa.me/${s.whatsapp.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-size:12px">📲 ${s.whatsapp}</a>`:'<span style="color:var(--muted)">—</span>'}</td>
-      <td>${link}</td>
+      <td><strong>${esc(s.name)}</strong></td>${mid}
+      <td><code style="background:var(--dark);padding:2px 6px;border-radius:4px;font-size:12px">${esc(s.username)}</code></td>
+      <td style="color:var(--muted)">${esc(s.email)||'—'}</td>
+      <td>${wa}</td>
+      ${isT?`<td>${link}</td>`:`<td>${link}</td>`}
       <td style="color:var(--muted);font-size:12px">${s.created_at?new Date(s.created_at).toLocaleDateString():'—'}</td>
-      <td>${act}${s.role!=='admin'?`<button class="btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteUser('${s.id}')">🗑</button>`:''}</td>
+      <td>${act}<button class="btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteUser('${s.id}')">🗑</button></td>
     </tr>`;
   }).join('');
 }
@@ -2563,7 +2576,7 @@ function buildCertificateHTML(){
   const corner=`<svg viewBox="0 0 80 80"><path d="M4 76V4H76" stroke="#b8902a" stroke-width="3" fill="none"/><path d="M14 56V14H56" stroke="#b8902a" stroke-width="1.2" fill="none"/><path d="M14 6l8 8-8 8-8-8z" fill="#b8902a"/><circle cx="34" cy="14" r="2" fill="#b8902a"/><circle cx="14" cy="34" r="2" fill="#b8902a"/></svg>`;
   const pat="url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56'%3E%3Cg fill='none' stroke='%23b8902a' stroke-opacity='.16'%3E%3Crect x='14' y='14' width='28' height='28'/%3E%3Crect x='14' y='14' width='28' height='28' transform='rotate(45 28 28)'/%3E%3C/g%3E%3C/svg%3E\")";
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Certificate - ${esc(name)}</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Great+Vibes&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:wght@500;600;700&family=Great+Vibes&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
 <style>
 @page{size:A4 landscape;margin:0}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -2584,18 +2597,18 @@ html,body{background:#2b2924;overflow:hidden}
 .title{font-family:'Playfair Display',serif;font-size:46px;letter-spacing:9px;text-transform:uppercase;margin-top:20px;padding-left:9px;line-height:1.1}
 .sub{font-family:Cinzel,serif;font-size:13px;letter-spacing:6px;color:#b8902a;margin-top:4px;font-weight:600}
 .sub span{font-family:Amiri,serif;letter-spacing:0;font-size:19px;margin:0 6px}
-.pre{font-size:21px;font-style:italic;color:#5b4a1c;margin-top:16px}
+.pre{font-size:22px;font-weight:500;letter-spacing:.4px;color:#5b4a1c;margin-top:16px}
 .name{font-size:${isAr?'56px':'70px'};font-family:${isAr?"Amiri,serif;font-weight:700":"'Great Vibes',cursive"};line-height:1.15;margin-top:2px;max-width:900px}
 .nl{width:640px;height:2px;background:linear-gradient(90deg,transparent,#b8902a 20%,#b8902a 80%,transparent);margin-top:2px;position:relative}
 .nl::after{content:"";position:absolute;left:50%;top:-4px;width:9px;height:9px;background:#b8902a;transform:translateX(-50%) rotate(45deg)}
-.mid{font-size:20px;font-style:italic;color:#5b4a1c;margin-top:14px}
+.mid{font-size:21px;font-weight:500;letter-spacing:.4px;color:#5b4a1c;margin-top:14px}
 .exam{font-family:Cinzel,serif;font-weight:700;font-size:19px;letter-spacing:2px;background:#0d0b07;color:#e3be58;padding:10px 40px;margin-top:14px;border:6px double #b8902a;max-width:860px}
 .stats{display:flex;margin-top:20px}
 .stats div{padding:0 30px;border-left:1px solid #b8902a}.stats div:first-child{border:none}
 .stats small{display:block;font-family:Cinzel,serif;font-size:8.5px;letter-spacing:3px;color:#8a6a14}
 .stats b{font-family:'Playfair Display',serif;font-size:19px}
 .q{margin-top:20px;max-width:760px}
-.q .e{font-size:22px;font-style:italic;font-weight:600;color:#3b2f10}
+.q .e{font-size:23px;font-weight:600;letter-spacing:.4px;color:#3b2f10}
 .q .a{font-family:Amiri,serif;font-size:19px;color:#8a6a14;margin-top:2px}
 .foot{position:absolute;left:96px;right:96px;bottom:46px;display:flex;justify-content:space-between;align-items:flex-end}
 .col{width:270px;text-align:center}
@@ -2603,7 +2616,7 @@ html,body{background:#2b2924;overflow:hidden}
 .sigimg{height:56px}
 .line{border-top:1.5px solid #b8902a;padding-top:5px}
 .col b{display:block;font-family:Cinzel,serif;font-size:11.5px;letter-spacing:1.5px}
-.col span{display:block;font-size:13.5px;font-style:italic;color:#5b4a1c}
+.col span{display:block;font-size:14px;font-weight:600;letter-spacing:.6px;color:#5b4a1c}
 .dt{font-family:'Playfair Display',serif;font-size:19px;line-height:1.3;padding-bottom:3px}
 .dh{font-family:Amiri,serif;font-size:15px;color:#8a6a14}
 .seal{width:104px;height:104px;filter:drop-shadow(0 3px 3px rgba(0,0,0,.25))}
@@ -2641,7 +2654,9 @@ html,body{background:#2b2924;overflow:hidden}
 function loadH2C(){return new Promise((res,rej)=>{if(window.html2canvas)return res();const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';s.onload=res;s.onerror=()=>rej(new Error('html2canvas load failed'));document.head.appendChild(s);});}
 async function certToCanvas(){
   const f=document.getElementById('certFrame'),d=f.contentDocument,st=d.getElementById('st');
-  await loadH2C();if(d.fonts&&d.fonts.ready)await d.fonts.ready;
+  await loadH2C();
+  try{await Promise.all(['500 22px "Cormorant Garamond"','600 23px "Cormorant Garamond"','700 20px Cinzel','700 46px "Playfair Display"','400 70px "Great Vibes"','700 22px Amiri'].map(x=>d.fonts.load(x)));}catch(e){}
+  if(d.fonts&&d.fonts.ready)await d.fonts.ready;
   const t=st.style.transform,ml=st.style.marginLeft,mt=st.style.marginTop;
   st.style.transform='none';st.style.marginLeft='0';st.style.marginTop='0';
   try{return await window.html2canvas(st,{scale:2.5,backgroundColor:'#ffffff',width:1122,height:793,windowWidth:1122,windowHeight:793,scrollX:0,scrollY:0,useCORS:true});}
@@ -2886,7 +2901,7 @@ function switchAdminTab(tab){
     const el=document.getElementById(`adminTab-${t}`);if(el)el.style.display=t===tab?'block':'none';
     const b=document.getElementById(`tabBtn-${t}`);if(b)b.classList.toggle('active',t===tab);
   });
-  if(tab==='students')renderStudentsTable();
+  if(tab==='students')setUsersView(usersView);
   if(tab==='bank'){populateDropdowns();renderBankList();}
   if(tab==='exams'){populateDropdowns();renderAdminExams();}
   if(tab==='schedule'){renderScheduleList();populateDropdowns();}
