@@ -311,6 +311,7 @@ body.ramadan .ph-in::after{content:"🏮";position:absolute;bottom:10px;inset-in
 @keyframes fxpop{from{transform:scale(.4);opacity:0}}
 
 /* v3 */
+.fx-lang{font-size:12px;padding:4px 6px;border-radius:8px;border:1px solid #C9A84C;background:transparent;color:inherit;max-width:150px}
 .page.active{animation:fxpg .38s cubic-bezier(.2,.8,.2,1)}@keyframes fxpg{from{opacity:0;transform:translateY(10px)}}
 .auth-title,.ph-name{background:linear-gradient(100deg,#B8923A 20%,#F6E3A1 45%,#B8923A 70%) 0 0/250% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:fxshine 6s linear infinite}
 .ph-name{background-image:linear-gradient(100deg,#fff 20%,#F6E3A1 45%,#fff 70%)}
@@ -1173,11 +1174,18 @@ async function loadAllData(){
   allTeachers=allUsers.filter(u=>u.role==='teacher');
   [,allExams,allResults,allDiscounts,allSchedules,allQuestionBank,allNotifications]=
     await Promise.all([Promise.resolve(allUsers),j(eR),j(rR),j(dR),j(scR),j(bR),j(nR)]);
-  secRows=allQuestionBank.filter(q=>q.text==='__SECTIONS__');linkRow=allQuestionBank.find(q=>q.text==='__LINKS__')||null;try{links=JSON.parse(linkRow.subject)||{};}catch{links={};}allQuestionBank=allQuestionBank.filter(q=>q.text!=='__SECTIONS__'&&q.text!=='__LINKS__');
+  secRows=allQuestionBank.filter(q=>q.text==='__SECTIONS__');linkRow=allQuestionBank.find(q=>q.text==='__LINKS__')||null;try{links=JSON.parse(linkRow.subject)||{};}catch{links={};}langRow=allQuestionBank.find(q=>q.text==='__LANGS__')||null;try{langs=JSON.parse(langRow.subject)||{};}catch{langs={};}allQuestionBank=allQuestionBank.filter(q=>q.text!=='__SECTIONS__'&&q.text!=='__LINKS__'&&q.text!=='__LANGS__');
 }
 
 // ── TEACHER ↔ STUDENT LINKS (stored like sections: one hidden row in question_bank) ──
-let links={},linkRow=null;
+let links={},linkRow=null,langs={},langRow=null;
+async function saveLangs(){
+  const sub=JSON.stringify(langs);
+  const body=langRow?{subject:sub}:{text:'__LANGS__',subject:sub,options:['','','',''],correct:0,points:1,created_by:currentUser.id,created_at:new Date().toISOString()};
+  const res=await sb(langRow?`question_bank?id=eq.${langRow.id}`:'question_bank',{method:langRow?'PATCH':'POST',body:JSON.stringify(body),prefer:langRow?'return=minimal':'return=representation'});
+  if(res.ok&&!langRow){try{const d=await res.json();langRow=d[0]||null;}catch(e){}}
+  return res.ok;
+}
 const teachersOf=sid=>(links[sid]||[]).map(String);
 const studentIdsOf=tid=>allStudents.filter(s=>teachersOf(s.id).includes(String(tid))).map(s=>s.id);
 const tName=id=>(allTeachers.find(t=>String(t.id)===String(id))||{}).name||'?';
@@ -3214,7 +3222,38 @@ function tick(){
   cd.innerHTML='<div style="font-size:28px">⏳</div><div class="t">Next exam · الامتحان القادم<small>'+cd.nx.e.title.replace(/</g,'&lt;')+'</small></div><div class="u"><div><b>'+d+'</b><small>يوم</small></div><div><b>'+hh+'</b><small>ساعة</small></div><div><b>'+m+'</b><small>دقيقة</small></div><div><b>'+sc+'</b><small>ثانية</small></div></div>';
 }
 setInterval(tick,1000);
-function msgFor(p){return p>=90?'ما شاء الله، بارك الله فيك! أداء مبهر ✨':p>=70?'أحسنت، واصل التقدّم بإذن الله 🌟':p>=50?'جيد، وبقليل من المراجعة تصل للتميّز 📖':'المحاولة القادمة أقرب إن شاء الله، لا تيأس 🤍'}
+var LG={
+ar:{n:'العربية',rtl:1,btn:'📤 شارك إنجازي',prev:'متوسطك السابق',now:'هذه المرة',tr:'',m:['ما شاء الله، بارك الله فيك! أداء مبهر ✨','أحسنت، واصل التقدّم بإذن الله 🌟','جيد، وبقليل من المراجعة تصل للتميّز 📖','المحاولة القادمة أقرب إن شاء الله، لا تيأس 🤍'],share:function(p){return 'الحمد لله، حققت '+p+'% في MY Institute'}},
+en:{n:'English',btn:'📤 Share my achievement',prev:'Your previous average',now:'This time',tr:'“And say: My Lord, increase me in knowledge.”',m:['MashaAllah! Outstanding performance ✨','Well done — keep going, InshaAllah 🌟','Good — a little review and you will excel 📖','Next attempt will be closer, InshaAllah. Don’t give up 🤍'],share:function(p){return 'Alhamdulillah, I scored '+p+'% at MY Institute'}},
+fr:{n:'Français',btn:'📤 Partager ma réussite',prev:'Votre moyenne précédente',now:'Cette fois',tr:'« Et dis : Seigneur, accrois mes connaissances. »',m:['MashaAllah ! Performance remarquable ✨','Bravo, continuez ainsi InshaAllah 🌟','Bien — un peu de révision et vous excellerez 📖','La prochaine fois sera meilleure InshaAllah 🤍'],share:function(p){return 'Alhamdulillah, j’ai obtenu '+p+'% à MY Institute'}},
+tr:{n:'Türkçe',btn:'📤 Başarımı paylaş',prev:'Önceki ortalamanız',now:'Bu sefer',tr:'“De ki: Rabbim, ilmimi artır.”',m:['MaşaAllah! Harika bir performans ✨','Aferin, devam et İnşaAllah 🌟','İyi — biraz tekrarla başarırsın 📖','Bir sonraki deneme daha iyi olacak İnşaAllah 🤍'],share:function(p){return 'Elhamdülillah, MY Institute’te %'+p+' aldım'}},
+ur:{n:'اردو',rtl:1,btn:'📤 اپنی کامیابی شیئر کریں',prev:'آپ کی پچھلی اوسط',now:'اس بار',tr:'«اور کہو: اے میرے رب! میرے علم میں اضافہ فرما»',m:['ماشاء اللہ! شاندار کارکردگی ✨','شاباش، ان شاء اللہ جاری رکھیں 🌟','اچھا ہے، تھوڑی مزید تیاری سے بہترین ہو جائیں گے 📖','اگلی کوشش ان شاء اللہ بہتر ہوگی 🤍'],share:function(p){return 'الحمدللہ، MY Institute میں '+p+'% حاصل کیے'}},
+id:{n:'Bahasa Indonesia',btn:'📤 Bagikan pencapaian saya',prev:'Rata-rata sebelumnya',now:'Kali ini',tr:'“Dan katakanlah: Ya Tuhanku, tambahkanlah ilmuku.”',m:['MasyaAllah! Penampilan luar biasa ✨','Bagus, teruskan insyaAllah 🌟','Baik — sedikit belajar lagi pasti unggul 📖','Percobaan berikutnya lebih baik insyaAllah 🤍'],share:function(p){return 'Alhamdulillah, nilai saya '+p+'% di MY Institute'}},
+es:{n:'Español',btn:'📤 Compartir mi logro',prev:'Tu promedio anterior',now:'Esta vez',tr:'«Y di: Señor mío, aumenta mi conocimiento.»',m:['¡MashaAllah! Rendimiento sobresaliente ✨','Bien hecho, sigue así InshaAllah 🌟','Bien — un poco de repaso y sobresaldrás 📖','El próximo intento será mejor InshaAllah 🤍'],share:function(p){return 'Alhamdulillah, obtuve '+p+'% en MY Institute'}}};
+function lang(){
+  var v=null;try{v=langs[currentUser.id]}catch(e){}
+  if(v&&typeof v==='object'){var t=v.t||'{score}%';return{n:v.n,rtl:/[\u0590-\u08FF]/.test(t),btn:'📤 '+(v.b||'Share'),prev:'—',now:'—',tr:'',m:[t,t,t,t],share:function(p){return t.replace('{score}',p)},c:t}}
+  return LG[v]||LG.ar;
+}
+function msgFor(p){var m=lang().m,t=p>=90?m[0]:p>=70?m[1]:p>=50?m[2]:m[3];return t.replace('{score}',Math.round(p))}
+function langUI(){
+  var tb=document.getElementById('studentsTable');if(!tb||typeof currentUser==='undefined'||!currentUser||currentUser.role==='student'||currentUser.role==='teacher')return;
+  tb.querySelectorAll('tr').forEach(function(tr){
+    if(tr.querySelector('.fx-lang'))return;
+    var b=tr.querySelector("button[onclick^=\"openLinksModal('student'\"]");if(!b)return;
+    var id=b.getAttribute('onclick').match(/'student','([^']+)'/)[1],cur=langs[id],sel=document.createElement('select');sel.className='fx-lang';sel.title='لغة مشاركة الإنجاز · Share language';
+    var h='';Object.keys(LG).forEach(function(k){h+='<option value="'+k+'">'+LG[k].n+'</option>'});h+='<option value="__c">'+(cur&&typeof cur==='object'?'✎ '+cur.n:'أخرى… Other')+'</option>';sel.innerHTML=h;
+    sel.value=cur&&typeof cur==='object'?'__c':(LG[cur]?cur:'ar');
+    sel.onchange=async function(){
+      var v=sel.value,val=v;
+      if(v==='__c'){var n=prompt('اسم اللغة (مثال: Deutsch)\nLanguage name:');if(!n){sel.value=LG[langs[id]]?langs[id]:'ar';return}
+        var t=prompt('رسالة المشاركة بهذه اللغة، واكتب {score} مكان النسبة\nShare message in this language, use {score} for the percentage:','{score}%');if(!t){sel.value=LG[langs[id]]?langs[id]:'ar';return}
+        var bb=prompt('نص الزر (اختياري)\nButton text (optional):','Share');val={n:n,t:t,b:bb||'Share'}}
+      langs[id]=val;sel.disabled=true;var ok=await saveLangs();sel.disabled=false;if(!ok)alert('تعذّر الحفظ · Could not save');
+    };
+    var w=document.createElement('div');w.style.marginTop='6px';w.appendChild(sel);b.parentNode.appendChild(w);
+  });
+}
 function result(){
   var pg=document.getElementById('page-result');if(!pg||!pg.classList.contains('active'))return;
   var pn=document.getElementById('pendingNote');if(pn&&pn.style.display!=='none')return;
@@ -3224,7 +3263,7 @@ function result(){
   var prev=null;try{var g=gradedOf(allResults.filter(function(r){return String(r.student_id)===String(currentUser.id)&&r.admin_note!==STARTED_NOTE})).slice().sort(function(a,b){return new Date(a.submitted_at)-new Date(b.submitted_at)});
     if(g.length>1){var o=g.slice(0,-1);prev=o.reduce(function(a,r){return a+r.score},0)/o.length}}catch(e){}
   var d=document.createElement('div');d.id='fxRes';d.dataset.k=key;
-  d.innerHTML='<div class="msg">'+msgFor(pct)+'</div>'+(prev==null?'':'<div class="cmp"><span>متوسطك السابق · '+Math.round(prev)+'%</span><div class="bar"><i data-w="'+prev+'"></i></div><span>هذه المرة · '+pct+'%</span><div class="bar"><i data-w="'+pct+'"></i></div></div>')+'<button class="btn btn-outline" id="fxShare">📤 شارك إنجازي</button>';
+  d.innerHTML='<div class="msg" dir="'+(lang().rtl?'rtl':'ltr')+'">'+msgFor(pct)+'</div>'+(prev==null||lang().prev==='—'?'':'<div class="cmp"><span>'+lang().prev+' · '+Math.round(prev)+'%</span><div class="bar"><i data-w="'+prev+'"></i></div><span>'+lang().now+' · '+pct+'%</span><div class="bar"><i data-w="'+pct+'"></i></div></div>')+'<button class="btn btn-outline" id="fxShare">'+lang().btn+'</button>';
   document.getElementById('resultDetail').after(d);
   setTimeout(function(){d.querySelectorAll('.bar i').forEach(function(i){i.style.width=i.dataset.w+'%'})},60);
   document.getElementById('fxShare').onclick=function(){shareImg(pct)};
@@ -3242,11 +3281,13 @@ async function shareImg(pct){
   x.strokeStyle='#F6E3A1';x.lineWidth=14;x.beginPath();x.arc(W/2,640,200,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,pct/100));x.stroke();
   x.fillStyle='#F6E3A1';x.font="700 130px 'Cinzel',serif";x.fillText(pct+'%',W/2,685);
   x.fillStyle='#fff';x.font="700 58px 'Amiri',serif";x.fillText(currentUser.name||'',W/2,950);
-  x.direction='rtl';x.fillStyle='#E6CC85';x.font="700 60px 'Aref Ruqaa',serif";x.fillText(msgFor(pct).replace(/[^\u0600-\u06FF\s،!]/g,'').trim(),W/2,1060);
+  var L=lang(),rt=!!L.rtl,em=msgFor(pct).replace(/[\u{1F000}-\u{1FFFF}\u2600-\u27BF\uFE0F]/gu,'').trim(),fs=60,ff=function(z){return rt?'700 '+z+"px 'Aref Ruqaa','Amiri',serif":'700 '+z+"px 'Amiri',serif"};
+  x.direction=rt?'rtl':'ltr';x.fillStyle='#E6CC85';do{x.font=ff(fs);fs-=2}while(x.measureText(em).width>W-200&&fs>24);x.fillText(em,W/2,1060);
+  if(L.tr){x.fillStyle='#C9D4E6';x.font="italic 34px 'Amiri',serif";x.fillText(L.tr,W/2,250)}
   try{var m=metrics(),n=BD.filter(function(b){return b[4](m)});x.direction='ltr';x.font='54px serif';x.fillText(n.map(function(b){return b[1]}).join(' '),W/2,1160)}catch(e){}
   x.direction='ltr';x.fillStyle='#C9D4E6';x.font="400 30px Inter,sans-serif";x.fillText('my-institute.com',W/2,1250);
   c.toBlob(async function(b){var f=new File([b],'my-institute-achievement.png',{type:'image/png'});
-    try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'MY Institute',text:'الحمد لله، حققت '+pct+'% في MY Institute'});return}}catch(e){if(e&&e.name==='AbortError')return}
+    try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'MY Institute',text:lang().share(pct)});return}}catch(e){if(e&&e.name==='AbortError')return}
     var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=f.name;a.click()},'image/png');
 }
 /* command palette */
@@ -3272,7 +3313,7 @@ addEventListener('keydown',function(e){
 });
 function scan(root){
   if(!root.querySelectorAll)return;
-  login();hero();countdown();result();badges(root);
+  langUI();login();hero();countdown();result();badges(root);
   root.querySelectorAll('.ph-chip b,.stat-num').forEach(count);
   root.querySelectorAll('.ph-ring svg').forEach(ring);
   root.querySelectorAll('.ph-ayah').forEach(verse);
