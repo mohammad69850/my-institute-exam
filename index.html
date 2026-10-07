@@ -6,6 +6,7 @@
   <title>MY Institute – Exam Portal</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&family=Amiri:wght@400;700&display=swap" rel="stylesheet"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     :root{
       --gold:#1565C0;--gold-light:#0EA5E9;--gold-pale:#0369A1;
@@ -233,6 +234,7 @@
       <div class="field"><label>Username</label><input type="text" id="loginUsername" placeholder="Enter username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"/></div>
       <div class="field"><label>Password</label><div style="position:relative"><input type="password" id="loginPassword" placeholder="Enter password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" style="padding-right:64px"/><button type="button" id="pwToggle" onclick="togglePw()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--gold);font-size:12px;font-weight:600;cursor:pointer;padding:6px">Show</button></div></div>
       <button class="btn btn-primary" onclick="login()">Sign In</button>
+      <div style="margin-top:16px"><a href="#" onclick="openVerify();return false" style="font-size:13px;color:var(--gold)">🔍 Verify a certificate</a></div>
       <div style="margin-top:20px;font-size:13px;color:var(--muted)">Don't have an account? <a style="color:var(--gold);cursor:pointer" onclick="showPage('page-register')">Request Access</a></div>
     </div>
   </div>
@@ -499,7 +501,6 @@
       <button class="tab" onclick="switchTeacherTab('results')" id="teacherTabBtn-results">📊 Results</button>
       <button class="tab" onclick="switchTeacherTab('students')" id="teacherTabBtn-students">👥 My Students</button>
       <button class="tab" onclick="switchTeacherTab('insights')" id="teacherTabBtn-insights">📈 Insights</button>
-      <button class="tab" onclick="switchTeacherTab('ratings')" id="teacherTabBtn-ratings">⭐ My Ratings</button>
     </div>
     <div id="teacherTab-bank">
       <div class="section-header">
@@ -531,7 +532,6 @@
       <div class="table-wrap"><table><thead><tr><th>Student</th><th>Exams</th><th>Avg</th><th>Last exam</th><th>Status</th><th>Actions</th></tr></thead><tbody id="tsTable"></tbody></table></div>
     </div>
     <div id="teacherTab-insights" style="display:none"><div class="section-title">📈 Question insights — which questions are hard or easy</div><div id="tiBody"></div></div>
-    <div id="teacherTab-ratings" style="display:none"><div id="teacherRatingsList"></div></div>
     <div id="teacherTab-results" style="display:none">
       <div class="section-title">📊 Results for My Exams</div>
       <div class="table-wrap">
@@ -607,7 +607,8 @@
   <div class="container fade-in">
     <div class="section-title">👤 My Profile & Progress</div>
     <div class="grid grid-2">
-      <div class="card"><div class="text-muted mb-16">📊 My Exam History</div><div id="myScores"></div></div>
+      <div class="card"><div class="text-muted mb-16">📊 My Exam History</div><div id="myProgress" style="margin-bottom:16px"></div>
+      <div id="myScores"></div></div>
       <div class="card"><div class="text-muted mb-16">🎁 My Gifts</div><div id="myDiscounts"></div></div>
       <div class="card" style="grid-column:1/-1"><div class="text-muted mb-16">📜 My Certificates</div><div id="myCerts"></div></div>
     </div>
@@ -652,6 +653,16 @@
       <button class="btn btn-ghost" onclick="closeModal('modalAddTeacher')">Cancel</button>
       <button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="addUser('teacher')">Create Account</button>
     </div>
+  </div>
+</div>
+
+<!-- Verify certificate -->
+<div class="modal-overlay" id="modalVerify">
+  <div class="modal">
+    <div class="modal-title">🔍 Verify a certificate <button class="close-btn" onclick="closeModal('modalVerify')">✕</button></div>
+    <div class="field"><label>Certificate number</label><input type="text" id="vcInput" placeholder="MYI-2026-ABC123" onkeydown="if(event.key==='Enter')verifyCert()"/></div>
+    <div id="vcResult" style="margin-bottom:12px"></div>
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('modalVerify')">Close</button><button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="verifyCert()">Verify</button></div>
   </div>
 </div>
 
@@ -896,6 +907,7 @@ window.onload=async()=>{
     if(saved){currentUser=JSON.parse(saved);await afterLogin();}
   }catch(e){store.del('mi_user');currentUser=null;hideLoading();showPage('page-login');}
   setInterval(updateScheduleCountdowns,1000);
+  const vq=new URLSearchParams(location.search).get('verify');if(vq)openVerify(vq);
 };
 
 const showLoading=(msg='Loading…')=>{document.getElementById('loadingText').textContent=msg;document.getElementById('loadingOverlay').classList.add('show');};
@@ -1100,7 +1112,7 @@ async function loadAllData(){
     sb('schedules?select=*&order=opens_at.asc'),
     sb('question_bank?select=*&order=created_at.desc'),
     sb('notifications?select=*&order=created_at.desc'),
-    sb('teacher_ratings?select=*&order=created_at.desc')
+    (currentUser&&currentUser.role==='teacher')?Promise.resolve({ok:true,json:async()=>[]}):sb('teacher_ratings?select=*&order=created_at.desc')
   ]);
   ratingsOk=tR.ok;
   const j=async r=>{try{const d=await r.json();return Array.isArray(d)?d:[];}catch{return [];}};
@@ -1211,6 +1223,49 @@ function importStudentsCSV(inp){
 function saveDraft(){if(activeExam&&activeResultId)store.set('mi_draft',JSON.stringify({rid:activeResultId,examId:activeExam.id,answers,questionIndex,deadline:examStartTime+activeExam.duration_minutes*60000}));}
 const getDraft=()=>{try{return JSON.parse(store.get('mi_draft'));}catch{return null;}};
 
+// ── AUDIO PROMPT / PROGRESS / CERT VERIFY ──
+function handleAudioPick(input,prevId,hidId){
+  const f=input.files&&input.files[0];if(!f)return;
+  if(f.size>1.5*1024*1024){alert('This audio is '+(f.size/1048576).toFixed(1)+' MB. Please use a clip under 1.5 MB (shorter, or compress it as mp3).');input.value='';return;}
+  const r=new FileReader();r.onload=()=>{document.getElementById(hidId).value=r.result;const a=document.getElementById(prevId);a.src=r.result;a.style.display='block';};r.readAsDataURL(f);
+}
+function clearAudio(idx){document.getElementById('q-aud-'+idx).value='';const a=document.getElementById('q-audprev-'+idx);a.removeAttribute('src');a.style.display='none';}
+function renderMyProgress(){
+  const el=document.getElementById('myProgress');if(!el)return;
+  const g=gradedOf(allResults.filter(r=>String(r.student_id)===String(currentUser.id)&&r.admin_note!==STARTED_NOTE)).slice().sort((a,b)=>new Date(a.submitted_at)-new Date(b.submitted_at));
+  if(!g.length){el.innerHTML='';return;}
+  const n=g.length,W=560,H=170,P=30,X=i=>n===1?W/2:P+i*(W-2*P)/(n-1),Y=s=>H-P-Math.min(s,100)/100*(H-2*P);
+  const avg=Math.round(g.reduce((a,r)=>a+r.score,0)/n),best=Math.round(Math.max(...g.map(r=>r.score))),diff=n>1?Math.round(g[n-1].score-g[0].score):null;
+  const wk=[...new Set(g.map(r=>Math.floor(new Date(r.submitted_at)/6048e5)))].sort((a,b)=>a-b);let run=1,mx=1;for(let i=1;i<wk.length;i++){run=wk[i]===wk[i-1]+1?run+1:1;mx=Math.max(mx,run);}
+  const extra=[];if(mx>=3)extra.push('📅 '+mx+' weeks in a row');if(n>=3&&avg>=85)extra.push('🚀 Average 85%+');
+  const pts=g.map((r,i)=>[X(i),Y(r.score),r]),d0=r=>new Date(r.submitted_at).toLocaleDateString();
+  const stat=(v,l)=>`<div style="flex:1;min-width:90px;text-align:center"><div style="font-size:20px;font-weight:700">${v}</div><div class="text-muted" style="font-size:11px">${l}</div></div>`;
+  el.innerHTML=`<div class="card" style="padding:16px"><div class="section-title" style="margin-bottom:10px">📈 My progress</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">${stat(avg+'%','Average')}${stat(best+'%','Best')}${stat(n,'Exams')}${diff===null?'':stat((diff>0?'+':'')+diff+'%','Since first')}</div>
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto"><defs><linearGradient id="mpg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1565C0" stop-opacity=".25"/><stop offset="1" stop-color="#1565C0" stop-opacity="0"/></linearGradient></defs>
+    ${[0,50,100].map(v=>`<line x1="${P}" x2="${W-P}" y1="${Y(v)}" y2="${Y(v)}" stroke="#C7E3F0"/><text x="${P-6}" y="${Y(v)+4}" font-size="10" fill="#64748B" text-anchor="end">${v}</text>`).join('')}
+    <line x1="${P}" x2="${W-P}" y1="${Y(60)}" y2="${Y(60)}" stroke="#16A34A" stroke-dasharray="5" stroke-opacity=".6"/><text x="${W-P}" y="${Y(60)-4}" font-size="10" fill="#16A34A" text-anchor="end">pass 60%</text>
+    ${n>1?`<polygon fill="url(#mpg)" points="${X(0)},${Y(0)} ${pts.map(p=>p[0]+','+p[1]).join(' ')} ${X(n-1)},${Y(0)}"/><polyline fill="none" stroke="#1565C0" stroke-width="2.5" points="${pts.map(p=>p[0]+','+p[1]).join(' ')}"/>`:''}
+    ${pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="4.5" fill="${p[2].score>=60?'#16A34A':'#C0392B'}"><title>${esc((allExams.find(e=>e.id===p[2].exam_id)||{}).title||'')} — ${Math.round(p[2].score)}% (${d0(p[2])})</title></circle>`).join('')}
+    <text x="${P}" y="${H-6}" font-size="10" fill="#64748B">${d0(g[0])}</text>${n>1?`<text x="${W-P}" y="${H-6}" font-size="10" fill="#64748B" text-anchor="end">${d0(g[n-1])}</text>`:''}</svg>
+    ${badgesHTML(g)}${extra.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin:4px 0">${extra.map(x=>`<span class="badge badge-active">${x}</span>`).join('')}</div>`:''}</div>`;
+}
+function certHash(sid,eid,score){let h=0;for(const ch of `${sid}|${eid}|${score}`)h=(h*31+ch.charCodeAt(0))>>>0;return h;}
+function certNo(sid,eid,score,d){return `MYI-${d.getFullYear()}-${certHash(sid,eid,score).toString(36).toUpperCase().padStart(6,'0').slice(0,6)}`;}
+function qrDataURL(text){try{const d=document.createElement('div');new QRCode(d,{text,width:160,height:160,correctLevel:QRCode.CorrectLevel.M});const c=d.querySelector('canvas');return c?c.toDataURL('image/png'):'';}catch(e){return '';}}
+function openVerify(code){document.getElementById('vcInput').value=code||'';document.getElementById('vcResult').innerHTML='';openModal('modalVerify');if(code)verifyCert();}
+async function verifyCert(){
+  const code=(document.getElementById('vcInput').value||'').trim().toUpperCase().replace(/\s+/g,''),out=document.getElementById('vcResult');
+  if(!/^MYI-\d{4}-[A-Z0-9]{6}$/.test(code)){out.innerHTML='<div class="alert alert-error">Enter a number like MYI-2026-ABC123.</div>';return;}
+  out.innerHTML='<div class="text-muted">Checking…</div>';
+  try{
+    const R=await (await sb('results?passed=eq.true&select=student_id,exam_id,score,submitted_at')).json();if(!Array.isArray(R))throw 0;
+    const m=R.find(r=>r.submitted_at&&certNo(r.student_id,r.exam_id,Math.round(r.score||0),new Date(r.submitted_at))===code);
+    if(!m){out.innerHTML='<div class="alert alert-error">❌ No certificate found with this number.</div>';return;}
+    const s=((await (await sb(`users?id=eq.${m.student_id}&select=name`)).json())||[])[0]||{name:'—'},e=((await (await sb(`exams?id=eq.${m.exam_id}&select=title`)).json())||[])[0]||{title:'—'};
+    out.innerHTML=`<div class="alert alert-info" style="line-height:1.8">✅ <strong>Valid certificate</strong><br>Student: <strong>${esc(s.name)}</strong><br>Exam: <strong>${esc(e.title)}</strong><br>Score: <strong>${Math.round(m.score)}%</strong><br>Date: ${new Date(m.submitted_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</div>`;
+  }catch(err){out.innerHTML='<div class="alert alert-error">Could not check right now. Please try again.</div>';}
+}
 // ── LEADERBOARD ──────────────────────────────
 function renderLeaderboard(){
   const lb=document.getElementById('leaderboardList');
@@ -1590,6 +1645,10 @@ function addQuestion(q){
       <div style="margin-top:4px"><input type="file" accept="image/*" id="q-imgfile-${idx}" onchange="handleImagePick(this,'q-imgprev-${idx}','q-img-${idx}')"/>
       <input type="hidden" id="q-img-${idx}" value="${q.image||''}"/>
       <img id="q-imgprev-${idx}" class="q-img-preview" src="${q.image||''}" style="display:${q.image?'block':'none'}"/></div></div>
+    <div style="margin-bottom:10px"><label style="font-size:11px;color:var(--muted)">🔊 ATTACH AUDIO TO LISTEN TO (optional — recitation / Tajweed clip, max 1.5 MB)</label>
+      <div style="margin-top:4px"><input type="file" accept="audio/*" onchange="handleAudioPick(this,'q-audprev-${idx}','q-aud-${idx}')"/> <button class="btn-sm" type="button" onclick="clearAudio(${idx})">✕ Remove audio</button>
+      <input type="hidden" id="q-aud-${idx}" value="${q.audio_prompt||''}"/>
+      <audio id="q-audprev-${idx}" controls ${q.audio_prompt?`src="${q.audio_prompt}"`:''} style="display:${q.audio_prompt?'block':'none'};width:100%;margin-top:6px"></audio></div></div>
     <div id="q-body-${idx}">
       <div id="q-sec-mcq-${idx}"><div class="qtype-note">SELECT CORRECT ANSWER ☝️</div>
         ${['A','B','C','D'].map((l,li)=>`<div class="option-input"><input type="radio" name="correct-${idx}" value="${li}" id="r-${idx}-${li}" ${li===(q.correct||0)&&t!=='tf'?'checked':''}/>
@@ -1644,7 +1703,7 @@ async function saveExam(publish=true){
     const q={type,text,points:parseFloat(document.getElementById(`q-points-${idx}`)?.value)||1,
       audio_required:document.getElementById(`q-audio-${idx}`)?.checked||false,
       bonus:document.getElementById(`q-bonus-${idx}`)?.checked||false,
-      image:document.getElementById(`q-img-${idx}`)?.value||null,
+      image:document.getElementById(`q-img-${idx}`)?.value||null,audio_prompt:document.getElementById(`q-aud-${idx}`)?.value||null,
       bank_id:document.getElementById(`q-bankid-${idx}`)?.value||null,options:['','','',''],correct:0};
     if(document.getElementById(`q-unb-${idx}`)?.value||(!publish&&!q.bank_id&&type==='mcq'))q.unbanked=true;
     if(type==='mcq'){
@@ -2142,6 +2201,7 @@ function renderQuestion(){
     <div class="points-chip">${q.bonus?'⭐ Bonus · ':''}${q.points||1} point${(q.points||1)>1?'s':''}</div>
     <div class="question-text">${q.text}</div>
     ${q.image?`<img src="${q.image}" style="max-width:100%;max-height:260px;border-radius:8px;margin-bottom:16px;border:1px solid var(--border)"/>`:'' }
+    ${q.audio_prompt?`<div style="margin-bottom:16px"><div style="font-size:13px;color:var(--muted);margin-bottom:6px">🔊 Listen carefully, then answer</div><audio controls controlsList="nodownload" src="${q.audio_prompt}" style="width:100%"></audio></div>`:''}
     ${q.audio_required?`
       <div class="audio-record-box" id="recBox-${questionIndex}">
         <div style="font-size:13px;color:var(--muted);margin-bottom:10px">🎙️ Record your audio answer for this question</div>
@@ -2568,8 +2628,8 @@ function buildCertificateHTML(){
   const d=lastResult.submitted_at?new Date(lastResult.submitted_at):new Date();
   const en=d.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
   let hj='';try{hj=d.toLocaleDateString('ar-SA-u-ca-islamic-umalqura',{day:'numeric',month:'long',year:'numeric'});}catch(e){}
-  let h=0;for(const ch of `${currentUser.id}|${activeExam.id}|${score}`)h=(h*31+ch.charCodeAt(0))>>>0;
-  const no=`MYI-${d.getFullYear()}-${h.toString(36).toUpperCase().padStart(6,'0').slice(0,6)}`;
+  const h=certHash(currentUser.id,activeExam.id,score),no=certNo(currentUser.id,activeExam.id,score,d);
+  const qr=qrDataURL(location.href.split(/[?#]/)[0]+'?verify='+no);
   const pool=score>=90?CERT_QUOTES.high:score>=75?CERT_QUOTES.mid:CERT_QUOTES.low,q=pool[h%pool.length];
   const sig=C.signatureImg?`<img class="sigimg" src="${C.signatureImg}">`:`<div class="sig">MY Institute</div>`;
   const star=[...Array(48)].map((_,i)=>{const r=i%2?50:56,a=i*Math.PI/24;return(60+r*Math.cos(a)).toFixed(1)+','+(60+r*Math.sin(a)).toFixed(1)}).join(' ');
@@ -2619,6 +2679,7 @@ html,body{background:#2b2924;overflow:hidden}
 .col span{display:block;font-size:14px;font-weight:600;letter-spacing:.6px;color:#5b4a1c}
 .dt{font-family:'Playfair Display',serif;font-size:19px;line-height:1.3;padding-bottom:3px}
 .dh{font-family:Amiri,serif;font-size:15px;color:#8a6a14}
+.qrb{position:absolute;left:668px;bottom:44px;width:80px;text-align:center}.qrb img{width:70px;height:70px;display:block;margin:0 auto;border:3px solid #fff;outline:1px solid #b8902a}.qrb span{display:block;font-family:Cinzel,serif;font-size:6.5px;letter-spacing:1.5px;color:#8a6a14;margin-top:4px}
 .seal{width:104px;height:104px;filter:drop-shadow(0 3px 3px rgba(0,0,0,.25))}
 @media print{html,body{background:#fff;overflow:visible}.stage{transform:none!important;margin:0!important}}
 </style></head><body>
@@ -2640,6 +2701,7 @@ html,body{background:#2b2924;overflow:hidden}
  <div class="stats"><div><small>SCORE</small><b>${score}%</b></div><div><small>GRADE</small><b>${g[0]} · ${g[1]}</b></div><div><small>CERTIFICATE NO.</small><b>${no}</b></div></div>
  <div class="q"><div class="e">“${esc(q[0])}”</div></div>
 </div>
+${qr?`<div class="qrb"><img src="${qr}"><span>SCAN TO VERIFY</span></div>`:''}
 <div class="foot">
  <div class="col"><div class="dt">${en}</div><div class="line"><b>DATE OF ISSUE</b><span>${esc(C.website)}</span></div></div>
  <svg class="seal" viewBox="0 0 120 120"><defs><radialGradient id="gg" cx="35%" cy="30%"><stop offset="0" stop-color="#f3d77a"/><stop offset=".6" stop-color="#b8902a"/><stop offset="1" stop-color="#7d5f12"/></radialGradient><path id="cp" d="M60,60 m-36,0 a36,36 0 1,1 72,0 a36,36 0 1,1 -72,0"/></defs>
@@ -2817,6 +2879,7 @@ async function markNotificationRead(id){
 // ── STUDENT PROFILE ───────────────────────────
 function renderStudentProfile(){
   if(!currentUser)return;
+  renderMyProgress();
   const myR=allResults.filter(r=>r.student_id===currentUser.id).sort((a,b)=>new Date(b.submitted_at)-new Date(a.submitted_at));
   document.getElementById('myScores').innerHTML=myR.length?myR.map(r=>{
     const ex=allExams.find(e=>e.id===r.exam_id)||{title:'?'};
@@ -2914,7 +2977,7 @@ function switchAdminTab(tab){
 
 function showTeacherTab(tab){showPage('page-teacher');switchTeacherTab(tab);}
 function switchTeacherTab(tab){
-  const tabs=['bank','exams','results','students','insights','ratings'];
+  const tabs=['bank','exams','results','students','insights'];
   tabs.forEach(t=>{
     const el=document.getElementById(`teacherTab-${t}`);if(el)el.style.display=t===tab?'block':'none';
     const b=document.getElementById(`teacherTabBtn-${t}`);if(b)b.classList.toggle('active',t===tab);
@@ -2924,7 +2987,6 @@ function switchTeacherTab(tab){
   if(tab==='results')renderTeacherResultsTable();
   if(tab==='students')renderTeacherStudents();
   if(tab==='insights')renderInsights();
-  if(tab==='ratings')renderRatings('teacherRatingsList',currentUser.id);
 }
 
 // ── NAVIGATION & MODALS ───────────────────────
