@@ -213,7 +213,43 @@
 .insp-hi{font-size:15px;font-weight:600;color:var(--gold-pale);margin-bottom:8px}
 .insp-text{font-family:'Amiri',serif;font-size:21px;line-height:1.6;color:var(--text)}
 .insp-src{margin-top:8px;font-size:13px;color:var(--muted)}
-</style>
+
+    /* ── PROFILE DESIGN ── */
+    .ph{position:relative;border-radius:20px;overflow:hidden;margin-bottom:22px;color:#fff;background:linear-gradient(135deg,#0B1B33 0%,#14305A 55%,#0B1B33 100%);box-shadow:0 10px 32px rgba(11,27,51,.28);border-bottom:3px solid #C9A84C}
+    .ph::before{content:"";position:absolute;inset:0;opacity:.1;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cg fill='none' stroke='%23C9A84C' stroke-width='1'%3E%3Crect x='14' y='14' width='36' height='36'/%3E%3Crect x='14' y='14' width='36' height='36' transform='rotate(45 32 32)'/%3E%3C/g%3E%3C/svg%3E")}
+    .ph-in{position:relative;display:flex;gap:22px;align-items:center;flex-wrap:wrap;padding:26px 28px}
+    .ph-ring{position:relative;width:116px;height:116px;flex:none}
+    .ph-ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+    .ph-av{position:absolute;inset:11px;border-radius:50%;background:#0B1B33;border:2px solid #C9A84C;display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:30px;font-weight:700;color:#E6CC85}
+    .ph-ringlbl{position:absolute;left:0;right:0;bottom:-4px;text-align:center}
+    .ph-ringlbl span{background:#C9A84C;color:#0B1B33;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px}
+    .ph-txt{flex:1;min-width:230px}
+    .ph-greet{font-size:12px;letter-spacing:.5px;color:#E6CC85}
+    .ph-name{font-family:'Amiri','Cinzel',serif;font-size:30px;font-weight:700;line-height:1.25;margin:2px 0 6px}
+    .ph-ayah{font-family:'Amiri',serif;font-size:17px;color:#E6CC85;opacity:.9}
+    .ph-chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .ph-chip{background:rgba(255,255,255,.08);border:1px solid rgba(201,168,76,.35);border-radius:12px;padding:8px 14px;text-align:center;min-width:84px}
+    .ph-chip b{display:block;font-size:19px;color:#fff}.ph-chip small{font-size:11px;color:#C9D4E6}
+    .ph-lvl{min-width:210px;max-width:260px}
+    .ph-lvl .t{font-family:'Amiri',serif;font-size:21px;color:#E6CC85}.ph-lvl .t small{font-family:'Inter',sans-serif;font-size:11px;color:#C9D4E6;margin-inline-start:6px}
+    .ph-bar{height:8px;border-radius:99px;background:rgba(255,255,255,.14);margin:8px 0 5px;overflow:hidden}.ph-bar i{display:block;height:100%;background:linear-gradient(90deg,#C9A84C,#F1DC9A);border-radius:99px}
+    .ph-lvl .n{font-size:11px;color:#C9D4E6}
+    .ph-tool{position:absolute;top:12px;inset-inline-end:14px;background:rgba(255,255,255,.1);border:1px solid rgba(201,168,76,.4);color:#E6CC85;border-radius:999px;padding:5px 12px;font-size:12px;cursor:pointer}
+    #page-profile{background:#FBF7EE;min-height:calc(100vh - 72px)}
+    #page-profile .card{background:#fff;border:1px solid #EADFC4;border-radius:16px;box-shadow:0 2px 14px rgba(120,90,20,.08)}
+    #page-profile.dark{background:#0E1626;--text:#E8ECF4;--muted:#93A0B8;--border:#2A3A58;color:#E8ECF4}
+    #page-profile.dark .card{background:#16223A;border-color:#2A3A58;box-shadow:none}
+    #page-profile.dark .text-muted{color:#93A0B8}
+    .card-h{font-weight:600;font-size:14px;margin-bottom:14px;display:flex;justify-content:space-between;gap:8px;color:var(--muted)}.card-h span{font-family:'Amiri',serif;font-size:16px;color:#B58B2A}
+    .gbadge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px 5px 8px;border-radius:999px;background:linear-gradient(#FFF8E1,#F6E7B4);border:1px solid #D9BE6A;color:#6B4E0A;font-size:12px;font-weight:600}
+    .cert-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+    .cert-card{position:relative;border:1px solid #D9BE6A;border-radius:14px;padding:16px;background:linear-gradient(160deg,#FFFDF6,#FBF1D4);color:#3D2E08}
+    #page-profile.dark .cert-card{background:linear-gradient(160deg,#1B2A47,#16223A);color:#E8ECF4}
+    .cert-card .sc{font-family:'Cinzel',serif;font-size:26px;font-weight:700;color:#B58B2A}
+    .cert-card .tt{font-weight:600;font-size:14px;margin:4px 0 2px}.cert-card .mt{font-size:11px;opacity:.7}
+    .cert-card .no{font-family:monospace;font-size:11px;letter-spacing:1px;margin:8px 0 10px;opacity:.8}
+    .seal{position:absolute;top:12px;inset-inline-end:12px;background:#16A34A;color:#fff;border:0;border-radius:999px;padding:3px 10px;font-size:11px;cursor:pointer}
+  </style>
 </head>
 <body>
 
@@ -487,6 +523,7 @@
 <!-- TEACHER PAGE -->
 <div class="page" id="page-teacher">
   <div class="container fade-in">
+    <div id="teacherHero"></div>
     <div class="tabs">
       <button class="tab active" onclick="switchTeacherTab('bank')" id="teacherTabBtn-bank">📚 My Questions</button>
       <button class="tab" onclick="switchTeacherTab('exams')" id="teacherTabBtn-exams">📋 My Exams</button>
@@ -597,12 +634,12 @@
 <!-- STUDENT PROFILE -->
 <div class="page" id="page-profile">
   <div class="container fade-in">
-    <div class="section-title">👤 My Profile & Progress</div>
+    <div id="profileHero"></div>
     <div class="grid grid-2">
-      <div class="card"><div class="text-muted mb-16">📊 My Exam History</div><div id="myProgress" style="margin-bottom:16px"></div>
+      <div class="card"><div class="card-h">📊 My Exam History <span>سجل الامتحانات</span></div><div id="myProgress" style="margin-bottom:16px"></div>
       <div id="myScores"></div></div>
-      <div class="card"><div class="text-muted mb-16">🎁 My Gifts</div><div id="myDiscounts"></div></div>
-      <div class="card" style="grid-column:1/-1"><div class="text-muted mb-16">📜 My Certificates</div><div id="myCerts"></div></div>
+      <div class="card"><div class="card-h">🎁 My Gifts <span>هداياي</span></div><div id="myDiscounts"></div></div>
+      <div class="card" style="grid-column:1/-1"><div class="card-h">📜 My Certificates <span>شهاداتي</span></div><div id="myCerts"></div></div>
     </div>
   </div>
 </div>
@@ -1185,10 +1222,10 @@ function renderMyProgress(){
   const stat=(v,l)=>`<div style="flex:1;min-width:90px;text-align:center"><div style="font-size:20px;font-weight:700">${v}</div><div class="text-muted" style="font-size:11px">${l}</div></div>`;
   el.innerHTML=`<div class="card" style="padding:16px"><div class="section-title" style="margin-bottom:10px">📈 My progress</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">${stat(avg+'%','Average')}${stat(best+'%','Best')}${stat(n,'Exams')}${diff===null?'':stat((diff>0?'+':'')+diff+'%','Since first')}</div>
-    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto"><defs><linearGradient id="mpg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1565C0" stop-opacity=".25"/><stop offset="1" stop-color="#1565C0" stop-opacity="0"/></linearGradient></defs>
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto"><defs><linearGradient id="mpg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B58B2A" stop-opacity=".25"/><stop offset="1" stop-color="#B58B2A" stop-opacity="0"/></linearGradient></defs>
     ${[0,50,100].map(v=>`<line x1="${P}" x2="${W-P}" y1="${Y(v)}" y2="${Y(v)}" stroke="#C7E3F0"/><text x="${P-6}" y="${Y(v)+4}" font-size="10" fill="#64748B" text-anchor="end">${v}</text>`).join('')}
-    <line x1="${P}" x2="${W-P}" y1="${Y(60)}" y2="${Y(60)}" stroke="#16A34A" stroke-dasharray="5" stroke-opacity=".6"/><text x="${W-P}" y="${Y(60)-4}" font-size="10" fill="#16A34A" text-anchor="end">pass 60%</text>
-    ${n>1?`<polygon fill="url(#mpg)" points="${X(0)},${Y(0)} ${pts.map(p=>p[0]+','+p[1]).join(' ')} ${X(n-1)},${Y(0)}"/><polyline fill="none" stroke="#1565C0" stroke-width="2.5" points="${pts.map(p=>p[0]+','+p[1]).join(' ')}"/>`:''}
+    <line x1="${P}" x2="${W-P}" y1="${Y(60)}" y2="${Y(60)}" stroke="#16A34A" stroke-dasharray="5" stroke-opacity=".3"/><text x="${W-P}" y="${Y(60)-4}" font-size="10" fill="#16A34A" text-anchor="end">pass 60%</text>
+    ${n>1?`<polygon fill="url(#mpg)" points="${X(0)},${Y(0)} ${pts.map(p=>p[0]+','+p[1]).join(' ')} ${X(n-1)},${Y(0)}"/><polyline fill="none" stroke="#B58B2A" stroke-width="2.5" points="${pts.map(p=>p[0]+','+p[1]).join(' ')}"/>`:''}
     ${pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="4.5" fill="${p[2].score>=60?'#16A34A':'#C0392B'}"><title>${esc((allExams.find(e=>e.id===p[2].exam_id)||{}).title||'')} — ${Math.round(p[2].score)}% (${d0(p[2])})</title></circle>`).join('')}
     <text x="${P}" y="${H-6}" font-size="10" fill="#64748B">${d0(g[0])}</text>${n>1?`<text x="${W-P}" y="${H-6}" font-size="10" fill="#64748B" text-anchor="end">${d0(g[n-1])}</text>`:''}</svg>
     ${badgesHTML(g)}${extra.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin:4px 0">${extra.map(x=>`<span class="badge badge-active">${x}</span>`).join('')}</div>`:''}</div>`;
@@ -2441,10 +2478,11 @@ function delSection(path){
 const gradedOf=rs=>rs.filter(r=>r.graded!==false&&r.score!=null&&r.admin_note!==STARTED_NOTE).sort((a,b)=>new Date(a.submitted_at)-new Date(b.submitted_at));
 function badgesHTML(rs){
   const g=gradedOf(rs),B=[];
-  if(g.length)B.push('🎯 First exam');if(g.some(r=>r.score>=100))B.push('💯 Perfect score');
-  if(g.length>=3&&g.slice(-3).every(r=>r.score>=60))B.push('🔥 3 passes in a row');
-  if(g.length>=2&&g[g.length-1].score>g[g.length-2].score)B.push('📈 Improved');if(g.length>=5)B.push('🏅 5 exams done');
-  return B.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">${B.map(x=>`<span class="badge badge-active">${x}</span>`).join('')}</div>`:'';
+  if(g.length)B.push('First exam');if(g.some(r=>r.score>=100))B.push('Perfect score');
+  if(g.length>=3&&g.slice(-3).every(r=>r.score>=60))B.push('3 passes in a row');
+  if(g.length>=2&&g[g.length-1].score>g[g.length-2].score)B.push('Improved');if(g.length>=5)B.push('5 exams done');
+  const ic='<svg width="16" height="16" viewBox="0 0 24 24" fill="#B58B2A"><path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17l-6.1 3.4 1.5-6.8L2.2 9l6.9-.7z"/></svg>';
+  return B.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">${B.map(x=>`<span class="gbadge">${ic}${x}</span>`).join('')}</div>`:'';
 }
 function sparkSVG(rs){
   const g=gradedOf(rs);if(g.length<2)return '';const W=300,H=80,n=g.length;
@@ -2811,9 +2849,42 @@ async function markNotificationRead(id){
 }
 
 // ── STUDENT PROFILE ───────────────────────────
+function phHTML(o){
+  const C=2*Math.PI*52,pct=o.pct==null?0:Math.max(0,Math.min(100,o.pct));
+  return `<div class="ph">${o.tool||''}<div class="ph-in">
+    <div class="ph-ring"><svg viewBox="0 0 116 116" width="116" height="116"><circle cx="58" cy="58" r="52" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="5"/><circle cx="58" cy="58" r="52" fill="none" stroke="#C9A84C" stroke-width="5" stroke-linecap="round" stroke-dasharray="${(pct/100*C).toFixed(1)} ${C.toFixed(1)}"/></svg>
+      <div class="ph-av">${esc(o.initials)}</div><div class="ph-ringlbl"><span>${o.pct==null?'—':Math.round(pct)+'%'}</span></div></div>
+    <div class="ph-txt"><div class="ph-greet">${o.greet}</div><div class="ph-name">${esc(o.name)}</div><div class="ph-ayah">﴿ وَقُل رَّبِّ زِدْنِي عِلْمًا ﴾</div>
+      <div class="ph-chips">${o.chips.map(c=>`<div class="ph-chip"><b>${c[0]}</b><small>${c[1]}</small></div>`).join('')}</div></div>
+    ${o.lvl||''}</div></div>`;
+}
+function greetNow(){const h=new Date().getHours();return h<12?'Good morning · صباح الخير':h<18?'Good afternoon · نهارك سعيد':'Good evening · مساء الخير';}
+const PH_LEVELS=[{n:0,en:'Beginner',ar:'مبتدئ'},{n:2,en:'Striving',ar:'مجتهد'},{n:5,en:'Proficient',ar:'متقن'}];
+function toggleProfileDark(){const pg=document.getElementById('page-profile');pg.classList.toggle('dark');try{localStorage.setItem('mi_dark',pg.classList.contains('dark')?'1':'');}catch(e){}renderProfileHero();}
+function renderProfileHero(){
+  const el=document.getElementById('profileHero');if(!el||!currentUser)return;
+  try{if(localStorage.getItem('mi_dark'))document.getElementById('page-profile').classList.add('dark');}catch(e){}
+  const mine=allResults.filter(r=>String(r.student_id)===String(currentUser.id)),g=gradedOf(mine);
+  const avg=g.length?g.reduce((a,r)=>a+r.score,0)/g.length:null,best=g.length?Math.max(...g.map(r=>r.score)):null;
+  const passed=new Set(mine.filter(r=>r.passed).map(r=>r.exam_id)).size;
+  let li=0;PH_LEVELS.forEach((l,i)=>{if(passed>=l.n)li=i;});
+  const cur=PH_LEVELS[li],nx=PH_LEVELS[li+1];
+  const lvl=`<div class="ph-lvl"><div class="t">${cur.ar}<small>${cur.en}</small></div><div class="ph-bar"><i style="width:${nx?Math.round((passed-cur.n)/(nx.n-cur.n)*100):100}%"></i></div><div class="n">${nx?`${nx.n-passed} more pass${nx.n-passed>1?'es':''} to reach ${nx.ar} · ${nx.en}`:'Highest level reached 🌟'}</div></div>`;
+  const dark=document.getElementById('page-profile').classList.contains('dark');
+  el.innerHTML=phHTML({name:currentUser.name,initials:(currentUser.name||'?').split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase(),greet:greetNow(),pct:avg,
+    chips:[[g.length,'Exams'],[avg==null?'—':Math.round(avg)+'%','Average'],[best==null?'—':Math.round(best)+'%','Best']],lvl,
+    tool:`<button class="ph-tool" onclick="toggleProfileDark()">${dark?'☀️ Light':'🌙 Dark'}</button>`});
+}
+function renderTeacherHero(){
+  const el=document.getElementById('teacherHero');if(!el||!currentUser||currentUser.role!=='teacher')return;
+  const {exams,students}=teacherScope(currentUser.id),ids=exams.map(e=>e.id),rows=students.map(x=>studentStats(x.id,ids)),w=rows.filter(r=>r.avg!==null);
+  const avg=w.length?w.reduce((a,r)=>a+r.avg,0)/w.length:null,pend=rows.reduce((a,r)=>a+r.pending,0);
+  el.innerHTML=phHTML({name:currentUser.name,initials:(currentUser.name||'?').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase(),greet:greetNow()+' · Teacher · المعلم',pct:avg,
+    chips:[[students.length,'Students'],[exams.length,'Exams'],[avg==null?'—':Math.round(avg)+'%','Class average'],[pend,'Awaiting grading']]});
+}
 function renderStudentProfile(){
   if(!currentUser)return;
-  renderMyProgress();
+  renderMyProgress();renderProfileHero();
   const myR=allResults.filter(r=>r.student_id===currentUser.id).sort((a,b)=>new Date(b.submitted_at)-new Date(a.submitted_at));
   document.getElementById('myScores').innerHTML=myR.length?myR.map(r=>{
     const ex=allExams.find(e=>e.id===r.exam_id)||{title:'?'};
@@ -2833,15 +2904,11 @@ function renderStudentProfile(){
       <div style="margin-top:6px">${d.used?'<span class="badge badge-active">Used</span>':'<span class="badge badge-discount">Active 🎁</span>'}</div>
     </div>`).join(''):'<div class="empty-state" style="padding:20px"><div class="icon" style="font-size:28px">🎁</div><p>No gifts yet</p></div>';
   const passed=myR.filter(r=>r.passed);
-  document.getElementById('myCerts').innerHTML=passed.length?passed.map(r=>{
-    const ex=allExams.find(e=>e.id===r.exam_id)||{title:'?'};
-    return `<div style="display:inline-flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(21,101,192,.1);border:1px solid var(--gold);border-radius:10px;margin:0 8px 8px 0">
-      <div>📜</div>
-      <div><div style="font-size:13px;font-weight:600;color:var(--gold-light)">${ex.title}</div>
-      <div style="font-size:11px;color:var(--muted)">${Math.round(r.score)}% • ${r.submitted_at?new Date(r.submitted_at).toLocaleDateString():''}</div></div>
-      <button class="btn btn-outline" style="padding:6px 12px;font-size:12px" onclick="downloadCertForResult('${r.id}')">📥</button>
-    </div>`;
-  }).join(''):'<div style="color:var(--muted);font-size:13px;padding:12px">Pass an exam to earn a certificate!</div>';
+  document.getElementById('myCerts').innerHTML=passed.length?`<div class="cert-grid">${passed.map(r=>{
+    const ex=allExams.find(e=>e.id===r.exam_id)||{title:'?'},no=r.submitted_at?certNo(currentUser.id,r.exam_id,Math.round(r.score||0),new Date(r.submitted_at)):'';
+    return `<div class="cert-card">${no?`<button class="seal" title="Verify this certificate" onclick="openVerify('${no}')">✔ موثّقة</button>`:''}
+      <div class="sc">${Math.round(r.score)}%</div><div class="tt">${esc(ex.title)}</div><div class="mt">${r.submitted_at?new Date(r.submitted_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}):''}</div>
+      ${no?`<div class="no">${no}</div>`:''}<button class="btn-sm" onclick="downloadCertForResult('${r.id}')">⬇ Download certificate</button></div>`;}).join('')}</div>`:'<div style="color:var(--muted);font-size:13px;padding:12px">Pass an exam to earn a certificate! · انجح في امتحان لتحصل على شهادتك</div>';
 }
 
 // ── HELPERS ───────────────────────────────────
@@ -2910,6 +2977,7 @@ function switchAdminTab(tab){
 
 function showTeacherTab(tab){showPage('page-teacher');switchTeacherTab(tab);}
 function switchTeacherTab(tab){
+  renderTeacherHero();
   const tabs=['bank','exams','results','students','insights'];
   tabs.forEach(t=>{
     const el=document.getElementById(`teacherTab-${t}`);if(el)el.style.display=t===tab?'block':'none';
