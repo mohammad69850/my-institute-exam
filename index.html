@@ -311,6 +311,7 @@ body.ramadan .ph-in::after{content:"🏮";position:absolute;bottom:10px;inset-in
 @keyframes fxpop{from{transform:scale(.4);opacity:0}}
 
 /* v3 */
+#fxSb{position:fixed;bottom:18px;inset-inline-start:18px;z-index:9000;width:48px;height:48px;border-radius:50%;border:1.5px solid #C9A84C;background:#0B1B33;color:#F6E3A1;font-size:20px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35)}#fxSb:hover{box-shadow:0 0 18px rgba(201,168,76,.6)}
 .fx-lang{font-size:12px;padding:4px 6px;border-radius:8px;border:1px solid #C9A84C;background:transparent;color:inherit;max-width:150px}
 .page.active{animation:fxpg .38s cubic-bezier(.2,.8,.2,1)}@keyframes fxpg{from{opacity:0;transform:translateY(10px)}}
 .auth-title,.ph-name{background:linear-gradient(100deg,#B8923A 20%,#F6E3A1 45%,#B8923A 70%) 0 0/250% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:fxshine 6s linear infinite}
@@ -3291,16 +3292,59 @@ async function shareImg(pct){
     var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=f.name;a.click()},'image/png');
 }
 /* command palette */
-var K=document.createElement('div');K.id='fxK';K.innerHTML='<div><input placeholder="ابحث عن طالب أو امتحان…  Search" autocomplete="off"><ul></ul></div>';document.body.appendChild(K);
+var K=document.createElement('div');K.id='fxK';K.innerHTML='<div><input placeholder="طالب · مدرس · امتحان · تاريخ (أكتوبر، 8/10، 2026-10، اليوم)" autocomplete="off"><ul></ul></div>';document.body.appendChild(K);
 var kin=K.querySelector('input'),kul=K.querySelector('ul'),kitems=[],ksel=0;
 function kopen(){if(typeof currentUser==='undefined'||!currentUser||currentUser.role==='student')return;K.classList.add('on');kin.value='';krender();kin.focus()}
 function kclose(){K.classList.remove('on')}
+var MN={يناير:1,جانفي:1,january:1,jan:1,فبراير:2,فيفري:2,february:2,feb:2,مارس:3,march:3,mar:3,أبريل:4,ابريل:4,أبريل:4,april:4,apr:4,مايو:5,ماي:5,may:5,يونيو:6,يونيه:6,جوان:6,june:6,jun:6,يوليو:7,يوليه:7,جويلية:7,july:7,jul:7,أغسطس:8,اغسطس:8,أوت:8,august:8,aug:8,سبتمبر:9,september:9,sep:9,sept:9,أكتوبر:10,اكتوبر:10,october:10,oct:10,نوفمبر:11,november:11,nov:11,ديسمبر:12,december:12,dec:12};
+function nd(t){return t.replace(/[٠-٩]/g,function(c){return c.charCodeAt(0)-1632})}
+function pdate(q){
+  var t=nd(q.toLowerCase()).replace(/[أإآ]/g,'ا').replace(/\s+/g,' ').trim(),n=new Date(),r=null,m;
+  if(/^(اليوم|today)$/.test(t))return{y:n.getFullYear(),m:n.getMonth()+1,d:n.getDate()};
+  if(/^(امس|أمس|yesterday)$/.test(t)){var y=new Date(n-864e5);return{y:y.getFullYear(),m:y.getMonth()+1,d:y.getDate()}}
+  if(m=t.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/))return{y:+m[1],m:+m[2],d:+m[3]};
+  if(m=t.match(/^(\d{4})[-\/.](\d{1,2})$/))return{y:+m[1],m:+m[2]};
+  if(m=t.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})$/))return{y:+m[3],m:+m[2],d:+m[1]};
+  if(m=t.match(/^(\d{1,2})[-\/.](\d{4})$/))return{y:+m[2],m:+m[1]};
+  if(m=t.match(/^(\d{1,2})[-\/.](\d{1,2})$/))return{m:+m[2],d:+m[1]};
+  var w=t.replace(/(^|\s)(شهر|يوم|month|day|of|في)(?=\s|$)/g,' ').replace(/\s+/g,' ').trim(),toks=w.split(' '),mo=null,d=null,yr=null,rest=[];
+  toks.forEach(function(k){var kk=k.replace(/^ال/,''),mm=MN[k]||MN[kk];if(mm&&!mo)mo=mm;else if(/^\d{4}$/.test(k))yr=+k;else if(/^\d{1,2}$/.test(k)){if(d==null&&mo==null&&toks.length>1)d=+k;else if(mo==null&&d==null&&toks.length===1)mo=+k;else if(d==null)d=+k;else rest.push(k)}else rest.push(k)});
+  if(!mo&&d!=null&&toks.length===2&&yr==null){}
+  if(mo&&!rest.length)return{y:yr||undefined,m:mo,d:d||undefined};
+  if(/^(شهر|month)\s*\d{1,2}$/.test(t))return{m:+t.replace(/\D/g,'')};
+  return null;
+}
+function inD(v,p){if(!v)return false;var x=new Date(v);if(isNaN(x))return false;return(!p.y||x.getFullYear()===p.y)&&(!p.m||x.getMonth()+1===p.m)&&(!p.d||x.getDate()===p.d)}
+function fd(v){var x=new Date(v);return x.toLocaleDateString('en-GB')+' '+x.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
 function krender(){
-  var q=kin.value.trim().toLowerCase(),L=[];
-  [['students','👥 الطلاب','Students'],['exams','📋 الامتحانات','Exams'],['bank','📚 بنك الأسئلة','Question Bank'],['schedule','🗓️ الجدول','Schedule'],['results','📊 النتائج','Results']].forEach(function(t){if(!q||(t[1]+t[2]).toLowerCase().indexOf(q)>-1)L.push([t[1],'تبويب',function(){showAdminTab(t[0])}])});
-  if(q){try{allStudents.forEach(function(u){if((u.name+' '+u.username).toLowerCase().indexOf(q)>-1)L.push(['🎓 '+u.name,'@'+u.username,function(){openStudentDetail(u.id)}])});
-    allExams.forEach(function(e){if((e.title||'').toLowerCase().indexOf(q)>-1)L.push(['📝 '+e.title,'Exam',function(){openExamAnalysis(e.id)}])})}catch(e){}}
-  kitems=L.slice(0,40);ksel=0;kul.innerHTML=kitems.map(function(i,n){return '<li data-i="'+n+'" class="'+(n?'':'sel')+'"><span>'+i[0].replace(/</g,'&lt;')+'</span><small>'+i[1]+'</small></li>'}).join('')||'<li>لا نتائج</li>';
+  var q=kin.value.trim(),ql=q.toLowerCase(),L=[],esc2=function(t){return String(t==null?'':t).replace(/</g,'&lt;')};
+  [['students','👥 الطلاب','Students'],['exams','📋 الامتحانات','Exams'],['bank','📚 بنك الأسئلة','Question Bank'],['schedule','🗓️ الجدول','Schedule'],['results','📊 النتائج','Results']].forEach(function(t){if(!ql||(t[1]+t[2]).toLowerCase().indexOf(ql)>-1)L.push([t[1],'تبويب',function(){showAdminTab(t[0])}])});
+  if(q){
+    var pd=pdate(q);
+    if(pd){
+      try{
+        var seen={};allSchedules.forEach(function(x){if(inD(x.opens_at,pd)||inD(x.closes_at,pd)){var e=allExams.find(function(e){return e.id===x.exam_id});if(e&&!seen[x.id]){seen[x.id]=1;L.push(['🗓️ '+e.title,'موعد · '+fd(x.opens_at),function(){openExamAnalysis(e.id)}])}}});
+        allExams.forEach(function(e){if(inD(e.created_at,pd))L.push(['📝 '+e.title,'أُنشئ · '+fd(e.created_at),function(){openExamAnalysis(e.id)}])});
+        allResults.filter(function(r){return inD(r.submitted_at,pd)&&r.admin_note!==STARTED_NOTE}).sort(function(a,b){return new Date(b.submitted_at)-new Date(a.submitted_at)}).forEach(function(r){
+          var u=allStudents.find(function(u){return String(u.id)===String(r.student_id)})||{name:'?'},e=allExams.find(function(e){return e.id===r.exam_id})||{title:'?'};
+          L.push(['🎓 '+u.name+' — '+e.title+(r.score!=null?' · '+Math.round(r.score)+'%':''),fd(r.submitted_at),function(){openStudentDetail(r.student_id)}])});
+      }catch(e){}
+      if(L.length===5)L.push(['لا يوجد امتحان أو نتيجة في هذا التاريخ','',function(){}]);
+    }else{
+      try{
+        allStudents.forEach(function(u){if(((u.name||'')+' '+(u.username||'')+' '+(u.email||'')+' '+(u.whatsapp||'')).toLowerCase().indexOf(ql)>-1)L.push(['🎓 '+u.name,'@'+u.username,function(){openStudentDetail(u.id)}])});
+        allTeachers.forEach(function(u){if(((u.name||'')+' '+(u.username||'')+' '+(u.subject||'')+' '+(u.email||'')).toLowerCase().indexOf(ql)>-1)L.push(['👨‍🏫 '+u.name,(u.subject||'مدرس')+' · طلابه','' ].concat([function(){showAdminTab('students');openLinksModal('teacher',u.id)}]).slice(0,2).concat([function(){showAdminTab('students');openLinksModal('teacher',u.id)}]).slice(0,3))});
+        allExams.forEach(function(e){if(((e.title||'')+' '+(e.subject||'')).toLowerCase().indexOf(ql)>-1)L.push(['📝 '+e.title,e.subject||'Exam',function(){openExamAnalysis(e.id)}])});
+      }catch(e){}
+    }
+  }
+  kitems=L.slice(0,40);ksel=0;
+  kul.innerHTML=kitems.map(function(i,n){return '<li data-i="'+n+'" class="'+(n?'':'sel')+'"><span>'+esc2(i[0])+'</span><small>'+esc2(i[1])+'</small></li>'}).join('')||'<li>لا نتائج</li>';
+}
+function sbtn(){
+  var b=document.getElementById('fxSb'),ok=typeof currentUser!=='undefined'&&currentUser&&currentUser.role!=='student';
+  if(!ok){if(b)b.remove();return}
+  if(b)return;b=document.createElement('button');b.id='fxSb';b.textContent='🔍';b.title='بحث · Search (Ctrl+K)';b.onclick=kopen;document.body.appendChild(b);
 }
 function kgo(n){var it=kitems[n];if(it){kclose();try{it[2]()}catch(e){}}}
 kin.oninput=krender;kul.onclick=function(e){var l=e.target.closest('li');if(l&&l.dataset.i!=null)kgo(+l.dataset.i)};K.onclick=function(e){if(e.target===K)kclose()};
@@ -3313,7 +3357,7 @@ addEventListener('keydown',function(e){
 });
 function scan(root){
   if(!root.querySelectorAll)return;
-  langUI();login();hero();countdown();result();badges(root);
+  sbtn();langUI();login();hero();countdown();result();badges(root);
   root.querySelectorAll('.ph-chip b,.stat-num').forEach(count);
   root.querySelectorAll('.ph-ring svg').forEach(ring);
   root.querySelectorAll('.ph-ayah').forEach(verse);
