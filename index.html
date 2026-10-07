@@ -267,6 +267,47 @@
     body.dark ::-webkit-scrollbar-track{background:#16223A}
     .home-sub{color:var(--muted);font-size:14px;margin:-6px 0 22px}
   </style>
+<link href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;700&family=Scheherazade+New:wght@500;700&display=swap" rel="stylesheet"/>
+<style id="fx-style">
+.section-title,.ph-lvl .t{font-family:'Cinzel','Reem Kufi',serif}
+.ph-ayah{font-family:'Scheherazade New','Amiri',serif;font-size:20px;transition:opacity .6s,transform .6s}
+.ph-ayah.fx-out{opacity:0;transform:translateY(4px)}
+.ph-hijri{font-family:'Reem Kufi',sans-serif;font-size:12px;color:#C9D4E6;margin:-2px 0 4px;opacity:.9}
+/* section dividers */
+.section-title::after{content:"";flex:1;height:1px;margin-inline-start:6px;background:linear-gradient(90deg,rgba(201,168,76,.7),rgba(201,168,76,0))}
+/* shimmer on cards */
+.stat-box,.ph-chip{position:relative;overflow:hidden;transition:transform .25s,box-shadow .25s,border-color .25s}
+.stat-box::after,.ph-chip::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,226,140,.35) 50%,transparent 65%);transform:translateX(-120%);pointer-events:none}
+.stat-box:hover,.ph-chip:hover{transform:translateY(-3px);border-color:#C9A84C;box-shadow:0 0 0 1px rgba(201,168,76,.5),0 8px 22px rgba(201,168,76,.28)}
+.stat-box:hover::after,.ph-chip:hover::after{transform:translateX(120%);transition:transform .8s}
+.card:hover{box-shadow:0 0 0 1px rgba(201,168,76,.45),0 10px 26px rgba(201,168,76,.18)}
+/* skeleton */
+#homeHero:empty,#profileHero:empty{min-height:170px;border-radius:18px;background:linear-gradient(100deg,#0B1B33 30%,#1d3d6e 50%,#0B1B33 70%) 0 0/250% 100%;animation:fxsk 1.4s linear infinite}
+@keyframes fxsk{to{background-position:-250% 0}}
+/* empty states */
+.empty-state .icon{display:inline-block;animation:fxfloat 3.5s ease-in-out infinite;filter:drop-shadow(0 0 10px rgba(201,168,76,.55))}
+.empty-state::after{content:"﴿ ✦ ﴾";display:block;color:#C9A84C;margin-top:10px;opacity:.75;direction:rtl}
+@keyframes fxfloat{50%{transform:translateY(-8px)}}
+/* gold stars burst */
+.fx-star{position:fixed;z-index:9999;pointer-events:none;color:#E6CC85;font-size:18px;animation:fxburst 1.3s ease-out forwards;text-shadow:0 0 8px #C9A84C}
+@keyframes fxburst{to{transform:translate(var(--dx),var(--dy)) rotate(260deg) scale(.3);opacity:0}}
+/* Ramadan */
+body.ramadan .ph{background-image:radial-gradient(circle at 92% 18%,rgba(255,214,120,.25),transparent 38%),linear-gradient(135deg,#0B1B33,#2a1d3f)}
+body.ramadan .ph-in::before{content:"🌙";position:absolute;top:10px;inset-inline-start:18px;font-size:20px;opacity:.85}
+body.ramadan .ph-in::after{content:"🏮";position:absolute;bottom:10px;inset-inline-end:18px;font-size:24px;animation:fxsway 3s ease-in-out infinite;transform-origin:top center}
+@keyframes fxsway{50%{transform:rotate(8deg)}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.fx-badges{position:relative;padding:0 28px 22px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.fx-badges h4{width:100%;margin:0 0 2px;font:600 12px 'Reem Kufi','Inter',sans-serif;letter-spacing:.5px;color:#E6CC85}
+.fx-b{width:92px;text-align:center;padding:10px 4px 8px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(201,168,76,.45);color:#fff;transition:transform .25s,box-shadow .25s}
+.fx-b i{display:block;font-style:normal;font-size:28px;line-height:1.2}
+.fx-b b{display:block;font:700 13px 'Reem Kufi',sans-serif;color:#E6CC85;margin-top:2px}
+.fx-b small{display:block;font-size:10px;color:#C9D4E6}
+.fx-b.on{box-shadow:0 0 14px rgba(201,168,76,.35);animation:fxpop .6s backwards}
+.fx-b.on:hover{transform:translateY(-3px) scale(1.05)}
+.fx-b.off{opacity:.38;filter:grayscale(1);border-style:dashed}
+@keyframes fxpop{from{transform:scale(.4);opacity:0}}
+</style>
 </head>
 <body>
 
@@ -3033,6 +3074,83 @@ function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('page-login').classList.contains('active'))login();});
+</script>
+<script id="fx-script">
+(function(){
+var V=['﴿ وَقُل رَّبِّ زِدْنِي عِلْمًا ﴾','﴿ اقْرَأْ بِاسْمِ رَبِّكَ الَّذِي خَلَقَ ﴾','﴿ وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا ﴾','﴿ فَاذْكُرُونِي أَذْكُرْكُمْ ﴾','﴿ إِنَّ مَعَ الْعُسْرِ يُسْرًا ﴾','« خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ »','« مَنْ سَلَكَ طَرِيقًا يَلْتَمِسُ فِيهِ عِلْمًا سَهَّلَ اللَّهُ لَهُ طَرِيقًا إِلَى الْجَنَّةِ »'];
+var day=Math.floor(Date.now()/864e5),vi=day%V.length;
+var hj=new Date();
+function hijri(f,o){try{return new Intl.DateTimeFormat(f,o).format(hj)}catch(e){return ''}}
+var hStr=hijri('ar-SA-u-ca-islamic-umalqura-nu-latn',{day:'numeric',month:'long',year:'numeric'});
+var hMonth=parseInt(hijri('en-u-ca-islamic-umalqura',{month:'numeric'}),10);
+if(hMonth===9)document.body.classList.add('ramadan');
+function count(el){
+  var t=el.textContent.trim();if(!/^\d+$/.test(t)||el._w===t)return;
+  var n=+t,s=performance.now(),d=900;el._w=t;
+  (function f(now){var p=Math.min(1,(now-s)/d),e=1-Math.pow(1-p,3),v=String(Math.round(n*e));el._w=v;el.textContent=v;if(p<1&&el._w===v)requestAnimationFrame(f);else el._w=String(n)})(s);
+}
+function ring(svg){
+  var c=svg.querySelectorAll('circle')[1];if(!c||c.dataset.fx)return;c.dataset.fx=1;
+  var a=c.getAttribute('stroke-dasharray');c.setAttribute('stroke-dasharray','0 999');
+  c.getBoundingClientRect();c.style.transition='stroke-dasharray 1.4s cubic-bezier(.2,.8,.2,1)';
+  requestAnimationFrame(function(){c.setAttribute('stroke-dasharray',a)});
+}
+function verse(el){
+  if(el.dataset.fxd)return;el.dataset.fxd=1;
+  el.classList.add('fx-out');
+  setTimeout(function(){el.textContent=V[vi];el.classList.remove('fx-out')},50);
+  setInterval(function(){vi=(vi+1)%V.length;el.classList.add('fx-out');setTimeout(function(){el.textContent=V[vi];el.classList.remove('fx-out')},600)},25000);
+}
+function burst(x,y){
+  for(var i=0;i<16;i++){var s=document.createElement('span');s.className='fx-star';s.textContent=i%2?'✦':'✧';
+    var a=Math.PI*2*i/16,r=70+Math.random()*80;
+    s.style.left=x+'px';s.style.top=y+'px';s.style.setProperty('--dx',Math.cos(a)*r+'px');s.style.setProperty('--dy',Math.sin(a)*r+'px');
+    document.body.appendChild(s);setTimeout(function(n){n.remove()}.bind(null,s),1400);}
+}
+var BD=[
+['first','🌱','أول خطوة','Exam taken',function(m){return m.n>=1}],
+['pass','🏅','أول نجاح','First pass',function(m){return m.p>=1}],
+['perfect','💯','الدرجة الكاملة','Score 100%',function(m){return m.best>=100}],
+['five','📚','مثابر','5 exams',function(m){return m.n>=5}],
+['star','⭐','متفوق','Avg ≥ 85%',function(m){return m.n>=3&&m.avg>=85}],
+['master','👑','متقن','5 exams passed',function(m){return m.p>=5}],
+['streak','🔥','مواظب','2 weeks in a row',function(m){return m.run>=2}],
+['month','🌙','نشيط الشهر','3 this month',function(m){return m.mo>=3}]];
+function metrics(){
+  var mine=allResults.filter(function(r){return String(r.student_id)===String(currentUser.id)&&r.admin_note!==STARTED_NOTE}),g=gradedOf(mine);
+  var wk=[...new Set(g.map(function(r){return Math.floor(new Date(r.submitted_at)/6048e5)}))].sort(function(a,b){return a-b}),run=wk.length?1:0,mx=run;
+  for(var i=1;i<wk.length;i++){run=wk[i]===wk[i-1]+1?run+1:1;mx=Math.max(mx,run)}
+  var now=new Date();
+  return{n:g.length,p:new Set(mine.filter(function(r){return r.passed}).map(function(r){return r.exam_id})).size,
+    best:g.length?Math.max.apply(null,g.map(function(r){return r.score})):0,avg:g.length?g.reduce(function(a,r){return a+r.score},0)/g.length:0,run:mx,
+    mo:g.filter(function(r){var d=new Date(r.submitted_at);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()}).length};
+}
+function badges(root){
+  if(typeof currentUser==='undefined'||!currentUser||currentUser.role!=='student')return;
+  root.querySelectorAll('#homeHero .ph,#profileHero .ph').forEach(function(ph){
+    if(ph.querySelector('.fx-badges'))return;
+    var m;try{m=metrics()}catch(e){return}
+    var seen=[];try{seen=JSON.parse(localStorage.getItem('mi_badges_'+currentUser.id)||'[]')}catch(e){}
+    var got=[],h='<h4>الأوسمة · Badges</h4>';
+    BD.forEach(function(b){var on=b[4](m);if(on)got.push(b[0]);
+      h+='<div class="fx-b '+(on?'on':'off')+'" title="'+b[3]+'"><i>'+b[1]+'</i><b>'+b[2]+'</b><small>'+b[3]+'</small></div>'});
+    var d=document.createElement('div');d.className='fx-badges';d.innerHTML=h;ph.appendChild(d);
+    if(got.some(function(x){return seen.indexOf(x)<0})&&seen.length){var r=d.getBoundingClientRect();burst(r.left+r.width/2,r.top+20)}
+    try{localStorage.setItem('mi_badges_'+currentUser.id,JSON.stringify(got))}catch(e){}
+  });
+}
+function scan(root){
+  if(!root.querySelectorAll)return;
+  badges(root);
+  root.querySelectorAll('.ph-chip b,.stat-num').forEach(count);
+  root.querySelectorAll('.ph-ring svg').forEach(ring);
+  root.querySelectorAll('.ph-ayah').forEach(verse);
+  root.querySelectorAll('.ph-greet').forEach(function(g){if(hStr&&!g.nextElementSibling.classList.contains('ph-hijri')){var d=document.createElement('div');d.className='ph-hijri';d.textContent=hStr;g.after(d)}});
+  root.querySelectorAll('.result-card').forEach(function(r){if(!r.dataset.fxb){r.dataset.fxb=1;var b=r.getBoundingClientRect();burst(b.left+b.width/2,b.top+80)}});
+}
+var q=0;new MutationObserver(function(){if(q)return;q=1;requestAnimationFrame(function(){q=0;scan(document)})}).observe(document.body,{childList:true,subtree:true,characterData:true});
+scan(document);
+})();
 </script>
 </body>
 </html>
