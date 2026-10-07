@@ -363,12 +363,14 @@
       <div class="section-header">
         <div class="section-title" style="margin:0">👥 User Management</div>
         <div class="flex gap-10">
+          <label class="btn btn-outline" style="width:auto;padding:10px 18px;cursor:pointer" title="CSV columns: name, username, password, email, whatsapp">📥 Import CSV<input type="file" accept=".csv,.txt" style="display:none" onchange="importStudentsCSV(this)"/></label>
+          <select id="usersFilter" onchange="renderStudentsTable()" style="padding:9px 12px;border:2px solid var(--border);border-radius:10px;background:#F5FAFF;font-size:13px"></select>
           <button class="btn btn-outline" style="width:auto;padding:10px 18px" onclick="openModal('modalAddTeacher')">+ Add Teacher</button>
           <button class="btn btn-primary" style="width:auto;padding:10px 18px" onclick="openModal('modalAddStudent')">+ Add Student</button>
         </div>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th>Name</th><th>Role</th><th>Username</th><th>Email</th><th>WhatsApp</th><th>Joined</th><th>Actions</th></tr></thead>
+        <table><thead><tr><th>Name</th><th>Role</th><th>Username</th><th>Email</th><th>WhatsApp</th><th>Teacher / Students</th><th>Joined</th><th>Actions</th></tr></thead>
         <tbody id="studentsTable"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px">No users yet</td></tr></tbody></table>
       </div>
     </div>
@@ -623,6 +625,7 @@
     <div class="field"><label>Password</label><input type="password" id="newStudentPass" placeholder="Set password"/></div>
     <div class="field"><label>Email (optional)</label><input type="email" id="newStudentEmail" placeholder="student@email.com"/></div>
     <div class="field"><label>WhatsApp (optional)</label><input type="text" id="newStudentWA" placeholder="+447911123456"/></div>
+    <div class="field"><label>Teachers (optional)</label><div id="newStudentTeachers" style="max-height:130px;overflow-y:auto"></div></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modalAddStudent')">Cancel</button>
       <button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="addUser('student')">Create Account</button>
@@ -647,6 +650,21 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modalAddTeacher')">Cancel</button>
       <button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="addUser('teacher')">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- Teacher <-> Student links -->
+<div class="modal-overlay" id="modalLinks">
+  <div class="modal">
+    <div class="modal-title"><span id="lkTitle"></span> <button class="close-btn" onclick="closeModal('modalLinks')">✕</button></div>
+    <div id="lkAlert"></div>
+    <input type="text" id="lkSearch" placeholder="🔍 Search…" oninput="drawLinksList()" style="width:100%;background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;margin-bottom:8px"/>
+    <div style="display:flex;gap:8px;margin-bottom:8px"><button class="btn-sm" type="button" onclick="lkAll(true)">Select all shown</button><button class="btn-sm" type="button" onclick="lkAll(false)">Clear shown</button></div>
+    <div id="lkList" style="max-height:320px;overflow-y:auto"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modalLinks')">Cancel</button>
+      <button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="saveLinksModal()">💾 Save</button>
     </div>
   </div>
 </div>
@@ -696,7 +714,7 @@
 <!-- Create Exam -->
 <div class="modal-overlay" id="modalCreateExam">
   <div class="modal" style="max-width:760px">
-    <div class="modal-title">Create New Exam <button class="close-btn" onclick="closeModal('modalCreateExam')">✕</button></div>
+    <div class="modal-title">Create New Exam <button class="close-btn" onclick="closeExamModal()">✕</button></div>
     <div id="createExamAlert"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="field"><label>Exam Title</label><input type="text" id="examTitle" placeholder="e.g. Tajweed Level 1"/></div>
@@ -726,9 +744,14 @@
     <div class="field"><label>Description</label><textarea id="examDesc" placeholder="Brief description…" style="min-height:60px"></textarea></div>
     <hr class="divider"/>
     <div class="field">
-      <label>👥 Assign to specific students (leave empty = all students)</label>
-      <div style="margin-bottom:8px"><label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)"><input type="checkbox" id="examAssignAll" checked onchange="toggleAssignAll()" style="width:auto"/> Available to all students</label></div>
-      <div class="student-pick-list" id="examStudentPickList" style="display:none"></div>
+      <label>👥 Who can take this exam?</label>
+      <div id="examTeacherQuick" style="margin-bottom:8px"><select id="examPickTeacher" onchange="pickByTeacher()" style="width:100%;background:#F5FAFF;border:2px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px"></select></div>
+      <div style="margin-bottom:8px"><label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)"><input type="checkbox" id="examAssignAll" checked onchange="toggleAssignAll()" style="width:auto"/> <span id="examAssignAllTxt">Available to all students</span></label></div>
+      <div id="examPickWrap" style="display:none">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><input type="text" id="examPickSearch" placeholder="🔍 Search student…" oninput="filterExamPick()" style="flex:1;min-width:140px;background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"/><button class="btn-sm" type="button" onclick="pickAllShown(true)">Select all</button><button class="btn-sm" type="button" onclick="pickAllShown(false)">Clear</button></div>
+        <div class="student-pick-list" id="examStudentPickList" style="display:grid"></div>
+        <div class="text-muted" id="examPickCount" style="font-size:12px;margin-top:6px"></div>
+      </div>
     </div>
     <hr class="divider"/>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -749,8 +772,9 @@
     <div id="questionsBuilder"></div>
     <button class="add-q-btn" onclick="addQuestion()">+ Add New Question</button>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal('modalCreateExam')">Cancel</button>
-      <button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="saveExam()">💾 Save Exam</button>
+      <button class="btn btn-ghost" onclick="closeExamModal()">Cancel</button>
+      <button class="btn btn-outline" style="width:auto;padding:10px 20px" onclick="saveExam(false)" title="Hidden from students — come back and finish later">📝 Save as draft</button>
+      <button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="saveExam(true)">🚀 Save &amp; publish</button>
     </div>
   </div>
 </div>
@@ -1084,8 +1108,107 @@ async function loadAllData(){
   allTeachers=allUsers.filter(u=>u.role==='teacher');
   [,allExams,allResults,allDiscounts,allSchedules,allQuestionBank,allNotifications,allRatings]=
     await Promise.all([Promise.resolve(allUsers),j(eR),j(rR),j(dR),j(scR),j(bR),j(nR),j(tR)]);
-  secRows=allQuestionBank.filter(q=>q.text==='__SECTIONS__');allQuestionBank=allQuestionBank.filter(q=>q.text!=='__SECTIONS__');
+  secRows=allQuestionBank.filter(q=>q.text==='__SECTIONS__');linkRow=allQuestionBank.find(q=>q.text==='__LINKS__')||null;try{links=JSON.parse(linkRow.subject)||{};}catch{links={};}allQuestionBank=allQuestionBank.filter(q=>q.text!=='__SECTIONS__'&&q.text!=='__LINKS__');
 }
+
+// ── TEACHER ↔ STUDENT LINKS (stored like sections: one hidden row in question_bank) ──
+let links={},linkRow=null;
+const teachersOf=sid=>(links[sid]||[]).map(String);
+const studentIdsOf=tid=>allStudents.filter(s=>teachersOf(s.id).includes(String(tid))).map(s=>s.id);
+const tName=id=>(allTeachers.find(t=>String(t.id)===String(id))||{}).name||'?';
+async function saveLinks(){
+  const sub=JSON.stringify(links);
+  const body=linkRow?{subject:sub}:{text:'__LINKS__',subject:sub,options:['','','',''],correct:0,points:1,created_by:currentUser.id,created_at:new Date().toISOString()};
+  const res=await sb(linkRow?`question_bank?id=eq.${linkRow.id}`:'question_bank',{method:linkRow?'PATCH':'POST',body:JSON.stringify(body),prefer:'return=minimal'});
+  return res.ok;
+}
+let lkMode='',lkId='',lkSel=new Set();
+function openLinksModal(mode,id){
+  lkMode=mode;lkId=String(id);
+  lkSel=new Set(mode==='teacher'?studentIdsOf(id).map(String):teachersOf(id));
+  const u=(mode==='teacher'?allTeachers:allStudents).find(x=>String(x.id)===lkId)||{};
+  document.getElementById('lkTitle').textContent=mode==='teacher'?'👥 Students of '+u.name:'👨‍🏫 Teachers of '+u.name;
+  document.getElementById('lkSearch').value='';document.getElementById('lkAlert').innerHTML='';
+  drawLinksList();openModal('modalLinks');
+}
+const lkItems=()=>{const q=(document.getElementById('lkSearch').value||'').toLowerCase();return(lkMode==='teacher'?allStudents:allTeachers).filter(x=>(x.name||'').toLowerCase().includes(q));};
+function drawLinksList(){
+  document.getElementById('lkList').innerHTML=lkItems().map(x=>`<label style="display:flex;align-items:center;gap:8px;padding:7px 4px;cursor:pointer;border-bottom:1px solid var(--border)"><input type="checkbox" style="width:auto" ${lkSel.has(String(x.id))?'checked':''} onchange="lkToggle('${x.id}',this.checked)"/> ${esc(x.name)}${lkMode==='teacher'&&teachersOf(x.id).length?`<span class="text-muted" style="font-size:11px">· ${teachersOf(x.id).map(tName).map(esc).join(', ')}</span>`:''}</label>`).join('')||'<div class="text-muted">Nothing to show</div>';
+}
+function lkToggle(id,on){on?lkSel.add(String(id)):lkSel.delete(String(id));}
+function lkAll(on){lkItems().forEach(x=>lkToggle(x.id,on));drawLinksList();}
+async function saveLinksModal(){
+  showLoading('Saving…');
+  if(lkMode==='teacher'){allStudents.forEach(s=>{const a=teachersOf(s.id).filter(x=>x!==lkId);if(lkSel.has(String(s.id)))a.push(lkId);if(a.length)links[s.id]=a;else delete links[s.id];});}
+  else{if(lkSel.size)links[lkId]=[...lkSel];else delete links[lkId];}
+  const ok=await saveLinks();
+  if(ok){await loadAllData();hideLoading();closeModal('modalLinks');renderStudentsTable();}
+  else{hideLoading();document.getElementById('lkAlert').innerHTML='<div class="alert alert-error">Could not save. Please try again.</div>';}
+}
+function pickableStudents(){
+  if(!currentUser||currentUser.role!=='teacher')return allStudents;
+  const ids=new Set(studentIdsOf(currentUser.id).map(String));
+  return ids.size?allStudents.filter(s=>ids.has(String(s.id))):allStudents;
+}
+function toggleAssignAll(){
+  document.getElementById('examPickWrap').style.display=document.getElementById('examAssignAll').checked?'none':'block';updPickCount();
+}
+function updPickCount(){const n=document.querySelectorAll('.examStudentChk:checked').length;const el=document.getElementById('examPickCount');if(el)el.textContent=n+' selected';}
+function filterExamPick(){const q=(document.getElementById('examPickSearch').value||'').toLowerCase();document.querySelectorAll('#examStudentPickList>div').forEach(d=>d.style.display=(d.dataset.n||'').includes(q)?'':'none');}
+function pickAllShown(on){document.querySelectorAll('#examStudentPickList>div').forEach(d=>{if(d.style.display!=='none')d.querySelector('input').checked=on;});updPickCount();}
+function pickByTeacher(){
+  const sel=document.getElementById('examPickTeacher');if(!sel.value)return;
+  const ids=new Set(studentIdsOf(sel.value).map(String));
+  if(!ids.size){alert('This teacher has no students yet. Add them from Users → 👥 Students.');sel.value='';return;}
+  document.getElementById('examAssignAll').checked=false;toggleAssignAll();
+  document.querySelectorAll('.examStudentChk').forEach(c=>{if(ids.has(c.value))c.checked=true;});
+  sel.value='';updPickCount();
+}
+function closeExamModal(){if(confirm('Close without saving? Anything not saved will be lost.\n(Use "Save as draft" to continue later.)'))closeModal('modalCreateExam');}
+
+// ── EXTRAS: retake, duplicate, analysis, CSV import, autosave ──
+async function allowRetake(id){
+  if(!confirm('Delete this attempt so the student can take the exam again?'))return;
+  showLoading();await sb(`results?id=eq.${id}`,{method:'DELETE',prefer:''});await loadAllData();
+  renderTeacherResultsTable();if(typeof renderResultsTable==='function')renderResultsTable();renderLeaderboard();hideLoading();
+}
+async function duplicateExam(id){
+  const e=allExams.find(x=>x.id===id);if(!e)return;showLoading('Duplicating…');
+  const r=await sb('exams',{method:'POST',prefer:'return=minimal',body:JSON.stringify({title:e.title+' (copy)',subject:e.subject,level:e.level,duration_minutes:e.duration_minutes,passing_score:e.passing_score,description:e.description,questions:e.questions,assigned_students:e.assigned_students||[],auto_grade:e.auto_grade,result_mode:e.result_mode,is_active:false,created_by:currentUser.id,created_at:new Date().toISOString()})});
+  await loadAllData();hideLoading();renderAdminExams();renderTeacherExamList();updateAdminStats();
+  if(!r.ok)alert('Could not duplicate the exam.');
+}
+function openExamAnalysis(id){
+  const ex=allExams.find(e=>e.id===id);if(!ex)return;
+  const rs=allResults.filter(r=>r.exam_id===id&&r.admin_note!==STARTED_NOTE&&r.graded!==undefined&&r.answers);
+  const rows=(ex.questions||[]).map((q,i)=>{let ok=0,n=0;rs.forEach(r=>{const g=gradeQ(q,(r.answers||{})[i]);if(g.status==='manual')return;n++;if(g.status==='correct')ok++;});return{q,i,n,pct:n?Math.round(ok/n*100):null};}).sort((a,b)=>(a.pct===null)-(b.pct===null)||(a.pct-b.pct));
+  const taken=new Set(rs.map(r=>String(r.student_id)));
+  const ct=allTeachers.find(x=>String(x.id)===String(ex.created_by));
+  const aud=(ex.assigned_students||[]).length?allStudents.filter(s=>ex.assigned_students.map(String).includes(String(s.id))):(ct&&studentIdsOf(ct.id).length?allStudents.filter(s=>studentIdsOf(ct.id).map(String).includes(String(s.id))):allStudents);
+  const miss=aud.filter(s=>!taken.has(String(s.id)));
+  document.getElementById('tdTitle').textContent='📉 '+ex.title;
+  document.getElementById('tdBody').innerHTML=`<div class="text-muted" style="margin-bottom:10px">${rs.length} attempts · ${miss.length} of ${aud.length} students have not taken it</div>`
+   +(miss.length?`<div class="alert alert-info" style="margin-bottom:12px;font-size:12px">Not taken: ${miss.map(s=>esc(s.name)).join(', ')}</div>`:'')
+   +'<div style="font-weight:600;margin-bottom:6px">Questions — hardest first</div>'
+   +(rows.map(r=>`<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)"><strong style="min-width:44px;color:${r.pct===null?'var(--muted)':r.pct<50?'var(--danger)':'var(--success)'}">${r.pct===null?'—':r.pct+'%'}</strong><span style="flex:1;font-size:13px">Q${r.i+1}. ${esc(r.q.text)}</span></div>`).join('')||'<div class="text-muted">No questions</div>');
+  openModal('modalStudent');
+}
+function importStudentsCSV(inp){
+  const f=inp.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=async()=>{
+    const rows=String(rd.result).replace(/^\uFEFF/,'').split(/\r?\n/).map(l=>l.split(/[,;\t]/).map(x=>x.trim())).filter(r=>r[0]);
+    if(rows.length&&/^(name|الاسم)$/i.test(rows[0][0]))rows.shift();
+    const have=new Set([...allStudents,...allTeachers].map(u=>(u.username||'').toLowerCase()));const ok=[],skip=[];
+    rows.forEach(r=>{const name=r[0],u=(r[1]||'').toLowerCase(),pw=r[2];if(!name||!u||!pw||have.has(u)){skip.push(name||'?');return;}have.add(u);ok.push({name,username:u,password:pw,email:r[3]||'',whatsapp:r[4]||'',role:'student',created_at:new Date().toISOString()});});
+    if(!ok.length){alert('Nothing to import.\nColumns: name, username, password, email, whatsapp');inp.value='';return;}
+    if(!confirm('Import '+ok.length+' students?'+(skip.length?'\n\nSkipped (missing data or duplicate username): '+skip.join(', '):''))){inp.value='';return;}
+    showLoading('Importing…');const res=await sb('users',{method:'POST',body:JSON.stringify(ok),prefer:'return=minimal'});
+    await loadAllData();renderStudentsTable();updateAdminStats();populateDropdowns();hideLoading();inp.value='';
+    if(!res.ok)alert('Import failed. Please check the file and try again.');
+  };rd.readAsText(f);
+}
+function saveDraft(){if(activeExam&&activeResultId)store.set('mi_draft',JSON.stringify({rid:activeResultId,examId:activeExam.id,answers,questionIndex,deadline:examStartTime+activeExam.duration_minutes*60000}));}
+const getDraft=()=>{try{return JSON.parse(store.get('mi_draft'));}catch{return null;}};
 
 // ── LEADERBOARD ──────────────────────────────
 function renderLeaderboard(){
@@ -1146,35 +1269,49 @@ async function addUser(role){
   const email=document.getElementById(emailId).value.trim();
   const whatsapp=document.getElementById(waId).value.trim();
   const subject=isTeacher?(document.getElementById('newTeacherSubject')?.value.trim()||''):'';
+  const pickedTeachers=isTeacher?[]:[...document.querySelectorAll('.newStuTeacher:checked')].map(c=>c.value);
   const alertEl=document.getElementById(alertId);
   if(!name||!username||!password){alertEl.innerHTML='<div class="alert alert-error">Name, username and password required.</div>';return;}
   showLoading(`Creating ${role}…`);
   const payload={name,username,password,email,whatsapp,role,created_at:new Date().toISOString()};
   if(isTeacher)payload.subject=subject;
-  const res=await sb('users',{method:'POST',body:JSON.stringify(payload)});
-  const data=await res.json();hideLoading();
+  let res=await sb('users',{method:'POST',body:JSON.stringify(payload)});
+  let data=await res.json().catch(()=>({}));
+  if(!res.ok&&isTeacher&&'subject' in payload&&/subject/i.test(JSON.stringify(data))){delete payload.subject;res=await sb('users',{method:'POST',body:JSON.stringify(payload)});data=await res.json().catch(()=>({}));}
+  hideLoading();
   if(res.ok){
+    if(pickedTeachers.length&&data&&data[0]){links[data[0].id]=pickedTeachers;await saveLinks();}
     await loadAllData();renderStudentsTable();updateAdminStats();populateDropdowns();closeModal(modalId);
     [nameId,userIdEl,passId,emailId,waId].forEach(id=>document.getElementById(id).value='');
     alertEl.innerHTML='';
-  }else{alertEl.innerHTML=`<div class="alert alert-error">${data.message||'Error.'}</div>`;}
+  }else{alertEl.innerHTML=`<div class="alert alert-error">${esc((data&&(data.message||data.error))||'Error ('+res.status+')')}${data&&data.hint?' — '+esc(data.hint):''}${data&&data.details?' ('+esc(data.details)+')':''}</div>`;}
 }
 
 function renderStudentsTable(){
   const tbody=document.getElementById('studentsTable');
-  const allUsers=[...allStudents,...allTeachers].sort((a,b)=>a.name.localeCompare(b.name));
-  if(!allUsers.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px">No users yet</td></tr>';return;}
-  tbody.innerHTML=allUsers.map(s=>{
+  const fs=document.getElementById('usersFilter');
+  if(fs){const v=fs.value;fs.innerHTML='<option value="">All users</option><option value="__students">Students only</option><option value="__teachers">Teachers only</option><option value="__none">Students without a teacher</option>'+allTeachers.map(x=>`<option value="${x.id}">Students of ${esc(x.name)}</option>`).join('');fs.value=[...fs.options].some(o=>o.value===v)?v:'';}
+  const f=fs?fs.value:'';
+  let list=[...allStudents,...allTeachers].sort((a,b)=>a.name.localeCompare(b.name));
+  if(f==='__students')list=list.filter(u=>u.role==='student');
+  else if(f==='__teachers')list=list.filter(u=>u.role==='teacher');
+  else if(f==='__none')list=list.filter(u=>u.role==='student'&&!teachersOf(u.id).length);
+  else if(f)list=list.filter(u=>u.role==='student'&&teachersOf(u.id).includes(String(f)));
+  if(!list.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px">No users</td></tr>';return;}
+  tbody.innerHTML=list.map(s=>{
     const roleBadge=s.role==='teacher'?'<span class="teacher-badge">📚 Teacher</span>':s.role==='admin'?'<span class="badge badge-sched">⚙️ Admin</span>':'<span class="badge badge-active">🎓 Student</span>';
-    const disc=allDiscounts.filter(d=>d.student_id===s.id);
+    const link=s.role==='teacher'?`<span class="text-muted" style="font-size:12px">${studentIdsOf(s.id).length} students</span>`
+      :(teachersOf(s.id).length?teachersOf(s.id).map(x=>`<span class="teacher-badge">${esc(tName(x))}</span>`).join(' '):'<span style="color:var(--muted)">—</span>');
+    const act=s.role==='teacher'?`<button class="btn-sm" onclick="openLinksModal('teacher','${s.id}')">👥 Students</button> `:s.role==='student'?`<button class="btn-sm" onclick="openLinksModal('student','${s.id}')">👨‍🏫 Teachers</button> `:'';
     return `<tr>
       <td><strong>${s.name}</strong>${s.subject?`<div style="font-size:11px;color:var(--muted)">${s.subject}</div>`:''}  </td>
       <td>${roleBadge}</td>
       <td><code style="background:var(--dark);padding:2px 6px;border-radius:4px;font-size:12px">${s.username}</code></td>
       <td style="color:var(--muted)">${s.email||'—'}</td>
       <td>${s.whatsapp?`<a href="https://wa.me/${s.whatsapp.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-size:12px">📲 ${s.whatsapp}</a>`:'<span style="color:var(--muted)">—</span>'}</td>
+      <td>${link}</td>
       <td style="color:var(--muted);font-size:12px">${s.created_at?new Date(s.created_at).toLocaleDateString():'—'}</td>
-      <td>${s.role!=='admin'?`<button class="btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteUser('${s.id}')">🗑</button>`:''}</td>
+      <td>${act}${s.role!=='admin'?`<button class="btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteUser('${s.id}')">🗑</button>`:''}</td>
     </tr>`;
   }).join('');
 }
@@ -1182,6 +1319,7 @@ function renderStudentsTable(){
 async function deleteUser(id){
   if(!confirm('Delete this user?'))return;
   showLoading();await sb(`users?id=eq.${id}`,{method:'DELETE',prefer:''});
+  let ch=false;if(links[id]){delete links[id];ch=true;}Object.keys(links).forEach(k=>{const a=links[k].filter(x=>String(x)!==String(id));if(a.length!==links[k].length){ch=true;if(a.length)links[k]=a;else delete links[k];}});if(ch)await saveLinks();
   await loadAllData();renderStudentsTable();renderLeaderboard();updateAdminStats();populateDropdowns();hideLoading();
 }
 
@@ -1400,9 +1538,14 @@ function openCreateExamModal(examId){
   const sc=ex?allSchedules.filter(x=>x.exam_id===ex.id).sort((a,b)=>new Date(a.opens_at)-new Date(b.opens_at)):[];
   const cur=sc.find(x=>new Date(x.closes_at)>=new Date())||sc[0];
   set('examOpens',cur?toLocalInput(cur.opens_at):'');set('examCloses',cur?toLocalInput(cur.closes_at):'');
-  const assigned=ex?(ex.assigned_students||[]):[];
-  document.getElementById('examAssignAll').checked=!assigned.length;toggleAssignAll();
-  document.querySelectorAll('.examStudentChk').forEach(c=>c.checked=assigned.includes(c.value));
+  const assigned=ex?(ex.assigned_students||[]).map(String):[];
+  const isT=currentUser.role==='teacher',mine=isT?studentIdsOf(currentUser.id).map(String):[];
+  const allChk=!assigned.length||(mine.length>0&&mine.every(i=>assigned.includes(i)));
+  document.getElementById('examAssignAllTxt').textContent=isT?(mine.length?'All my students':'All students (no students are assigned to you yet)'):'Available to all students';
+  document.getElementById('examTeacherQuick').style.display=isT?'none':'block';
+  document.getElementById('examPickSearch').value='';filterExamPick();
+  document.getElementById('examAssignAll').checked=allChk;
+  document.querySelectorAll('.examStudentChk').forEach(c=>c.checked=assigned.includes(c.value));toggleAssignAll();
   if(ex&&(ex.questions||[]).length)ex.questions.forEach(q=>addQuestion(q));else addQuestion();
   document.querySelector('#modalCreateExam .modal-title').firstChild.textContent=ex?'Edit Exam ':'Create New Exam ';
   openModal('modalCreateExam');
@@ -1413,7 +1556,7 @@ function addQuestion(q){
   const bankId=q.bank_id||(q.created_by&&q.id?q.id:'');
   const opts=q.options||['','','',''];
   div.innerHTML=`<div class="q-num">Question ${idx}${bankId?' <span style="color:var(--muted);font-size:10px">(from bank)</span>':''}</div>
-    <input type="hidden" id="q-bankid-${idx}" value="${bankId}"/>
+    <input type="hidden" id="q-bankid-${idx}" value="${bankId}"/><input type="hidden" id="q-unb-${idx}" value="${q.unbanked?1:''}"/>
     <button class="del-q-btn" onclick="removeQuestion(${idx})">✕ Remove</button>
     <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap">
       <div style="flex:1;min-width:200px"><label style="font-size:11px;color:var(--muted)">QUESTION TEXT</label>
@@ -1469,17 +1612,17 @@ function toggleQuestionAudio(idx){
 }
 function removeQuestion(idx){const el=document.getElementById(`qb-${idx}`);if(el)el.remove();}
 
-async function saveExam(){
+async function saveExam(publish=true){
   const title=document.getElementById('examTitle').value.trim();
   const subject=document.getElementById('examSubject').value.trim();
   const level=document.getElementById('examLevel').value.trim();
-  const duration=parseInt(document.getElementById('examDuration').value);
-  const pass=parseInt(document.getElementById('examPass').value);
+  const duration=parseInt(document.getElementById('examDuration').value)||30;
+  const pass=parseInt(document.getElementById('examPass').value)||60;
   const desc=document.getElementById('examDesc').value.trim();
   const resultMode=document.getElementById('examResultMode').value;
   const alertEl=document.getElementById('createExamAlert');
   const fail=m=>{alertEl.innerHTML=`<div class="alert alert-error">${m}</div>`;alertEl.scrollIntoView({behavior:'smooth'});};
-  if(!title||!duration){fail('Title and duration are required.');return;}
+  if(!title){fail('Exam title is required.');return;}
   const questions=[];let bad='';
   document.querySelectorAll('.question-builder').forEach(qb=>{
     const idx=qb.id.replace('qb-','');
@@ -1490,6 +1633,7 @@ async function saveExam(){
       bonus:document.getElementById(`q-bonus-${idx}`)?.checked||false,
       image:document.getElementById(`q-img-${idx}`)?.value||null,
       bank_id:document.getElementById(`q-bankid-${idx}`)?.value||null,options:['','','',''],correct:0};
+    if(document.getElementById(`q-unb-${idx}`)?.value||(!publish&&!q.bank_id&&type==='mcq'))q.unbanked=true;
     if(type==='mcq'){
       q.options=[0,1,2,3].map(li=>document.getElementById(`q-opt-${idx}-${li}`)?.value.trim()||'');
       const cr=qb.querySelector(`input[name="correct-${idx}"]:checked`);q.correct=cr?parseInt(cr.value):0;
@@ -1504,28 +1648,36 @@ async function saveExam(){
     }
     questions.push(q);
   });
-  if(bad){fail(bad);return;}
-  if(!questions.length){fail('Add at least one question.');return;}
+  if(bad&&publish){fail(bad);return;}
+  if(!questions.length&&publish){fail('Add at least one question (or use Save as draft).');return;}
   const oV=document.getElementById('examOpens').value,cV=document.getElementById('examCloses').value;
   if((oV||cV)&&!(oV&&cV)){fail('Fill both Opens and Closes, or leave both empty.');return;}
   if(oV&&new Date(oV)>=new Date(cV)){fail('Closes time must be after the Opens time.');return;}
   const opensISO=oV?new Date(oV).toISOString():'',closesISO=cV?new Date(cV).toISOString():'';
   const assignAll=document.getElementById('examAssignAll').checked;
-  const assigned_students=assignAll?[]:[...document.querySelectorAll('.examStudentChk:checked')].map(c=>c.value);
+  const isTch=currentUser.role==='teacher';
+  let assigned_students;
+  if(assignAll)assigned_students=(isTch&&studentIdsOf(currentUser.id).length)?studentIdsOf(currentUser.id).map(String):[];
+  else{assigned_students=[...document.querySelectorAll('.examStudentChk:checked')].map(c=>c.value);
+    if(!assigned_students.length){fail('Choose at least one student, or tick the "all" box.');return;}}
   const hasManual=questions.some(q=>q.audio_required||q.type==='short');
   const auto_grade=resultMode==='auto'&&!hasManual;
-  const body={title,subject,level,duration_minutes:duration,passing_score:pass,description:desc,questions,assigned_students,auto_grade,result_mode:resultMode};
-  showLoading('Saving exam…');
+  const body={title,subject,level,duration_minutes:duration,passing_score:pass,description:desc,questions,assigned_students,auto_grade,result_mode:resultMode,is_active:publish};
+  if(!publish&&editingExamId&&(allExams.find(e=>e.id===editingExamId)||{}).is_active&&!confirm('This exam is live. Saving it as a draft will hide it from students. Continue?'))return;
+  showLoading(publish?'Saving exam…':'Saving draft…');
   const res=editingExamId
     ?await sb(`exams?id=eq.${editingExamId}`,{method:'PATCH',body:JSON.stringify(body)})
-    :await sb('exams',{method:'POST',body:JSON.stringify({...body,is_active:true,created_by:currentUser.id,created_at:new Date().toISOString()})});
+    :await sb('exams',{method:'POST',body:JSON.stringify({...body,created_by:currentUser.id,created_at:new Date().toISOString()})});
   const data=await res.json();
   if(res.ok){
     await saveExamWindow(editingExamId||(data&&data[0]&&data[0].id),opensISO,closesISO);
-    if(!editingExamId){
-      const newOnes=questions.filter(q=>!q.bank_id&&q.type==='mcq');
-      if(newOnes.length){showLoading('Saving new questions to bank…');
-        await Promise.all(newOnes.map(q=>sb('question_bank',{method:'POST',body:JSON.stringify({subject,level,points:q.points,text:q.text,options:q.options,correct:q.correct,audio_required:q.audio_required,image:q.image,created_by:currentUser.id,created_at:new Date().toISOString()})})));}
+    if(publish){
+      const exId=editingExamId||(data&&data[0]&&data[0].id);
+      const toBank=questions.filter(q=>!q.bank_id&&q.type==='mcq'&&(!editingExamId||q.unbanked));
+      const flagged=questions.some(q=>q.unbanked);
+      if(toBank.length){showLoading('Saving new questions to bank…');
+        await Promise.all(toBank.map(async q=>{const r=await sb('question_bank',{method:'POST',body:JSON.stringify({subject,level,points:q.points,text:q.text,options:q.options,correct:q.correct,audio_required:q.audio_required,image:q.image,created_by:currentUser.id,created_at:new Date().toISOString()})});try{const d=await r.json();if(r.ok&&d&&d[0])q.bank_id=d[0].id;}catch(e){}}));}
+      if(exId&&(toBank.length||flagged)){questions.forEach(q=>delete q.unbanked);await sb(`exams?id=eq.${exId}`,{method:'PATCH',body:JSON.stringify({questions}),prefer:'return=minimal'});}
     }
     editingExamId=null;await loadAllData();hideLoading();
     renderAdminExams();renderTeacherExamList();updateAdminStats();populateDropdowns();closeModal('modalCreateExam');
@@ -1542,7 +1694,7 @@ function renderAdminExams(){
     return `<div class="card">
       <div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:8px">
         <div class="card-title">${e.title}</div>
-        <span class="badge ${e.is_active?'badge-active':'badge-draft'}">${e.is_active?'Active':'Draft'}</span>
+        <span class="badge ${e.is_active?'badge-active':'badge-draft'}">${e.is_active?'Active':'Draft · hidden'}</span>
       </div>
       <div class="card-meta">${e.subject||''}${e.level?' • '+e.level:''} • ⏱ ${e.duration_minutes}min • ${(e.questions||[]).length} Qs • ${attempts} attempts</div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:8px">By: ${creator.name}</div>
@@ -1552,7 +1704,7 @@ function renderAdminExams(){
       </div>
       ${sched.length?`<div style="font-size:11px;color:var(--gold);margin-bottom:10px">🗓️ ${sched.length} schedule(s)</div>`:''}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn-sm" onclick="openCreateExamModal('${e.id}')">✏️ Edit</button>
+        <button class="btn-sm" onclick="openCreateExamModal('${e.id}')">${e.is_active?'✏️ Edit':'✏️ Continue draft'}</button> <button class="btn-sm" onclick="duplicateExam('${e.id}')">📄 Copy</button> <button class="btn-sm" onclick="openExamAnalysis('${e.id}')">📉 Analysis</button>
         <button class="btn-sm" onclick="toggleExamActive('${e.id}',${!e.is_active})">${e.is_active?'⏸ Deactivate':'▶ Activate'}</button>
         <button class="btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteExam('${e.id}')">🗑</button>
       </div>
@@ -1569,20 +1721,20 @@ function renderTeacherExamList(){
     return `<div class="card">
       <div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:8px">
         <div class="card-title">${e.title}</div>
-        <span class="badge ${e.is_active?'badge-active':'badge-draft'}">${e.is_active?'Active':'Draft'}</span>
+        <span class="badge ${e.is_active?'badge-active':'badge-draft'}">${e.is_active?'Active':'Draft · hidden'}</span>
       </div>
       <div class="card-meta">${e.subject||''}${e.level?' • '+e.level:''} • ⏱ ${e.duration_minutes}min • ${(e.questions||[]).length} Qs • ${attempts} attempts</div>
       <div style="font-size:11px;margin-bottom:10px">
         ${e.auto_grade===false||e.result_mode==='manual'?'<span class="badge badge-manual">✏️ Manual grading</span>':'<span class="badge badge-active">⚡ Auto result</span>'}
       </div>
-      <button class="btn-sm" onclick="openCreateExamModal('${e.id}')">✏️ Edit</button> <button class="btn-sm" onclick="openTeacherResultsForExam('${e.id}')">📊 View Results</button>
+      <button class="btn-sm" onclick="openCreateExamModal('${e.id}')">${e.is_active?'✏️ Edit':'✏️ Continue draft'}</button> <button class="btn-sm" onclick="duplicateExam('${e.id}')">📄 Copy</button> <button class="btn-sm" onclick="openExamAnalysis('${e.id}')">📉 Analysis</button> <button class="btn-sm" onclick="openTeacherResultsForExam('${e.id}')">📊 View Results</button> <button class="btn-sm" onclick="toggleExamActive('${e.id}',${!e.is_active})">${e.is_active?'⏸ Unpublish':'▶ Publish'}</button>
     </div>`;
   }).join('');
 }
 
 async function toggleExamActive(id,val){
   showLoading();await sb(`exams?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({is_active:val})});
-  const ex=allExams.find(e=>e.id===id);if(ex)ex.is_active=val;renderAdminExams();renderAvailableExams();hideLoading();
+  const ex=allExams.find(e=>e.id===id);if(ex)ex.is_active=val;renderAdminExams();renderTeacherExamList();renderAvailableExams();hideLoading();
 }
 async function deleteExam(id){
   if(!confirm('Delete this exam?'))return;showLoading();
@@ -1756,7 +1908,7 @@ function renderTeacherResultsTable(filterExamId){
       <td>${pending?'—':`<span style="color:${pct>=60?'var(--success)':'var(--danger)'};font-weight:600">${pct}%</span>`}</td>
       <td>${pending?'—':(getGrade(pct).split(' ')[1]||'')}</td>
       <td style="color:var(--muted);font-size:12px">${dt}</td>
-      <td>${pending?`<button class="btn-sm" style="background:#2980b9;color:#fff;border-color:#2980b9" onclick="openManualGradeModal('${r.id}')">✏️ Grade</button>`:''} <button class="btn-sm" onclick="openReview('${r.id}')">🔍 Review</button></td>
+      <td>${pending?`<button class="btn-sm" style="background:#2980b9;color:#fff;border-color:#2980b9" onclick="openManualGradeModal('${r.id}')">✏️ Grade</button>`:''} <button class="btn-sm" onclick="openReview('${r.id}')">🔍 Review</button> <button class="btn-sm" onclick="allowRetake('${r.id}')">🔁 Retake</button></td>
     </tr>`;
   }).join('');
 }
@@ -1902,7 +2054,7 @@ function renderAvailableExams(){
       ${pendingMine?`<div class="alert alert-info" style="margin-bottom:10px;font-size:12px">⏳ A previous result is pending grading</div>`:''}
       ${best!==null?`<div class="alert alert-info" style="margin-bottom:10px;font-size:12px">Best score: <strong>${Math.round(best)}%</strong></div>`:''}
       ${upcoming&&!doneToday?`<div class="alert alert-info" style="margin-bottom:10px;font-size:12px">🗓️ Opens ${new Date(upcoming.opens_at).toLocaleString()}<br>Closes ${new Date(upcoming.closes_at).toLocaleString()}</div><button class="btn btn-ghost" disabled style="cursor:not-allowed;opacity:.6">🔒 Not open yet</button>`:doneToday
-        ?`<button class="btn btn-ghost" disabled style="cursor:not-allowed;opacity:.6">${startedOnly?'⚠️ Attempt started, not submitted — ask your teacher for a retake':'✅ Already taken'}</button>`
+        ?(startedOnly&&getDraft()&&getDraft().examId===e.id&&getDraft().deadline>Date.now()?`<button class="btn btn-primary" onclick="startExam('${e.id}')">▶ Resume your exam</button>`:`<button class="btn btn-ghost" disabled style="cursor:not-allowed;opacity:.6">${startedOnly?'⚠️ Attempt started, not submitted — ask your teacher for a retake':'✅ Already taken'}</button>`)
         :`<button class="btn btn-primary" onclick="startExam('${e.id}')">Start Exam →</button>`
       }
     </div>`;
@@ -1917,6 +2069,14 @@ async function startExam(examId){
   const test=isTestAccount(currentUser);
   if(!exam||!(exam.questions||[]).length){alert('This exam has no questions yet. Please tell your teacher.');return;}
   const mine=allResults.filter(r=>r.student_id===currentUser.id&&r.exam_id===examId);
+  const dr=getDraft();
+  if(!test&&dr&&dr.examId===examId&&dr.deadline>Date.now()&&mine.some(r=>r.id===dr.rid&&r.admin_note===STARTED_NOTE)){
+    activeResultId=dr.rid;activeExam=exam;answers=dr.answers||{};audioAnswers={};questionIndex=dr.questionIndex||0;lastResult=null;
+    examStartTime=dr.deadline-exam.duration_minutes*60000;timeLeft=Math.round((dr.deadline-Date.now())/1000);
+    document.getElementById('examName').textContent=exam.title;
+    document.getElementById('examMeta').textContent=`${exam.subject||''}${exam.level?' • '+exam.level:''} • ${exam.questions.length} questions • ${exam.duration_minutes} min`;
+    startTimer();renderQuestion();showPage('page-exam');return;
+  }
   if(!test&&mine.length){alert('You have already taken (or started) this exam, so it cannot be opened again.\n\nIf you need another attempt, ask your teacher/admin to press “🔁 Allow retake” for you.');renderAvailableExams();return;}
   const scs=allSchedules.filter(x=>x.exam_id===examId);
   if(!test&&scs.length){const n=new Date();
@@ -1946,7 +2106,7 @@ async function startExam(examId){
 
 function startTimer(){
   clearInterval(timerInterval);updateTimerDisplay();
-  timerInterval=setInterval(()=>{timeLeft--;updateTimerDisplay();if(timeLeft<=0){clearInterval(timerInterval);submitExam(true);}},1000);
+  timerInterval=setInterval(()=>{timeLeft--;if(timeLeft%5===0)saveDraft();updateTimerDisplay();if(timeLeft<=0){clearInterval(timerInterval);submitExam(true);}},1000);
 }
 
 function updateTimerDisplay(){
@@ -2025,7 +2185,7 @@ function answerArea(q){
   return `<div class="options" style="margin-top:16px">${q.options.map((opt,i)=>opt?`<div class="option ${a===i?'selected':''}" onclick="selectAnswer(${i})"><div class="option-letter">${L[i]}</div><span>${esc(opt)}</span></div>`:'').join('')}</div>`;
 }
 function setMatch(k,v){const a=Array.isArray(answers[questionIndex])?answers[questionIndex]:(answers[questionIndex]=[]);a[k]=v;}
-function selectAnswer(i){answers[questionIndex]=i;renderQuestion();}
+function selectAnswer(i){answers[questionIndex]=i;saveDraft();renderQuestion();}
 
 function nextQuestion(){
   if(questionIndex===activeExam.questions.length-1){
@@ -2067,6 +2227,7 @@ async function submitExam(timeUp){
 }
 
 function showResultPage(score,correct,total,passed,graded=true){
+  store.del('mi_draft');
   document.getElementById('pendingNote').style.display=graded?'none':'block';
   document.getElementById('reviewBtn').style.display=graded?'inline-flex':'none';
   if(!graded){
@@ -2140,8 +2301,8 @@ function startReview(){
 
 // ── TEACHER: STUDENTS & MESSAGES ──────────────
 function teacherScope(tid){
-  const exams=allExams.filter(e=>String(e.created_by)===String(tid));const ids=new Set();let all=false;
-  exams.forEach(e=>{const a=e.assigned_students||[];if(!a.length)all=true;a.forEach(i=>ids.add(String(i)));
+  const exams=allExams.filter(e=>String(e.created_by)===String(tid));const ids=new Set(studentIdsOf(tid).map(String));let all=false;
+  exams.forEach(e=>{const a=e.assigned_students||[];if(!a.length&&!ids.size)all=true;a.forEach(i=>ids.add(String(i)));
     allResults.filter(r=>r.exam_id===e.id).forEach(r=>ids.add(String(r.student_id)));});
   return{exams,students:allStudents.filter(s=>all||ids.has(String(s.id)))};
 }
@@ -2709,14 +2870,13 @@ function populateDropdowns(){
   ['bankFilterSubject','pickBankSubject','tBankFilterSubject'].forEach(id=>{const el=document.getElementById(id);if(el){const v=el.value;el.innerHTML=subjHtml;el.value=v;}});
   ['bankFilterLevel','pickBankLevel','tBankFilterLevel'].forEach(id=>{const el=document.getElementById(id);if(el){const v=el.value;el.innerHTML=lvlHtml;el.value=v;}});
   // Student assignment picker
+  const isAd=currentUser&&currentUser.role==='admin';
   const spList=document.getElementById('examStudentPickList');
-  if(spList)spList.innerHTML=allStudents.map(s=>`<div class="student-pick-item"><input type="checkbox" value="${s.id}" class="examStudentChk"/> ${s.name}</div>`).join('')||'<div class="text-muted" style="font-size:12px">No students yet</div>';
+  if(spList)spList.innerHTML=pickableStudents().map(s=>`<div class="student-pick-item" data-n="${esc(s.name).toLowerCase()}"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" value="${s.id}" class="examStudentChk" style="width:auto" onchange="updPickCount()"/> ${esc(s.name)}${isAd&&teachersOf(s.id).length?`<span class="text-muted" style="font-size:11px">· ${teachersOf(s.id).map(tName).map(esc).join(', ')}</span>`:''}</label></div>`).join('')||'<div class="text-muted" style="font-size:12px">No students yet</div>';
+  const pt=document.getElementById('examPickTeacher');if(pt)pt.innerHTML='<option value="">➕ Add all students of a teacher…</option>'+allTeachers.map(x=>`<option value="${x.id}">${esc(x.name)} (${studentIdsOf(x.id).length})</option>`).join('');
+  const nt=document.getElementById('newStudentTeachers');if(nt)nt.innerHTML=allTeachers.map(x=>`<label style="display:flex;align-items:center;gap:6px;padding:4px 0;cursor:pointer"><input type="checkbox" value="${x.id}" class="newStuTeacher" style="width:auto"/> ${esc(x.name)}</label>`).join('')||'<div class="text-muted" style="font-size:12px">No teachers yet</div>';
 }
 
-function toggleAssignAll(){
-  const all=document.getElementById('examAssignAll').checked;
-  document.getElementById('examStudentPickList').style.display=all?'none':'grid';
-}
 
 // ── TABS ──────────────────────────────────────
 function showAdminTab(tab){showPage('page-admin');switchAdminTab(tab);}
