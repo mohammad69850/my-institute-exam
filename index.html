@@ -2675,7 +2675,7 @@ html,body{background:#2b2924;overflow:hidden}
 <div class="abs cn" style="top:30px;left:30px">${corner}</div><div class="abs cn" style="top:30px;right:30px;transform:scaleX(-1)">${corner}</div>
 <div class="abs cn" style="bottom:30px;left:30px;transform:scaleY(-1)">${corner}</div><div class="abs cn" style="bottom:30px;right:30px;transform:scale(-1,-1)">${corner}</div>
 <div class="c">
- <div class="ayah" dir="rtl" style="direction:rtl;unicode-bidi:isolate">﴾ وَقُل رَّبِّ زِدْنِي عِلْمًا ﴿</div>
+ <div class="ayah" dir="rtl" style="direction:rtl;unicode-bidi:isolate">﴿ وَقُل رَّبِّ زِدْنِي عِلْمًا ﴾</div>
  <img class="emb" src="${CERT_EMBLEM}">
  <div class="inst">${esc(C.institute)}</div><div class="tag">${esc(C.tagline)}</div>
  <div class="title">Certificate</div>
@@ -2868,7 +2868,7 @@ function phHTML(o){
   return `<div class="ph">${o.tool||''}<div class="ph-in">
     <div class="ph-ring"><svg viewBox="0 0 116 116" width="116" height="116"><circle cx="58" cy="58" r="52" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="5"/><circle cx="58" cy="58" r="52" fill="none" stroke="#C9A84C" stroke-width="5" stroke-linecap="round" stroke-dasharray="${(pct/100*C).toFixed(1)} ${C.toFixed(1)}"/></svg>
       <div class="ph-av">${esc(o.initials)}</div><div class="ph-ringlbl"><span>${o.pct==null?'—':Math.round(pct)+'%'}</span></div></div>
-    <div class="ph-txt"><div class="ph-greet">${o.greet}</div><div class="ph-name">${esc(o.name)}</div><div class="ph-ayah" dir="rtl" style="text-align:left;unicode-bidi:isolate">﴾ وَقُل رَّبِّ زِدْنِي عِلْمًا ﴿</div>
+    <div class="ph-txt"><div class="ph-greet">${o.greet}</div><div class="ph-name">${esc(o.name)}</div><div class="ph-ayah" dir="rtl" style="text-align:left;unicode-bidi:isolate">﴿ وَقُل رَّبِّ زِدْنِي عِلْمًا ﴾</div>
       <div class="ph-chips">${o.chips.map(c=>`<div class="ph-chip"><b>${c[0]}</b><small>${c[1]}</small></div>`).join('')}</div></div>
     ${o.lvl||''}</div></div>`;
 }
