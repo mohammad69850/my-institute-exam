@@ -237,7 +237,7 @@
     .ph-tool{position:absolute;top:12px;inset-inline-end:14px;background:rgba(255,255,255,.1);border:1px solid rgba(201,168,76,.4);color:#E6CC85;border-radius:999px;padding:5px 12px;font-size:12px;cursor:pointer}
     #page-profile{background:#FBF7EE;min-height:calc(100vh - 72px)}
     #page-profile .card{background:#fff;border:1px solid #EADFC4;border-radius:16px;box-shadow:0 2px 14px rgba(120,90,20,.08)}
-    #page-profile.dark{background:#0E1626;--text:#E8ECF4;--muted:#93A0B8;--border:#2A3A58;color:#E8ECF4}
+    #page-profile.nodark-legacy{background:#0E1626;--text:#E8ECF4;--muted:#93A0B8;--border:#2A3A58;color:#E8ECF4}
     #page-profile.dark .card{background:#16223A;border-color:#2A3A58;box-shadow:none}
     #page-profile.dark .text-muted{color:#93A0B8}
     .card-h{font-weight:600;font-size:14px;margin-bottom:14px;display:flex;justify-content:space-between;gap:8px;color:var(--muted)}.card-h span{font-family:'Amiri',serif;font-size:16px;color:#B58B2A}
@@ -249,6 +249,23 @@
     .cert-card .tt{font-weight:600;font-size:14px;margin:4px 0 2px}.cert-card .mt{font-size:11px;opacity:.7}
     .cert-card .no{font-family:monospace;font-size:11px;letter-spacing:1px;margin:8px 0 10px;opacity:.8}
     .seal{position:absolute;top:12px;inset-inline-end:12px;background:#16A34A;color:#fff;border:0;border-radius:999px;padding:3px 10px;font-size:11px;cursor:pointer}
+
+    /* ── GLOBAL DARK THEME ── */
+    body.dark{--bg:#0E1626;--bg2:#16223A;--card:#16223A;--dark:#1B2A47;--black:#0E1626;--border:#2A3A58;--text:#E8ECF4;--muted:#93A0B8;--gold:#5B9BF0;--gold-light:#7CC4F5;--gold-pale:#8FD0F8;--accent-light:#12361F;--blue-light:#1C2347;--purple-light:#2A1E4A;--shadow:0 2px 16px rgba(0,0,0,.4)}
+    body.dark .header,body.dark .auth-card,body.dark .card,body.dark .stat-box,body.dark .exam-header,body.dark .question-card,body.dark .result-card,body.dark .modal,body.dark .table-wrap,body.dark .bank-card,body.dark .tip-card,body.dark .option-input input[type="text"]{background:var(--card)!important;color:var(--text)}
+    body.dark .field input,body.dark .field select,body.dark .field textarea,body.dark .option,body.dark .bank-filters select,body.dark .bank-filters input,body.dark .tabs,body.dark th,body.dark .question-builder,body.dark .lb-row,body.dark .bank-pick-row,body.dark .student-pick-list,body.dark input,body.dark select,body.dark textarea{background:var(--dark)!important;color:var(--text)!important;border-color:var(--border)}
+    body.dark [style*="background:#F5FAFF"],body.dark [style*="background:#fff"],body.dark [style*="background:#FFFFFF"],body.dark [style*="background:#EAF6FF"],body.dark [style*="background:#EFF8FF"]{background:var(--dark)!important;color:var(--text)!important}
+    body.dark .auth-wrap{background:linear-gradient(135deg,#0B1B33,#14305A)}
+    body.dark .home-banner,body.dark .insp-card,body.dark .leaderboard-section{background:var(--card)!important;border-color:var(--border)}
+    body.dark .btn-ghost,body.dark .btn-sm,body.dark .btn-outline,body.dark .user-badge{background:var(--dark);color:var(--text);border-color:var(--border)}
+    body.dark .tab.active{color:#fff}
+    body.dark td,body.dark .section-title,body.dark h1,body.dark h2,body.dark h3{color:var(--text)}
+    body.dark #page-profile{background:var(--bg)}
+    body.dark #page-profile .card{background:var(--card)!important;border-color:var(--border);box-shadow:none}
+    body.dark .cert-card{background:linear-gradient(160deg,#1B2A47,#16223A);color:var(--text);border-color:#8a7330}
+    body.dark .gbadge{background:linear-gradient(#3a3016,#2b2410);color:#F1DC9A;border-color:#8a7330}
+    body.dark ::-webkit-scrollbar-track{background:#16223A}
+    .home-sub{color:var(--muted);font-size:14px;margin:-6px 0 22px}
   </style>
 </head>
 <body>
@@ -297,6 +314,7 @@
       <div><div class="logo-text">MY Institute</div><div class="logo-sub">Exam Portal</div></div>
     </div>
     <div class="header-right">
+      <button class="btn-sm" id="themeBtn" onclick="toggleTheme()" title="Dark / Light">🌙</button>
       <div class="user-badge" id="headerUser">—</div>
       <button class="btn-sm" id="headerHomeBtn" onclick="goHome()">🏠 Home</button>
       <button class="btn-sm" id="headerProfileBtn" onclick="showPage('page-profile')" style="display:none">👤 My Profile</button>
@@ -310,17 +328,13 @@
 <!-- HOME -->
 <div class="page" id="page-home">
   <div class="container fade-in">
-    <div class="home-banner">
-      <div class="home-banner-icon">🕌</div>
-      <div style="flex:1">
-        <h1 id="homeWelcome">Welcome!</h1>
-        <p id="homeSubtitle">Your learning portal</p>
-        <div class="subject-chips">
-          <span class="chip chip-quran">📖 Quran</span>
-          <span class="chip chip-arabic">✍️ Arabic</span>
-          <span class="chip chip-islamic">☪️ Islamic Studies</span>
-        </div>
-      </div>
+    <div id="homeHero"></div>
+    <div style="display:none"><h1 id="homeWelcome"></h1></div>
+    <p id="homeSubtitle" class="home-sub">Your learning portal</p>
+    <div class="subject-chips" style="margin:-4px 0 22px">
+      <span class="chip chip-quran">📖 Quran</span>
+      <span class="chip chip-arabic">✍️ Arabic</span>
+      <span class="chip chip-islamic">☪️ Islamic Studies</span>
     </div>
     <div id="dailyInspiration" class="insp-card"></div>
     <div id="notifBannerArea"></div>
@@ -1048,7 +1062,7 @@ async function afterLogin(){
     document.getElementById('studentExamsSection').style.display='block';
     renderAvailableExams();renderStudentProfile();renderNotifBanner();
   }
-  renderLeaderboard();updateAdminStats();showPage('page-home');
+  renderLeaderboard();updateAdminStats();renderHomeHero();showPage('page-home');
   document.getElementById('homeWelcome').textContent=`Welcome, ${currentUser.name}!`;
   renderInspiration();
   document.getElementById('homeSubtitle').textContent=currentUser.role==='admin'
@@ -2860,27 +2874,41 @@ function phHTML(o){
 }
 function greetNow(){const h=new Date().getHours();return h<12?'Good morning · صباح الخير':h<18?'Good afternoon · نهارك سعيد':'Good evening · مساء الخير';}
 const PH_LEVELS=[{n:0,en:'Beginner',ar:'مبتدئ'},{n:2,en:'Striving',ar:'مجتهد'},{n:5,en:'Proficient',ar:'متقن'}];
-function toggleProfileDark(){const pg=document.getElementById('page-profile');pg.classList.toggle('dark');try{localStorage.setItem('mi_dark',pg.classList.contains('dark')?'1':'');}catch(e){}renderProfileHero();}
-function renderProfileHero(){
-  const el=document.getElementById('profileHero');if(!el||!currentUser)return;
-  try{if(localStorage.getItem('mi_dark'))document.getElementById('page-profile').classList.add('dark');}catch(e){}
+function applyTheme(){let d=false;try{d=!!localStorage.getItem('mi_dark');}catch(e){}document.body.classList.toggle('dark',d);const b=document.getElementById('themeBtn');if(b)b.textContent=d?'☀️':'🌙';}
+function toggleTheme(){let d=document.body.classList.contains('dark');try{localStorage.setItem('mi_dark',d?'':'1');}catch(e){}applyTheme();if(currentUser){renderHomeHero();if(currentUser.role==='student')renderProfileHero();if(currentUser.role==='teacher')renderTeacherHero();}}
+applyTheme();
+function renderAdminHero(id){
+  const el=document.getElementById(id);if(!el)return;
+  const g=allResults.filter(r=>r.graded!==false&&r.score!=null&&r.admin_note!==STARTED_NOTE),avg=g.length?g.reduce((a,r)=>a+r.score,0)/g.length:null;
+  el.innerHTML=phHTML({name:currentUser.name,initials:(currentUser.name||'?').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase(),greet:greetNow()+' · Director · المدير',pct:avg,
+    chips:[[allStudents.length,'Students'],[allTeachers.length,'Teachers'],[allExams.length,'Exams'],[g.length,'Graded attempts']],tool:themeTool()});
+}
+function themeTool(){return `<button class="ph-tool" onclick="toggleTheme()">${document.body.classList.contains('dark')?'☀️ Light':'🌙 Dark'}</button>`;}
+function renderHomeHero(){
+  if(!currentUser)return;
+  if(currentUser.role==='student')renderProfileHero('homeHero');
+  else if(currentUser.role==='teacher')renderTeacherHero('homeHero');
+  else renderAdminHero('homeHero');
+}
+
+function renderProfileHero(id){
+  const el=document.getElementById(id||'profileHero');if(!el||!currentUser)return;
   const mine=allResults.filter(r=>String(r.student_id)===String(currentUser.id)),g=gradedOf(mine);
   const avg=g.length?g.reduce((a,r)=>a+r.score,0)/g.length:null,best=g.length?Math.max(...g.map(r=>r.score)):null;
   const passed=new Set(mine.filter(r=>r.passed).map(r=>r.exam_id)).size;
   let li=0;PH_LEVELS.forEach((l,i)=>{if(passed>=l.n)li=i;});
   const cur=PH_LEVELS[li],nx=PH_LEVELS[li+1];
   const lvl=`<div class="ph-lvl"><div class="t">${cur.ar}<small>${cur.en}</small></div><div class="ph-bar"><i style="width:${nx?Math.round((passed-cur.n)/(nx.n-cur.n)*100):100}%"></i></div><div class="n">${nx?`${nx.n-passed} more pass${nx.n-passed>1?'es':''} to reach ${nx.ar} · ${nx.en}`:'Highest level reached 🌟'}</div></div>`;
-  const dark=document.getElementById('page-profile').classList.contains('dark');
   el.innerHTML=phHTML({name:currentUser.name,initials:(currentUser.name||'?').split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase(),greet:greetNow(),pct:avg,
     chips:[[g.length,'Exams'],[avg==null?'—':Math.round(avg)+'%','Average'],[best==null?'—':Math.round(best)+'%','Best']],lvl,
-    tool:`<button class="ph-tool" onclick="toggleProfileDark()">${dark?'☀️ Light':'🌙 Dark'}</button>`});
+    tool:themeTool()});
 }
-function renderTeacherHero(){
-  const el=document.getElementById('teacherHero');if(!el||!currentUser||currentUser.role!=='teacher')return;
+function renderTeacherHero(id){
+  const el=document.getElementById(id||'teacherHero');if(!el||!currentUser||currentUser.role!=='teacher')return;
   const {exams,students}=teacherScope(currentUser.id),ids=exams.map(e=>e.id),rows=students.map(x=>studentStats(x.id,ids)),w=rows.filter(r=>r.avg!==null);
   const avg=w.length?w.reduce((a,r)=>a+r.avg,0)/w.length:null,pend=rows.reduce((a,r)=>a+r.pending,0);
   el.innerHTML=phHTML({name:currentUser.name,initials:(currentUser.name||'?').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase(),greet:greetNow()+' · Teacher · المعلم',pct:avg,
-    chips:[[students.length,'Students'],[exams.length,'Exams'],[avg==null?'—':Math.round(avg)+'%','Class average'],[pend,'Awaiting grading']]});
+    chips:[[students.length,'Students'],[exams.length,'Exams'],[avg==null?'—':Math.round(avg)+'%','Class average'],[pend,'Awaiting grading']],tool:themeTool()});
 }
 function renderStudentProfile(){
   if(!currentUser)return;
@@ -2991,7 +3019,7 @@ function switchTeacherTab(tab){
 }
 
 // ── NAVIGATION & MODALS ───────────────────────
-function goHome(){
+function goHome(){try{renderHomeHero();}catch(e){}
   if(!currentUser)return;
   if(document.getElementById('page-exam').classList.contains('active')){alert('Please finish and submit your exam first.');return;}
   showPage('page-home');renderLeaderboard();updateAdminStats();
