@@ -344,6 +344,30 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
 #fxK.on{display:flex}#fxK>div{width:min(520px,92vw);background:#0B1B33;border:1px solid #C9A84C;border-radius:16px;overflow:hidden;color:#fff;animation:fxzoom .25s}
 #fxK input{width:100%;padding:16px 18px;background:transparent;border:0;border-bottom:1px solid rgba(201,168,76,.4);color:#fff;font-size:16px;outline:0}
 #fxK ul{list-style:none;margin:0;padding:6px;max-height:50vh;overflow:auto}#fxK li{padding:10px 14px;border-radius:10px;cursor:pointer;font-size:14px;display:flex;justify-content:space-between}#fxK li.sel,#fxK li:hover{background:rgba(201,168,76,.18)}#fxK li small{color:#E6CC85}
+
+    /* ── DAILY HIFZ ── */
+    .hz-hero{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+    .hz-stat{flex:1;min-width:130px;background:var(--card);border:2px solid var(--border);border-radius:14px;padding:14px;text-align:center}
+    .hz-stat b{display:block;font-size:26px;color:var(--text)}.hz-stat small{color:var(--muted);font-size:11px}
+    .hz-week{display:flex;gap:6px;justify-content:center;margin-top:10px}
+    .hz-day{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;border:2px solid var(--border);color:var(--muted)}
+    .hz-day.on{background:var(--success);border-color:var(--success);color:#fff}.hz-day.today{border-color:var(--gold-light)}
+    .hz-task{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border:2px solid var(--border);border-radius:14px;background:var(--card);margin-bottom:10px}
+    .hz-task.done{border-color:var(--success)}
+    .hz-ar{font-family:'Amiri','Scheherazade New','Traditional Arabic',serif;direction:rtl;text-align:right;font-size:30px;line-height:2.4;word-spacing:2px;color:var(--text)}
+    .hz-w{display:inline-block;padding:0 3px;border-radius:8px;transition:filter .25s,background .25s}
+    .hz-w.hid{filter:blur(9px);background:rgba(21,101,192,.14);cursor:pointer;user-select:none;-webkit-user-select:none}
+    .hz-w.hid.peek{filter:none}
+    .hz-box{background:var(--card);border:2px solid var(--border);border-radius:16px;padding:16px 20px;margin:12px 0}
+    .hz-steps{display:flex;gap:6px;justify-content:center;margin-bottom:8px}
+    .hz-steps i{width:36px;height:6px;border-radius:4px;background:var(--border)}.hz-steps i.on{background:var(--gold-light)}
+    .hz-rate{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .hz-rate button{padding:14px 8px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:14px;font-family:inherit}
+    .hz-rate button:hover{border-color:var(--gold-light)}
+    .hz-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--border);margin-right:3px}.hz-dot.on{background:var(--success)}
+    .hz-pre{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:11px;overflow:auto;max-height:260px;white-space:pre}
+    @media(max-width:600px){.hz-ar{font-size:24px;line-height:2.2}.hz-rate{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -396,6 +420,7 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
       <div class="user-badge" id="headerUser">—</div>
       <button class="btn-sm" id="headerHomeBtn" onclick="goHome()">🏠 Home</button>
       <button class="btn-sm" id="headerProfileBtn" onclick="showPage('page-profile')" style="display:none">👤 My Profile</button>
+      <button class="btn-sm" id="headerHifzBtn" onclick="openHifzPage()" style="display:none">📖 Daily Hifz</button>
       <button class="btn-sm" id="headerTeacherBtn" onclick="showPage('page-teacher')" style="display:none">📚 Teacher Panel</button>
       <button class="btn-sm" id="headerAdminBtn" onclick="showPage('page-admin')" style="display:none">⚙️ Admin</button>
       <button class="btn-sm" onclick="logout()">Sign Out</button>
@@ -628,6 +653,7 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
       <button class="tab" onclick="switchTeacherTab('results')" id="teacherTabBtn-results">📊 Results</button>
       <button class="tab" onclick="switchTeacherTab('students')" id="teacherTabBtn-students">👥 My Students</button>
       <button class="tab" onclick="switchTeacherTab('insights')" id="teacherTabBtn-insights">📈 Insights</button>
+      <button class="tab" onclick="switchTeacherTab('hifz')" id="teacherTabBtn-hifz">📖 Daily Hifz</button>
     </div>
     <div id="teacherTab-bank">
       <div class="section-header">
@@ -658,6 +684,7 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
       <input type="text" id="tsSearch" placeholder="🔍 Search student…" oninput="renderTeacherStudents()" style="width:100%;max-width:320px;margin-bottom:12px;background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"/>
       <div class="table-wrap"><table><thead><tr><th>Student</th><th>Exams</th><th>Avg</th><th>Last exam</th><th>Status</th><th>Actions</th></tr></thead><tbody id="tsTable"></tbody></table></div>
     </div>
+    <div id="teacherTab-hifz" style="display:none"><div id="hifzTeacherBody"></div></div>
     <div id="teacherTab-insights" style="display:none"><div class="section-title">📈 Question insights — which questions are hard or easy</div><div id="tiBody"></div></div>
     <div id="teacherTab-results" style="display:none">
       <div class="section-title">📊 Results for My Exams</div>
@@ -748,6 +775,46 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
         <button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="submitRating()">Submit</button>
         <div id="rateMsg" style="margin-top:8px;font-size:13px"></div></div>
     </div>
+  </div>
+</div>
+
+
+<!-- ══════════ DAILY HIFZ ══════════ -->
+<div class="page" id="page-hifz">
+  <div class="container fade-in">
+    <div id="hifzBody"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalHifz">
+  <div class="modal" style="max-width:780px">
+    <div class="modal-title"><span id="hzTitle">📖</span> <button class="close-btn" onclick="hzClose()">✕</button></div>
+    <div id="hzBody"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalHifzAssign">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-title">📖 Assign a memorization task <span style="font-family:'Amiri',serif;font-size:16px;color:var(--muted)">واجب حفظ</span> <button class="close-btn" onclick="closeModal('modalHifzAssign')">✕</button></div>
+    <div id="haAlert"></div>
+    <div class="field"><label>Students</label>
+      <label style="font-size:12px;display:block;margin-bottom:6px;text-transform:none;letter-spacing:0"><input type="checkbox" id="haAll" onchange="hifzSelAll(this.checked)" style="width:auto"/> Select all</label>
+      <div id="haStudents" style="max-height:150px;overflow-y:auto;border:2px solid var(--border);border-radius:10px;padding:8px 12px"></div></div>
+    <div class="field"><label>Title (e.g. Surah Al-Mulk 1–5)</label><input type="text" id="haTitle" placeholder="Surah / ayah range"/></div>
+    <div class="field"><label>Arabic text (copy from a verified mushaf)</label><textarea id="haText" dir="rtl" rows="5" style="font-family:'Amiri','Scheherazade New',serif;font-size:22px;line-height:2;text-align:right" placeholder="الصق الآيات هنا"></textarea></div>
+    <div class="field"><label>Start date</label><input type="date" id="haStart"/></div>
+    <div class="field"><label>Note for the student (optional)</label><input type="text" id="haNote" placeholder="e.g. Focus on the madd in line 2"/></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modalHifzAssign')">Cancel</button>
+      <button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="saveHifzAssign()">Assign</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalHifzAudio">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-title"><span id="hxTitle">🎧 Recitations</span> <button class="close-btn" onclick="closeModal('modalHifzAudio')">✕</button></div>
+    <div id="hifzAudioBody"></div>
   </div>
 </div>
 
@@ -1162,6 +1229,7 @@ async function afterLogin(){
   renderLeaderboard();updateAdminStats();renderHomeHero();showPage('page-home');
   document.getElementById('homeWelcome').textContent=`Welcome, ${currentUser.name}!`;
   renderInspiration();
+  initHifz().catch(e=>console.error(e));
   document.getElementById('homeSubtitle').textContent=currentUser.role==='admin'
     ?'Admin Dashboard — Manage students, exams, schedules, and results.'
     :currentUser.role==='teacher'
@@ -3146,7 +3214,7 @@ function switchAdminTab(tab){
 function showTeacherTab(tab){showPage('page-teacher');switchTeacherTab(tab);}
 function switchTeacherTab(tab){
   renderTeacherHero();
-  const tabs=['bank','exams','results','students','insights'];
+  const tabs=['bank','exams','results','students','insights','hifz'];
   tabs.forEach(t=>{
     const el=document.getElementById(`teacherTab-${t}`);if(el)el.style.display=t===tab?'block':'none';
     const b=document.getElementById(`teacherTabBtn-${t}`);if(b)b.classList.toggle('active',t===tab);
@@ -3156,6 +3224,7 @@ function switchTeacherTab(tab){
   if(tab==='results')renderTeacherResultsTable();
   if(tab==='students')renderTeacherStudents();
   if(tab==='insights')renderInsights();
+  if(tab==='hifz')renderTeacherHifz();
 }
 
 // ── NAVIGATION & MODALS ───────────────────────
@@ -3173,6 +3242,338 @@ function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('page-login').classList.contains('active'))login();});
+
+// ══════════ DAILY HIFZ (memorization) ══════════
+const HIFZ_SQL=`create table if not exists hifz_tasks (
+  id bigint generated by default as identity primary key,
+  student_id text not null,
+  teacher_id text,
+  title text not null,
+  arabic_text text not null,
+  note text,
+  start_date date default current_date,
+  box int default 0,
+  next_review date,
+  status text default 'active',
+  created_at timestamptz default now()
+);
+create table if not exists hifz_logs (
+  id bigint generated by default as identity primary key,
+  task_id bigint not null,
+  student_id text not null,
+  day date default current_date,
+  kind text,
+  rating text,
+  has_audio boolean default false,
+  audio text,
+  created_at timestamptz default now()
+);
+alter table hifz_tasks enable row level security;
+alter table hifz_logs enable row level security;
+drop policy if exists hifz_tasks_all on hifz_tasks;
+create policy hifz_tasks_all on hifz_tasks for all using (true) with check (true);
+drop policy if exists hifz_logs_all on hifz_logs;
+create policy hifz_logs_all on hifz_logs for all using (true) with check (true);`;
+let hifzTasks=[],hifzLogs=[],hifzReady=true,hz=null;
+const HIFZ_INT=[1,3,7,14,30],HIFZ_STAGES=[0,.25,.5,.75,1];
+const HZ_HINT=[
+  'Step 1 · Read slowly, looking at every word. Repeat it a few times.',
+  'Step 2 · A quarter of the words are hidden. Recite and fill the gaps from memory.',
+  'Step 3 · Half of the words are hidden. Keep reciting out loud.',
+  'Step 4 · Three quarters are hidden. Almost there!',
+  'Step 5 · Everything is hidden. Recite from memory, then record yourself.'
+];
+const hDay=(d=new Date())=>new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const hAdd=(day,n)=>{const d=new Date(day+'T12:00:00');d.setDate(d.getDate()+n);return hDay(d);};
+const hFmt=day=>{try{return new Date(day+'T12:00:00').toLocaleDateString(undefined,{day:'numeric',month:'short'});}catch(e){return day;}};
+
+function hifzStreak(studentId){
+  const days=new Set(hifzLogs.filter(l=>String(l.student_id)===String(studentId)).map(l=>l.day));
+  const t=hDay();let d=days.has(t)?t:hAdd(t,-1),cur=0;
+  while(days.has(d)){cur++;d=hAdd(d,-1);}
+  let best=0,run=0,prev=null;
+  [...days].sort().forEach(x=>{run=(prev&&hAdd(prev,1)===x)?run+1:1;if(run>best)best=run;prev=x;});
+  return {cur,best,days,doneToday:days.has(t)};
+}
+function hifzDue(t){
+  if(!t||t.status!=='active')return false;
+  const d=t.next_review||t.start_date||String(t.created_at||'').slice(0,10);
+  return d<=hDay();
+}
+function hifzNextBox(b0,rating){
+  const b=rating==='hard'?Math.max(0,b0-1):rating==='good'?b0+1:b0+2;
+  if(b<=0)return {b:0,status:'active',next_offset:1};
+  if(b>5)return {b,status:'memorized',next_offset:30};
+  return {b,status:'active',next_offset:HIFZ_INT[b-1]};
+}
+async function loadHifz(){
+  try{
+    const sid=encodeURIComponent(String(currentUser.id)),stu=currentUser.role==='student';
+    const [tr,lr]=await Promise.all([
+      sb('hifz_tasks?select=*&order=created_at.desc'+(stu?'&student_id=eq.'+sid:'')),
+      sb('hifz_logs?select=id,task_id,student_id,day,kind,rating,has_audio,created_at&order=day.desc&limit=5000'+(stu?'&student_id=eq.'+sid:''))
+    ]);
+    if(!tr.ok||!lr.ok){hifzReady=false;hifzTasks=[];hifzLogs=[];return;}
+    hifzTasks=await tr.json();hifzLogs=await lr.json();
+    if(!Array.isArray(hifzTasks)||!Array.isArray(hifzLogs)){hifzReady=false;hifzTasks=[];hifzLogs=[];return;}
+    hifzReady=true;
+  }catch(e){console.error(e);hifzReady=false;hifzTasks=[];hifzLogs=[];}
+}
+function hifzMine(){
+  if(!currentUser||currentUser.role!=='teacher')return hifzTasks;
+  const ids=new Set(studentIdsOf(currentUser.id).map(String));
+  return hifzTasks.filter(t=>String(t.teacher_id)===String(currentUser.id)||ids.has(String(t.student_id)));
+}
+const hifzSetupBox=()=>`<div class="card"><div class="alert alert-error">Daily Hifz is not set up yet. The administrator needs to run this once in the Supabase SQL editor:</div><pre class="hz-pre">${esc(HIFZ_SQL)}</pre></div>`;
+
+// ── student side ──
+async function initHifz(){
+  const b=document.getElementById('headerHifzBtn');
+  if(b)b.style.display=currentUser.role==='student'?'inline-flex':'none';
+  if(currentUser.role!=='student')return;
+  await loadHifz();renderHifzBadge();
+}
+function renderHifzBadge(){
+  if(!currentUser||currentUser.role!=='student')return;
+  const due=hifzTasks.filter(hifzDue).length;
+  const b=document.getElementById('headerHifzBtn');
+  if(b)b.textContent='📖 Daily Hifz'+(due?` (${due})`:'');
+  let bn=document.getElementById('hifzHomeBanner');
+  const sec=document.getElementById('studentExamsSection');
+  if(!bn&&sec&&sec.parentNode){bn=document.createElement('div');bn.id='hifzHomeBanner';sec.parentNode.insertBefore(bn,sec);}
+  if(!bn)return;
+  if(!hifzReady||!hifzTasks.length){bn.innerHTML='';return;}
+  const st=hifzStreak(currentUser.id);
+  bn.innerHTML=`<div class="hz-task" style="margin-bottom:18px"><div><b>📖 Daily Hifz <span style="font-family:'Amiri',serif;color:var(--muted)">الحفظ اليومي</span></b>
+    <div class="text-muted" style="font-size:13px;margin-top:4px">${due?`You have <b>${due}</b> task${due>1?'s':''} for today.`:'All done for today. Well done!'} ${st.cur?`🔥 ${st.cur}-day streak`:''}</div></div>
+    <button class="btn btn-primary" style="width:auto;padding:10px 20px" onclick="openHifzPage()">${due?'Start':'Open'}</button></div>`;
+}
+async function openHifzPage(){
+  showPage('page-hifz');
+  document.getElementById('hifzBody').innerHTML='<div class="text-muted" style="padding:30px;text-align:center">Loading…</div>';
+  await loadHifz();renderHifzPage();renderHifzBadge();
+}
+function renderHifzPage(){
+  const el=document.getElementById('hifzBody');if(!el)return;
+  if(!hifzReady){el.innerHTML=`<div class="card"><div class="alert alert-error">Daily Hifz is not available yet. Please tell your administrator.</div></div>`;return;}
+  const today=hDay(),st=hifzStreak(currentUser.id);
+  const mine=hifzTasks.filter(t=>String(t.student_id)===String(currentUser.id));
+  const doneIds=new Set(hifzLogs.filter(l=>l.day===today).map(l=>String(l.task_id)));
+  const due=mine.filter(hifzDue),doneToday=mine.filter(t=>doneIds.has(String(t.id))&&!hifzDue(t));
+  const upcoming=mine.filter(t=>t.status==='active'&&!hifzDue(t)&&!doneIds.has(String(t.id)));
+  const mem=mine.filter(t=>t.status==='memorized');
+  const week=[];for(let i=6;i>=0;i--){const d=hAdd(today,-i);week.push(`<div class="hz-day${st.days.has(d)?' on':''}${d===today?' today':''}" title="${d}">${st.days.has(d)?'✓':new Date(d+'T12:00:00').getDate()}</div>`);}
+  const taskRow=t=>{
+    const b=t.box||0,isNew=b===0&&!(hifzLogs.some(l=>String(l.task_id)===String(t.id)));
+    return `<div class="hz-task"><div><b>${esc(t.title)}</b>
+      <div class="text-muted" style="font-size:12px;margin-top:3px">${isNew?'🆕 New — learn it today':b===0?'🔁 Repeat — let\u2019s try again':'🔁 Review'} ${t.note?'· '+esc(t.note):''}</div></div>
+      <button class="btn btn-primary" style="width:auto;padding:10px 20px" onclick="hifzStart(${t.id})">Start</button></div>`;};
+  el.innerHTML=`<div class="section-title">📖 Daily Hifz <span style="font-family:'Amiri',serif;color:var(--muted)">الحفظ اليومي</span></div>
+    <div class="hz-hero">
+      <div class="hz-stat"><b>🔥 ${st.cur}</b><small>Day streak${st.cur===1?'':'s'}</small></div>
+      <div class="hz-stat"><b>🏆 ${st.best}</b><small>Best streak</small></div>
+      <div class="hz-stat"><b>${doneToday.length}/${doneToday.length+due.length}</b><small>Today\u2019s tasks done</small></div>
+      <div class="hz-stat"><b>✅ ${mem.length}</b><small>Memorized</small></div>
+    </div>
+    <div class="card" style="margin-bottom:16px"><div class="card-h">This week <span>${st.doneToday?'You practised today ✓':'Practise today to keep your streak!'}</span></div><div class="hz-week">${week.join('')}</div></div>
+    <div class="card" style="margin-bottom:16px"><div class="card-h">Today <span>اليوم</span></div>
+      ${due.length?due.map(taskRow).join(''):''}
+      ${doneToday.map(t=>`<div class="hz-task done"><div><b>${esc(t.title)}</b><div class="text-muted" style="font-size:12px">✅ Done today — next review ${hFmt(t.next_review)}</div></div></div>`).join('')}
+      ${!due.length&&!doneToday.length?`<div class="text-muted" style="padding:10px">${mine.length?'Nothing due today. 🎉':'Your teacher has not assigned a memorization task yet.'}</div>`:''}
+    </div>
+    ${upcoming.length?`<div class="card" style="margin-bottom:16px"><div class="card-h">Coming up <span>قادم</span></div>${upcoming.map(t=>`<div class="hz-task"><div><b>${esc(t.title)}</b><div class="text-muted" style="font-size:12px">Next: ${hFmt(t.next_review||t.start_date)} · ${[0,1,2,3,4].map(i=>`<span class="hz-dot${(t.box||0)>i?' on':''}"></span>`).join('')}</div></div></div>`).join('')}</div>`:''}
+    ${mem.length?`<div class="card"><div class="card-h">Memorized <span>محفوظ</span></div>${mem.map(t=>`<div style="padding:6px 0">✅ ${esc(t.title)}</div>`).join('')}</div>`:''}`;
+}
+
+// ── practice session ──
+const hzRng=seed=>{let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};};
+function hzPlan(t){
+  const words=String(t.arabic_text||'').trim().split(/\s+/).filter(Boolean);
+  const idx=words.map((w,i)=>/[\u0621-\u063A\u0641-\u064A\u0671-\u06D3]/.test(w)?i:-1).filter(i=>i>=0);
+  const rnd=hzRng((Number(t.id)||7)*2654435761);
+  for(let i=idx.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
+  return {words,order:idx};
+}
+function hifzStart(id){
+  const t=hifzTasks.find(x=>String(x.id)===String(id));if(!t)return;
+  hz={task:t,plan:hzPlan(t),stage:0,reps:[0,0,0,0,0],audio:null,rec:null,stream:null,timer:null,revealAll:false,done:false,saved:null};
+  document.getElementById('hzTitle').textContent='📖 '+t.title;
+  openModal('modalHifz');hzRender();
+}
+function hzPeek(el){el.classList.add('peek');setTimeout(()=>el.classList.remove('peek'),2500);}
+function hzRender(){
+  if(!hz)return;
+  const body=document.getElementById('hzBody');
+  if(hz.saved){
+    const sv=hz.saved,st=hifzStreak(currentUser.id);
+    body.innerHTML=`<div style="text-align:center;padding:20px 10px"><div style="font-size:54px">${sv.status==='memorized'?'🌟':'✅'}</div>
+      <div style="font-size:20px;font-weight:700;margin:8px 0">${sv.status==='memorized'?'Mashallah! Fully memorized!':'Well done!'}</div>
+      <div class="text-muted" style="margin-bottom:6px">${sv.status==='memorized'?'This passage is now in your memorized list.':`Next review: <b>${hFmt(sv.next)}</b>`}</div>
+      <div style="font-size:18px;margin:10px 0">🔥 ${st.cur}-day streak</div>
+      <button class="btn btn-primary" style="width:auto;padding:10px 28px" onclick="hzClose()">Close</button></div>`;
+    return;
+  }
+  const t=hz.task,n=hz.plan.order.length,k=Math.ceil(HIFZ_STAGES[hz.stage]*n),hidden=new Set(hz.plan.order.slice(0,k));
+  const words=hz.plan.words.map((w,i)=>hidden.has(i)&&!hz.revealAll?`<span class="hz-w hid" onclick="hzPeek(this)">${esc(w)}</span> `:`<span class="hz-w">${esc(w)}</span> `).join('');
+  const last=hz.stage===4,reps=hz.reps[hz.stage];
+  let ctl='';
+  if(hz.done){
+    ctl=`<div class="hz-box"><div style="font-weight:600;margin-bottom:10px;text-align:center">How was it?</div>
+      <div class="hz-rate">
+        <button onclick="hifzFinish('hard')">😓<br><b>Hard</b><br><small class="text-muted">Repeat tomorrow</small></button>
+        <button onclick="hifzFinish('good')">🙂<br><b>Good</b><br><small class="text-muted">Normal review</small></button>
+        <button onclick="hifzFinish('easy')">😄<br><b>Easy</b><br><small class="text-muted">Longer break</small></button>
+      </div></div>`;
+  }else if(last){
+    ctl=`<div class="hz-box"><div style="font-weight:600;margin-bottom:8px">🎙 Record your recitation <span class="text-muted" style="font-weight:400">(optional — your teacher can listen)</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-outline" style="width:auto;padding:8px 16px;${hz.rec?'color:var(--danger);border-color:var(--danger)':''}" onclick="hzRecord()">${hz.rec?'⏹ Stop recording':hz.audio?'🔄 Re-record':'🎙 Start recording'}</button>
+        <button class="btn-sm" onclick="hz.revealAll=!hz.revealAll;hzRender()">${hz.revealAll?'🙈 Hide again':'👁 Show all to check'}</button>
+      </div>${hz.audio?`<audio controls src="${hz.audio}" style="width:100%;margin-top:10px"></audio>`:''}</div>`;
+  }
+  body.innerHTML=`<div class="hz-steps">${[0,1,2,3,4].map(i=>`<i class="${i<=hz.stage?'on':''}"></i>`).join('')}</div>
+    <div class="text-muted" style="text-align:center;font-size:13px;margin-bottom:6px">${HZ_HINT[hz.stage]}</div>
+    ${t.note?`<div style="text-align:center;font-size:13px;color:var(--gold-light);margin-bottom:6px">💬 ${esc(t.note)}</div>`:''}
+    <div class="hz-box"><div class="hz-ar">${words}</div></div>
+    ${hz.done?'':`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <button class="btn-sm" onclick="hzRep()" style="font-size:13px;padding:8px 14px">✓ I recited it (${reps})</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" style="width:auto;padding:8px 16px" ${hz.stage===0?'disabled':''} onclick="hzStep(-1)">◀ Back</button>
+        ${last?`<button class="btn btn-primary" style="width:auto;padding:8px 20px" ${hz.rec?'disabled':''} onclick="hz.done=true;hzRender()">I\u2019m done ✓</button>`
+              :`<button class="btn btn-primary" style="width:auto;padding:8px 20px" onclick="hzStep(1)">Next ▶</button>`}
+      </div></div>`}
+    ${ctl}`;
+}
+function hzRep(){hz.reps[hz.stage]++;hzRender();}
+function hzStep(d){hz.stage=Math.max(0,Math.min(4,hz.stage+d));hz.revealAll=false;hzRender();}
+async function hzRecord(){
+  if(hz.rec){hz.rec.stop();return;}
+  if(!navigator.mediaDevices||!window.MediaRecorder){alert('Recording is not supported in this browser.');return;}
+  let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:true});}catch(e){alert('Microphone access denied. Please allow the microphone in your browser settings.');return;}
+  const chunks=[],rec=new MediaRecorder(stream,{audioBitsPerSecond:32000});
+  rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
+  rec.onstop=()=>{
+    clearTimeout(hz&&hz.timer);stream.getTracks().forEach(x=>x.stop());
+    if(!hz)return;hz.rec=null;hz.stream=null;
+    const blob=new Blob(chunks,{type:rec.mimeType||'audio/webm'});
+    if(blob.size>1.5*1048576){alert('This recording is too long ('+(blob.size/1048576).toFixed(1)+' MB). Please keep it under about 5 minutes.');hzRender();return;}
+    const r=new FileReader();r.onload=()=>{if(hz){hz.audio=r.result;hzRender();}};r.readAsDataURL(blob);
+  };
+  hz.rec=rec;hz.stream=stream;rec.start();hzRender();
+  hz.timer=setTimeout(()=>{if(hz&&hz.rec)hz.rec.stop();},240000);
+}
+function hzClose(){
+  if(hz){clearTimeout(hz.timer);if(hz.rec){hz.rec.onstop=null;try{hz.rec.stop();}catch(e){}}if(hz.stream)hz.stream.getTracks().forEach(x=>x.stop());}
+  hz=null;closeModal('modalHifz');
+  if(document.getElementById('page-hifz').classList.contains('active'))renderHifzPage();
+  renderHifzBadge();
+}
+async function hifzFinish(rating){
+  if(!hz||hz.saving)return;hz.saving=true;
+  const t=hz.task,today=hDay(),b0=t.box||0,kind=b0===0?'learn':'review';
+  const nb=hifzNextBox(b0,rating),next=hAdd(today,nb.next_offset);
+  showLoading('Saving…');
+  try{
+    const r1=await sb('hifz_logs',{method:'POST',prefer:'return=minimal',body:JSON.stringify({task_id:t.id,student_id:String(currentUser.id),day:today,kind,rating,has_audio:!!hz.audio,audio:hz.audio||null})});
+    if(!r1.ok)throw new Error('log '+r1.status);
+    const r2=await sb('hifz_tasks?id=eq.'+t.id,{method:'PATCH',prefer:'return=minimal',body:JSON.stringify({box:nb.b,next_review:next,status:nb.status})});
+    if(!r2.ok)throw new Error('task '+r2.status);
+    hifzLogs.unshift({id:Date.now(),task_id:t.id,student_id:String(currentUser.id),day:today,kind,rating,has_audio:!!hz.audio,created_at:new Date().toISOString()});
+    t.box=nb.b;t.next_review=next;t.status=nb.status;
+    hz.saved={status:nb.status,next};
+  }catch(e){console.error(e);alert('Could not save your progress. Please check your connection and try again.');if(hz)hz.saving=false;hideLoading();return;}
+  hideLoading();hz.saving=false;hzRender();
+}
+
+// ── teacher side ──
+async function renderTeacherHifz(){
+  const el=document.getElementById('hifzTeacherBody');if(!el)return;
+  el.innerHTML='<div class="text-muted" style="padding:20px">Loading…</div>';
+  await loadHifz();drawTeacherHifz();
+}
+function drawTeacherHifz(){
+  const el=document.getElementById('hifzTeacherBody');if(!el)return;
+  const head=`<div class="section-header"><div class="section-title" style="margin:0">📖 Daily Hifz <span style="font-family:'Amiri',serif;color:var(--muted)">الحفظ اليومي</span></div>
+    <button class="btn btn-primary" style="width:auto;padding:10px 18px" onclick="openHifzAssign()">+ Assign task</button></div>`;
+  if(!hifzReady){el.innerHTML=head+hifzSetupBox();return;}
+  const fs=(document.getElementById('hifzFStudent')||{}).value||'',fst=(document.getElementById('hifzFStatus')||{}).value||'active';
+  const all=hifzMine(),today=hDay();
+  const nameOf=id=>{const u=allStudents.find(x=>String(x.id)===String(id));return u?u.name:'(student)';};
+  const stuIds=[...new Set(all.map(t=>String(t.student_id)))];
+  const todayDone=new Set(hifzLogs.filter(l=>l.day===today&&stuIds.includes(String(l.student_id))).map(l=>String(l.student_id)));
+  const overdue=all.filter(t=>t.status==='active'&&(t.next_review||t.start_date||'9999')<today).length;
+  const stat=(v,l)=>`<div class="hz-stat"><b>${v}</b><small>${l}</small></div>`;
+  const rows=all.filter(t=>(!fs||String(t.student_id)===fs)&&(fst==='all'||t.status===fst));
+  const cache={};const stOf=id=>cache[id]||(cache[id]=hifzStreak(id));
+  const body=rows.map(t=>{
+    const logs=hifzLogs.filter(l=>String(l.task_id)===String(t.id)),last=logs.reduce((m,l)=>l.day>m?l.day:m,'');
+    const due=t.next_review||t.start_date||'',late=t.status==='active'&&due&&due<today;
+    const dots=[0,1,2,3,4].map(i=>`<span class="hz-dot${t.status==='memorized'||(t.box||0)>i?' on':''}"></span>`).join('');
+    const hasAud=logs.some(l=>l.has_audio);
+    return `<tr><td>${esc(nameOf(t.student_id))}</td><td><b>${esc(t.title)}</b></td><td>${dots}</td>
+      <td style="${late?'color:var(--danger);font-weight:600':''}">${t.status==='memorized'?'✅ Memorized':due===today?'Today':hFmt(due)+(late?' (overdue)':'')}</td>
+      <td>${last?hFmt(last):'—'}</td><td>🔥 ${stOf(t.student_id).cur}</td>
+      <td>${hasAud?`<button class="btn-sm" title="Recitations" onclick="openHifzAudio(${t.id})">🎧</button> `:''}<button class="btn-sm" title="Delete" style="color:var(--danger);border-color:var(--danger)" onclick="hifzDelete(${t.id})">🗑</button></td></tr>`;
+  }).join('');
+  const stuOpts=stuIds.map(id=>`<option value="${esc(id)}"${id===fs?' selected':''}>${esc(nameOf(id))}</option>`).join('');
+  el.innerHTML=head+`<div class="hz-hero">${stat(all.filter(t=>t.status==='active').length,'Active tasks')}${stat(todayDone.size,'Students practised today')}${stat(overdue,'Overdue')}${stat(all.filter(t=>t.status==='memorized').length,'Memorized')}</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+      <select id="hifzFStudent" onchange="drawTeacherHifz()" style="background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"><option value="">All students</option>${stuOpts}</select>
+      <select id="hifzFStatus" onchange="drawTeacherHifz()" style="background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"><option value="active"${fst==='active'?' selected':''}>Active</option><option value="memorized"${fst==='memorized'?' selected':''}>Memorized</option><option value="all"${fst==='all'?' selected':''}>All</option></select>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>Student</th><th>Task</th><th>Progress</th><th>Next</th><th>Last</th><th>Streak</th><th>Actions</th></tr></thead>
+    <tbody>${body||'<tr><td colspan="7" class="text-muted" style="text-align:center;padding:20px">No tasks yet. Tap “Assign task” to start.</td></tr>'}</tbody></table></div>`;
+}
+function openHifzAssign(){
+  const ids=currentUser.role==='teacher'?studentIdsOf(currentUser.id).map(String):[];
+  const list=ids.length?allStudents.filter(s=>ids.includes(String(s.id))):allStudents;
+  document.getElementById('haStudents').innerHTML=list.length?list.map(s=>`<label style="display:block;font-size:13px;padding:3px 0;text-transform:none;letter-spacing:0"><input type="checkbox" class="haChk" value="${esc(s.id)}" style="width:auto"/> ${esc(s.name)}</label>`).join(''):'<span class="text-muted">No students found.</span>';
+  document.getElementById('haAll').checked=false;
+  ['haTitle','haText','haNote'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('haStart').value=hDay();document.getElementById('haAlert').innerHTML='';
+  openModal('modalHifzAssign');
+}
+function hifzSelAll(on){document.querySelectorAll('.haChk').forEach(c=>c.checked=on);}
+async function saveHifzAssign(){
+  const al=document.getElementById('haAlert'),err=m=>{al.innerHTML='<div class="alert alert-error">'+m+'</div>';};
+  const sids=[...document.querySelectorAll('.haChk:checked')].map(c=>c.value);
+  const title=document.getElementById('haTitle').value.trim(),text=document.getElementById('haText').value.trim();
+  const start=document.getElementById('haStart').value||hDay(),note=document.getElementById('haNote').value.trim();
+  if(!sids.length)return err('Please choose at least one student.');
+  if(!title)return err('Please enter a title.');
+  if(!/[\u0621-\u064A\u0671-\u06D3]/.test(text))return err('Please paste the Arabic text of the passage.');
+  showLoading('Assigning…');
+  try{
+    const rows=sids.map(id=>({student_id:String(id),teacher_id:String(currentUser.id),title,arabic_text:text,note:note||null,start_date:start,box:0,next_review:start,status:'active'}));
+    const r=await sb('hifz_tasks',{method:'POST',body:JSON.stringify(rows)});
+    const d=await r.json();
+    if(!r.ok||!Array.isArray(d))throw new Error('status '+r.status);
+    hifzTasks=d.concat(hifzTasks);
+  }catch(e){console.error(e);hideLoading();return err('Could not save. Make sure the Daily Hifz tables were created in Supabase.');}
+  hideLoading();closeModal('modalHifzAssign');drawTeacherHifz();
+}
+async function hifzDelete(id){
+  if(!confirm('Delete this task and all of its practice history?'))return;
+  showLoading('Deleting…');
+  try{
+    await sb('hifz_logs?task_id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    const r=await sb('hifz_tasks?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    if(!r.ok)throw new Error(r.status);
+    hifzTasks=hifzTasks.filter(t=>String(t.id)!==String(id));hifzLogs=hifzLogs.filter(l=>String(l.task_id)!==String(id));
+  }catch(e){console.error(e);alert('Could not delete.');}
+  hideLoading();drawTeacherHifz();
+}
+async function openHifzAudio(id){
+  const t=hifzTasks.find(x=>String(x.id)===String(id));
+  document.getElementById('hxTitle').textContent='🎧 '+(t?t.title:'Recitations');
+  const box=document.getElementById('hifzAudioBody');box.innerHTML='<div class="text-muted">Loading…</div>';openModal('modalHifzAudio');
+  try{
+    const r=await sb(`hifz_logs?task_id=eq.${id}&has_audio=eq.true&select=id,day,rating,audio&order=created_at.desc&limit=6`);
+    const d=await r.json();if(!r.ok||!Array.isArray(d))throw new Error();
+    const em={hard:'😓 Hard',good:'🙂 Good',easy:'😄 Easy'};
+    box.innerHTML=d.length?d.map(x=>`<div class="hz-box" style="margin:8px 0"><div class="text-muted" style="font-size:12px;margin-bottom:6px">${hFmt(x.day)} · ${em[x.rating]||''}</div><audio controls src="${x.audio}" style="width:100%"></audio></div>`).join(''):'<div class="text-muted">No recordings yet.</div>';
+  }catch(e){box.innerHTML='<div class="alert alert-error">Could not load recordings.</div>';}
+}
 </script>
 <script id="fx-script">
 (function(){
