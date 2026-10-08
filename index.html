@@ -653,6 +653,42 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
   </div>
 </div>
 
+<div class="modal-overlay" id="modalAttendance">
+  <div class="modal" style="max-width:780px">
+    <div class="modal-title"><span id="attTitle">Attendance</span> <button class="close-btn" onclick="closeModal('modalAttendance')">✕</button></div>
+    <div id="attSummary" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <input type="text" id="attSearch" placeholder="🔍 Search student…" oninput="renderAttendance()" style="flex:1;min-width:160px;background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"/>
+      <select id="attFilter" onchange="renderAttendance()" style="background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"><option value="">Everyone</option><option value="attended">✅ Attended (submitted)</option><option value="started">⚠️ Entered, not submitted</option><option value="none">❌ Has not entered</option></select>
+      <button class="btn-sm" onclick="closeModal('modalAttendance');openRemind(attExamId)">📣 Send reminder</button>
+    </div>
+    <div id="attList" style="max-height:55vh;overflow-y:auto"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalRemind">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-title"><span id="remTitle">Reminder</span> <button class="close-btn" onclick="closeModal('modalRemind')">✕</button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>Opens (optional)</label><input type="datetime-local" id="remOpens"/></div>
+      <div class="field"><label>Available until</label><input type="datetime-local" id="remUntil"/></div>
+    </div>
+    <div class="field"><label>Send to</label>
+      <select id="remAud" onchange="refreshRemTargets()"><option value="notentered">Students who have not entered the exam yet</option><option value="all">All assigned students</option></select>
+      <div id="remCount" class="text-muted" style="font-size:12px;margin-top:4px"></div>
+    </div>
+    <div class="field"><label>Message — <span class="text-muted">{name} is replaced with each student’s name</span></label><textarea id="remMsg" style="min-height:200px"></textarea></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <button class="btn btn-primary" style="width:auto;padding:10px 18px" onclick="sendRemindInApp()">🔔 In-app notification</button>
+      <div id="remChannels" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-outline" style="width:auto;padding:10px 18px" onclick="showRemindWA()">📲 WhatsApp</button>
+        <button class="btn btn-outline" style="width:auto;padding:10px 18px" onclick="showRemindEmail()">✉️ Email</button>
+      </div>
+    </div>
+    <div id="remOut"></div>
+  </div>
+</div>
+
 <!-- TEACHER PAGE -->
 <div class="page" id="page-teacher">
   <div class="container fade-in">
@@ -960,12 +996,12 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
     <div class="modal-title">Create New Exam <button class="close-btn" onclick="closeExamModal()">✕</button></div>
     <div id="createExamAlert"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="field"><label>Exam Title</label><input type="text" id="examTitle" placeholder="e.g. Tajweed Level 1"/></div>
+      <div class="field"><label>Exam Title</label><input type="text" id="examTitle" placeholder="e.g. Tajweed Level 1" oninput="markAttendedInPicker()"/></div>
       <div class="field"><label>Subject</label>
         <input list="subjectOptionsFull" id="examSubject" placeholder="Quran / Arabic…"/>
       </div>
       <div class="field"><label>Level</label>
-        <input list="levelOptions" id="examLevel" placeholder="Level 1 / Level 2…"/>
+        <input list="levelOptions" id="examLevel" placeholder="Level 1 / Level 2…" oninput="markAttendedInPicker()" onchange="markAttendedInPicker()"/>
       </div>
       <div class="field"><label>Duration (minutes)</label><input type="number" id="examDuration" value="30" min="1" max="180"/></div>
       <div class="field"><label>Passing Score (%)</label><input type="number" id="examPass" value="60" min="1" max="100"/></div>
@@ -986,6 +1022,26 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
     </div>
     <div class="field"><label>Description</label><textarea id="examDesc" placeholder="Brief description…" style="min-height:60px"></textarea></div>
     <hr class="divider"/>
+    <div id="bankImportSection" style="background:#FFFBEF;border:2px solid var(--gold);border-radius:12px;padding:12px;margin-bottom:12px">
+      <div style="font-family:'Cinzel',serif;font-size:14px;color:var(--gold-light);margin-bottom:4px">📚 Choose questions from the Question Bank</div>
+      <div class="text-muted" style="font-size:12px;margin-bottom:10px">Filter, tick the questions you want, then press “Add selected”. They appear in the question list below.</div>
+      <div class="bank-filters">
+        <select id="pickBankSubject" onchange="renderBankPicker()"><option value="">All Subjects</option></select>
+        <select id="pickBankLevel" onchange="renderBankPicker()"><option value="">All Levels</option></select>
+        <select id="pickBankType" onchange="renderBankPicker()" style="background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text)"><option value="">All types</option><option value="mcq">📝 MCQ</option><option value="tf">✔️ True/False</option><option value="fill">✍️ Fill blank</option><option value="match">🔗 Matching</option><option value="short">💬 Short answer</option><option value="audio">🎙️ Audio</option></select>
+        <input type="text" id="pickBankSearch" placeholder="🔍 Search bank…" oninput="renderBankPicker()" style="min-width:160px;background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text)"/>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">
+        <button class="btn-sm" type="button" onclick="bankPickAll(true)">☑ Select all shown</button>
+        <button class="btn-sm" type="button" onclick="bankPickAll(false)">☐ Clear</button>
+        <span style="margin-left:auto;display:flex;gap:6px;align-items:center;font-size:12px">🎲 Random <input type="number" id="pickBankRandN" value="5" min="1" style="width:64px;background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text);padding:6px 8px"/> <button class="btn-sm" type="button" onclick="bankPickRandom()">Pick</button></span>
+      </div>
+      <div id="bankPickerList" style="max-height:260px;overflow-y:auto;margin-bottom:8px"></div>
+      <div class="text-muted" id="pickBankCount" style="font-size:12px;margin-bottom:8px"></div>
+      <button class="btn btn-outline" style="width:100%" onclick="addSelectedBankQuestions()">+ Add Selected Questions to Exam</button>
+      <div id="pickBankMsg" style="font-size:12px;margin-top:8px;color:var(--success)"></div>
+    </div>
+    <hr class="divider"/>
     <div class="field">
       <label>👥 Who can take this exam?</label>
       <div id="examTeacherQuick" style="margin-bottom:8px"><select id="examPickTeacher" onchange="pickByTeacher()" style="width:100%;background:#F5FAFF;border:2px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px"></select></div>
@@ -997,17 +1053,6 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
         <div class="text-muted" id="examPickCount" style="font-size:12px;margin-top:6px"></div>
       </div>
     </div>
-    <hr class="divider"/>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div style="font-family:'Cinzel',serif;font-size:14px;color:var(--gold-light)">📚 Import from Question Bank</div>
-    </div>
-    <div class="bank-filters">
-      <select id="pickBankSubject" onchange="renderBankPicker()"><option value="">All Subjects</option></select>
-      <select id="pickBankLevel" onchange="renderBankPicker()"><option value="">All Levels</option></select>
-      <input type="text" id="pickBankSearch" placeholder="🔍 Search bank…" oninput="renderBankPicker()" style="min-width:160px;background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text)"/>
-    </div>
-    <div id="bankPickerList" style="max-height:220px;overflow-y:auto;margin-bottom:10px"></div>
-    <button class="btn btn-outline" style="width:100%;margin-bottom:16px" onclick="addSelectedBankQuestions()">+ Add Selected Questions to Exam</button>
     <hr class="divider"/>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <div style="font-family:'Cinzel',serif;font-size:14px;color:var(--gold-light)">✏️ Write New Questions</div>
@@ -1329,7 +1374,7 @@ function pickableStudents(){return allStudents;} // everyone can now pick from a
 function toggleAssignAll(){
   document.getElementById('examPickWrap').style.display=document.getElementById('examAssignAll').checked?'none':'block';updPickCount();
 }
-function updPickCount(){const n=document.querySelectorAll('.examStudentChk:checked').length;const el=document.getElementById('examPickCount');if(el)el.textContent=n+' selected';}
+function updPickCount(){const n=document.querySelectorAll('.examStudentChk:checked').length;const el=document.getElementById('examPickCount');if(el)el.textContent=n+' selected'+(el.dataset.att||'');}
 function filterExamPick(){
   const q=(document.getElementById('examPickSearch').value||'').toLowerCase(),src=document.getElementById('examPickSource')?.value||'';
   document.querySelectorAll('#examStudentPickList>div').forEach(d=>{
@@ -1751,36 +1796,56 @@ async function deleteBankQuestion(id){
   allQuestionBank=allQuestionBank.filter(q=>q.id!==id);renderBankList();renderTeacherBankList();hideLoading();
 }
 
-function renderBankPicker(){
-  const container=document.getElementById('bankPickerList');if(!container)return;
-  const subj=document.getElementById('pickBankSubject')?.value||'';
-  const lvl=document.getElementById('pickBankLevel')?.value||'';
-  const search=(document.getElementById('pickBankSearch')?.value||'').toLowerCase();
+const bankTypeLbl=q=>q.audio_required?'🎙️ Audio':({mcq:'📝 MCQ',tf:'✔️ True/False',fill:'✍️ Fill blank',match:'🔗 Matching',short:'💬 Short answer'})[qType(q)]||'📝 MCQ';
+const examBankIds=()=>new Set([...document.querySelectorAll('[id^="q-bankid-"]')].map(x=>String(x.value)).filter(Boolean));
+function bankPickData(){
+  const subj=document.getElementById('pickBankSubject')?.value||'',lvl=document.getElementById('pickBankLevel')?.value||'',type=document.getElementById('pickBankType')?.value||'';
+  const search=normA(document.getElementById('pickBankSearch')?.value||'');
   let data=allQuestionBank;
   if(subj)data=data.filter(q=>inSec(q.subject,subj));
   if(lvl)data=data.filter(q=>q.level===lvl);
-  if(search)data=data.filter(q=>(q.text||'').toLowerCase().includes(search));
-  if(!data.length){container.innerHTML='<div class="text-muted" style="font-size:12px;padding:8px">No matching questions</div>';return;}
-  container.innerHTML=data.map(q=>`
-    <label class="bank-pick-row">
-      <input type="checkbox" class="bankPickChk" value="${q.id}"/>
+  if(type==='audio')data=data.filter(q=>q.audio_required);
+  else if(type)data=data.filter(q=>!q.audio_required&&qType(q)===type);
+  if(search)data=data.filter(q=>normA((q.text||'')+' '+(q.subject||'')+' '+(q.level||'')).includes(search));
+  return data;
+}
+function updBankPickCount(){const el=document.getElementById('pickBankCount');if(el)el.textContent=`${document.querySelectorAll('.bankPickChk:checked').length} selected · ${document.querySelectorAll('.bankPickChk').length} shown · ${examBankIds().size} from bank already in this exam`;}
+function renderBankPicker(){
+  const container=document.getElementById('bankPickerList');if(!container)return;
+  const data=bankPickData(),have=examBankIds();
+  if(!data.length){container.innerHTML='<div class="text-muted" style="font-size:12px;padding:8px">No matching questions in the bank</div>';updBankPickCount();return;}
+  container.innerHTML=data.map(q=>{const inEx=have.has(String(q.id));return `
+    <label class="bank-pick-row" style="${inEx?'opacity:.55;cursor:default':''}">
+      <input type="checkbox" class="bankPickChk" value="${q.id}" ${inEx?'disabled':''} onchange="updBankPickCount()"/>
       <div style="flex:1">
-        <div style="font-size:13px;font-weight:500">${q.text}</div>
+        <div style="font-size:13px;font-weight:500">${esc(q.text)}</div>
         <div class="tags" style="margin-top:4px">
-          ${q.subject?`<span class="tag-pill tag-subject">${q.subject}</span>`:''}
-          ${q.level?`<span class="tag-pill tag-level">${q.level}</span>`:''}
+          ${q.subject?`<span class="tag-pill tag-subject">${esc(q.subject)}</span>`:''}
+          ${q.level?`<span class="tag-pill tag-level">${esc(q.level)}</span>`:''}
           <span class="tag-pill tag-points">${q.points||1} pt</span>
-          ${q.audio_required?'<span class="tag-pill" style="border-color:var(--purple);color:var(--purple)">🎙️</span>':''}
+          <span class="tag-pill" style="border-color:var(--blue);color:var(--blue)">${bankTypeLbl(q)}</span>
+          ${inEx?'<span class="tag-pill" style="border-color:var(--success);color:var(--success)">✔ already in exam</span>':''}
         </div>
       </div>
-    </label>`).join('');
+    </label>`;}).join('');
+  updBankPickCount();
 }
-
+function bankPickAll(on){document.querySelectorAll('.bankPickChk:not(:disabled)').forEach(c=>c.checked=on);updBankPickCount();}
+function bankPickRandom(){
+  const n=Math.max(1,parseInt(document.getElementById('pickBankRandN').value)||1);
+  const boxes=[...document.querySelectorAll('.bankPickChk:not(:disabled)')];
+  if(!boxes.length){alert('No questions to pick from — adjust the filters first.');return;}
+  boxes.forEach(c=>c.checked=false);
+  boxes.sort(()=>Math.random()-.5).slice(0,n).forEach(c=>c.checked=true);updBankPickCount();
+}
 function addSelectedBankQuestions(){
-  const checked=[...document.querySelectorAll('.bankPickChk:checked')].map(c=>c.value);
-  if(!checked.length){alert('Please select at least one question.');return;}
-  checked.forEach(id=>{const q=allQuestionBank.find(q=>q.id===id);if(q)addQuestion(q);});
-  document.querySelectorAll('.bankPickChk:checked').forEach(c=>c.checked=false);
+  const msg=document.getElementById('pickBankMsg'),have=examBankIds();
+  const checked=[...document.querySelectorAll('.bankPickChk:checked')].map(c=>c.value).filter(id=>!have.has(String(id)));
+  if(!checked.length){msg.style.color='var(--danger)';msg.textContent='Tick at least one question that is not already in the exam.';return;}
+  // drop untouched blank question boxes so they do not stay empty above the imported ones
+  document.querySelectorAll('.question-builder').forEach(qb=>{const i=qb.id.replace('qb-','');if(!(document.getElementById(`q-text-${i}`)?.value||'').trim()&&!document.getElementById(`q-bankid-${i}`)?.value)qb.remove();});
+  let n=0;checked.forEach(id=>{const q=allQuestionBank.find(x=>String(x.id)===String(id));if(q){addQuestion(q);n++;}});
+  renderBankPicker();msg.style.color='var(--success)';msg.textContent=`✅ ${n} question(s) added — they are in the question list below.`;
 }
 
 // ── EXAMS ────────────────────────────────────
@@ -1827,7 +1892,7 @@ function openCreateExamModal(examId){
   document.getElementById('examPickSearch').value='';{const ps=document.getElementById('examPickSource');if(ps)ps.value=(isT&&mine.length)?String(currentUser.id):'';}filterExamPick();
   document.getElementById('examAssignAll').checked=allChk;
   document.querySelectorAll('.examStudentChk').forEach(c=>c.checked=assigned.includes(c.value));toggleAssignAll();
-  if(ex&&(ex.questions||[]).length)ex.questions.forEach(q=>addQuestion(q));else addQuestion();
+  if(ex&&(ex.questions||[]).length)ex.questions.forEach(q=>addQuestion(q));else addQuestion();renderBankPicker();markAttendedInPicker();
   document.querySelector('#modalCreateExam .modal-title').firstChild.textContent=ex?'Edit Exam ':'Create New Exam ';
   openModal('modalCreateExam');
 }
@@ -1895,7 +1960,7 @@ function toggleQuestionAudio(idx){
   const on=document.getElementById(`q-audio-${idx}`).checked;
   document.getElementById(`q-body-${idx}`).style.opacity=on?'.4':'1';
 }
-function removeQuestion(idx){const el=document.getElementById(`qb-${idx}`);if(el)el.remove();}
+function removeQuestion(idx){const el=document.getElementById(`qb-${idx}`);if(el)el.remove();renderBankPicker();}
 
 async function saveExam(publish=true){
   const title=document.getElementById('examTitle').value.trim();
@@ -1949,6 +2014,16 @@ async function saveExam(publish=true){
   const auto_grade=resultMode==='auto'&&!hasManual;
   const body={title,subject,level,duration_minutes:duration,passing_score:pass,description:desc,questions,assigned_students,auto_grade,result_mode:resultMode,is_active:publish};
   if(!publish&&editingExamId&&(allExams.find(e=>e.id===editingExamId)||{}).is_active&&!confirm('This exam is live. Saving it as a draft will hide it from students. Continue?'))return;
+  if(publish){
+    const att=attendedBefore(title,level,editingExamId);
+    const eff=assigned_students.length?assigned_students:allStudents.filter(u=>!isTestAccount(u)).map(u=>String(u.id));
+    const hit=eff.filter(id=>att[id]);
+    if(hit.length){
+      const nm=id=>(allStudents.find(u=>String(u.id)===String(id))||{}).name||'?';
+      const list=hit.slice(0,12).map(id=>'• '+nm(id)+' — '+new Date(att[id].at).toLocaleDateString()+(att[id].status==='started'?' (entered, not submitted)':'')).join('\n')+(hit.length>12?'\n… +'+(hit.length-12)+' more':'');
+      if(!confirm('⚠️ '+hit.length+' of the selected students already entered this exam before:\n\n'+list+'\n\nThey cannot enter it again unless you press “Allow retake” for them.\nSave anyway?'))return;
+    }
+  }
   showLoading(publish?'Saving exam…':'Saving draft…');
   const res=editingExamId
     ?await sb(`exams?id=eq.${editingExamId}`,{method:'PATCH',body:JSON.stringify(body)})
@@ -1978,6 +2053,158 @@ async function saveExam(publish=true){
   }else{hideLoading();fail(data.message||'Error saving exam.');}
 }
 
+
+
+// ── ATTENDANCE: who entered which exam ──
+function examAttMap(examId){
+  const rank={started:1,pending:2,done:3},m={};
+  allResults.filter(r=>r.exam_id===examId).forEach(r=>{
+    const st=r.admin_note===STARTED_NOTE?'started':(r.graded===false?'pending':'done');
+    const c=m[r.student_id];
+    if(!c||rank[st]>rank[c.status]||(rank[st]===rank[c.status]&&new Date(r.submitted_at)>new Date(c.at)))m[r.student_id]={status:st,at:r.submitted_at,score:r.score,passed:r.passed,rid:r.id};
+  });
+  return m;
+}
+const examEntered=id=>Object.keys(examAttMap(id)).length;
+let attExamId=null;
+function openAttendance(id){attExamId=id;document.getElementById('attSearch').value='';document.getElementById('attFilter').value='';renderAttendance();openModal('modalAttendance');}
+function renderAttendance(){
+  const ex=allExams.find(e=>e.id===attExamId);if(!ex)return;
+  document.getElementById('attTitle').textContent='👥 Attendance — '+ex.title;
+  const map=examAttMap(ex.id),assigned=(ex.assigned_students||[]).map(String);
+  const real=allStudents.filter(u=>!isTestAccount(u));
+  const base=assigned.length?real.filter(u=>assigned.includes(String(u.id))):real;
+  const extra=real.filter(u=>map[u.id]&&!base.includes(u));
+  const all=[...base,...extra].map(u=>({u,a:map[u.id]||null,extra:extra.includes(u)}));
+  const nDone=all.filter(x=>x.a&&x.a.status!=='started').length,nStart=all.filter(x=>x.a&&x.a.status==='started').length,nNone=all.filter(x=>!x.a).length;
+  const chip=(t,c)=>`<span style="padding:6px 12px;border-radius:20px;border:2px solid ${c};color:${c};font-size:12px;font-weight:600">${t}</span>`;
+  document.getElementById('attSummary').innerHTML=chip('Assigned: '+all.length,'var(--muted)')+chip('✅ Attended: '+nDone,'var(--success)')+chip('⚠️ Entered, not submitted: '+nStart,'var(--gold)')+chip('❌ Not entered: '+nNone,'var(--danger)');
+  const q=normA(document.getElementById('attSearch').value||''),f=document.getElementById('attFilter').value;
+  let rows=all.filter(x=>(!q||normA(x.u.name).includes(q))&&(!f||(f==='attended'&&x.a&&x.a.status!=='started')||(f==='started'&&x.a&&x.a.status==='started')||(f==='none'&&!x.a)));
+  rows.sort((a,b)=>(a.a?0:1)-(b.a?0:1)||a.u.name.localeCompare(b.u.name));
+  const dt=t=>t?new Date(t).toLocaleString():'';
+  document.getElementById('attList').innerHTML=rows.length?rows.map(x=>{
+    const a=x.a;let st;
+    if(!a)st='<span class="badge badge-draft">❌ Not entered</span>';
+    else if(a.status==='started')st='<span class="badge badge-manual">⚠️ Entered, not submitted</span>';
+    else if(a.status==='pending')st='<span class="badge badge-pending">⏳ Submitted — pending grading</span>';
+    else st=`<span class="badge badge-active">✅ Attended</span> <b style="color:${a.passed?'var(--success)':'var(--danger)'}">${a.score!=null?Math.round(a.score)+'%':''}</b>`;
+    const tch=teachersOf(x.u.id).map(t=>`<span class="teacher-badge">${esc(tName(t))}</span>`).join(' ');
+    return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 4px;border-bottom:1px solid var(--border)">
+      <div style="min-width:160px"><div style="font-size:13px;font-weight:600">${esc(x.u.name)}${x.extra?' <span class="text-muted" style="font-size:10px">(not assigned now)</span>':''}</div><div style="margin-top:3px">${tch}</div></div>
+      <div style="flex:1;min-width:200px">${st}<div class="text-muted" style="font-size:11px;margin-top:3px">${a?dt(a.at):''}</div></div>
+      ${a?`<button class="btn-sm" onclick="attRetake('${a.rid}')">🔁 Allow retake</button>`:''}
+    </div>`;}).join(''):'<div class="text-muted" style="padding:16px;text-align:center">Nobody matches</div>';
+}
+async function attRetake(rid){await allowRetake(rid);renderAttendance();renderAdminExams();renderTeacherExamList();}
+
+
+// ── EXAM REMINDERS (in-app / WhatsApp / email) ──
+let remExamId=null,remTargets=[],remSent=new Set();
+const fmtDT=t=>new Date(t).toLocaleString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit',timeZoneName:'short'});
+const portalLink=()=>location.origin+location.pathname;
+function defaultRemindText(ex){
+  return `Assalamu Alaikum {name},
+
+📝 Your exam "${ex.title}"${ex.subject?` (${ex.subject}${ex.level?' • '+ex.level:''})`:''} {status}.
+🗓 Available until: {until}
+⏱ Duration: ${ex.duration_minutes} minutes • ${(ex.questions||[]).length} questions
+⚠️ You can enter the exam only once — please make sure you have a stable internet connection before you start.
+
+Open the exam portal: {link}
+
+Jazakum Allahu khayran,
+MY Institute`;
+}
+function remStatus(){const o=document.getElementById('remOpens').value;return(o&&new Date(o)>new Date())?'will open on '+fmtDT(o):'is now open';}
+function remUntilTxt(){const u=document.getElementById('remUntil').value;return u?fmtDT(u):'the closing date announced by your teacher';}
+function fillRem(tpl,name){return tpl.split('{name}').join(name).split('{status}').join(remStatus()).split('{until}').join(remUntilTxt()).split('{link}').join(portalLink());}
+function openRemind(id){
+  const ex=allExams.find(e=>e.id===id);if(!ex)return;remExamId=id;remSent=new Set();
+  const sc=allSchedules.filter(x=>x.exam_id===id).sort((a,b)=>new Date(b.closes_at)-new Date(a.closes_at))[0];
+  document.getElementById('remTitle').textContent='📣 Reminder — '+ex.title;
+  document.getElementById('remOpens').value=sc?toLocalInput(sc.opens_at):'';
+  document.getElementById('remUntil').value=sc?toLocalInput(sc.closes_at):'';
+  document.getElementById('remAud').value='notentered';
+  document.getElementById('remMsg').value=defaultRemindText(ex);
+  document.getElementById('remChannels').style.display=currentUser.role==='admin'?'flex':'none';
+  document.getElementById('remOut').innerHTML='';
+  refreshRemTargets();openModal('modalRemind');
+}
+function refreshRemTargets(){
+  const ex=allExams.find(e=>e.id===remExamId);if(!ex)return;
+  const map=examAttMap(ex.id),assigned=(ex.assigned_students||[]).map(String);
+  const real=allStudents.filter(u=>!isTestAccount(u));
+  const base=assigned.length?real.filter(u=>assigned.includes(String(u.id))):real;
+  const aud=document.getElementById('remAud').value;
+  remTargets=base.filter(u=>aud==='all'||!map[u.id]);
+  const isAd=currentUser.role==='admin';
+  document.getElementById('remCount').textContent=`${remTargets.length} student(s) will receive it`+(isAd?` · ${remTargets.filter(u=>u.whatsapp).length} with WhatsApp · ${remTargets.filter(u=>u.email).length} with email`:'');
+  remSent=new Set();document.getElementById('remOut').innerHTML='';
+}
+async function sendRemindInApp(){
+  const ex=allExams.find(e=>e.id===remExamId);if(!ex)return;
+  if(!remTargets.length){alert('No students to notify.');return;}
+  if(!confirm(`Send an in-app notification to ${remTargets.length} student(s)?`))return;
+  const msg=`📣 Reminder: your exam "${ex.title}" ${remStatus()}. Available until: ${remUntilTxt()}.`,now=new Date().toISOString();
+  const mk=extra=>JSON.stringify(remTargets.map(u=>({student_id:u.id,message:msg,read:false,created_at:now,...extra})));
+  showLoading('Sending…');
+  let res=await sb('notifications',{method:'POST',body:mk({exam_id:ex.id}),prefer:'return=minimal'});
+  if(!res.ok)res=await sb('notifications',{method:'POST',body:mk({}),prefer:'return=minimal'});
+  hideLoading();
+  if(res.ok){await loadAllData();alert(`Notification sent to ${remTargets.length} student(s) ✅\nThey will see it at the top of their dashboard.`);}
+  else alert('Could not send the notification. Check your connection / permissions.');
+}
+function remWaUrl(u){return `https://wa.me/${String(u.whatsapp||'').replace(/\D/g,'')}?text=${encodeURIComponent(fillRem(document.getElementById('remMsg').value,u.name))}`;}
+function showRemindWA(){
+  const withWA=remTargets.filter(u=>u.whatsapp&&String(u.whatsapp).replace(/\D/g,'').length>5),without=remTargets.filter(u=>!withWA.includes(u));
+  const out=document.getElementById('remOut');
+  if(!withWA.length){out.innerHTML='<div class="alert alert-info">None of these students has a WhatsApp number saved.</div>';return;}
+  out.innerHTML=`<div class="card-title" style="font-size:14px;margin-bottom:6px">📲 WhatsApp (${withWA.length})</div>
+    <div class="text-muted" style="font-size:12px;margin-bottom:8px">Each button opens WhatsApp with a personalised message — press Send inside WhatsApp. The browser only allows one chat at a time.</div>
+    <button class="btn btn-primary" style="width:auto;padding:8px 16px;margin-bottom:8px" onclick="remWaNext()">▶ Open next unsent</button>
+    <div style="max-height:260px;overflow-y:auto">${withWA.map(u=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid var(--border)"><span style="font-size:13px">${esc(u.name)} <span class="text-muted" style="font-size:11px">${esc(u.whatsapp)}</span></span><button class="btn-sm" id="remWa-${u.id}" onclick="remWaOne('${u.id}')">${remSent.has(String(u.id))?'✔ opened':'📲 Open chat'}</button></div>`).join('')}</div>
+    ${without.length?`<div class="text-muted" style="font-size:12px;margin-top:8px">No WhatsApp number: ${without.map(u=>esc(u.name)).join('، ')}</div>`:''}`;
+}
+function remWaOne(id){const u=remTargets.find(x=>String(x.id)===String(id));if(!u)return;window.open(remWaUrl(u),'_blank');remSent.add(String(id));const b=document.getElementById('remWa-'+id);if(b)b.textContent='✔ opened';}
+function remWaNext(){const u=remTargets.find(x=>x.whatsapp&&String(x.whatsapp).replace(/\D/g,'').length>5&&!remSent.has(String(x.id)));if(!u){alert('All chats were opened ✅');return;}remWaOne(u.id);}
+function showRemindEmail(){
+  const withE=remTargets.filter(u=>u.email),without=remTargets.filter(u=>!u.email),out=document.getElementById('remOut');
+  if(!withE.length){out.innerHTML='<div class="alert alert-info">None of these students has an email saved.</div>';return;}
+  const N=40,chunks=[];for(let i=0;i<withE.length;i+=N)chunks.push(withE.slice(i,i+N));
+  window._remChunks=chunks.map(c=>c.map(u=>u.email));
+  out.innerHTML=`<div class="card-title" style="font-size:14px;margin-bottom:6px">✉️ Email (${withE.length})</div>
+    <div class="text-muted" style="font-size:12px;margin-bottom:8px">Opens your email app with all addresses in BCC (so students do not see each other). The greeting becomes “Dear student”.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${chunks.map((c,i)=>`<button class="btn btn-primary" style="width:auto;padding:8px 16px" onclick="remMail(${i})">✉️ Open email${chunks.length>1?' ('+(i+1)+'/'+chunks.length+')':''}</button>`).join('')}
+    <button class="btn btn-outline" style="width:auto;padding:8px 16px" onclick="remCopyEmails()">📋 Copy all emails</button></div>
+    ${without.length?`<div class="text-muted" style="font-size:12px;margin-top:8px">No email: ${without.map(u=>esc(u.name)).join('، ')}</div>`:''}`;
+}
+function remMail(i){
+  const ex=allExams.find(e=>e.id===remExamId),body=fillRem(document.getElementById('remMsg').value,'dear student');
+  location.href='mailto:?bcc='+window._remChunks[i].map(encodeURIComponent).join(',')+'&subject='+encodeURIComponent('Exam reminder — '+(ex?ex.title:''))+'&body='+encodeURIComponent(body);
+}
+function remCopyEmails(){const t=window._remChunks.flat().join(', ');(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>alert('Emails copied ✅')).catch(()=>prompt('Copy the emails:',t));}
+
+// students who already entered an exam with the same name + level (or this very exam)
+function attendedBefore(title,level,examId){
+  const t=normA(title),out={};
+  allExams.filter(e=>e.id===examId||(normA(e.title)===t&&(e.level||'')===(level||''))).forEach(e=>{
+    const m=examAttMap(e.id);
+    Object.keys(m).forEach(sid=>{const c=out[sid];if(!c||new Date(m[sid].at)>new Date(c.at))out[sid]={at:m[sid].at,status:m[sid].status,exam:e.title};});
+  });
+  return out;
+}
+function markAttendedInPicker(){
+  const t=document.getElementById('examTitle')?.value||'',l=document.getElementById('examLevel')?.value.trim()||'';
+  const att=attendedBefore(t,l,editingExamId);let n=0;
+  document.querySelectorAll('#examStudentPickList>div').forEach(d=>{
+    d.querySelectorAll('.attBadge').forEach(x=>x.remove());
+    const sid=d.querySelector('input')?.value,a=att[sid];
+    if(a&&t.trim()){n++;const sp=document.createElement('span');sp.className='attBadge';sp.style.cssText='font-size:11px;color:var(--gold);font-weight:600;margin-left:6px';sp.textContent='⚠️ entered before · '+new Date(a.at).toLocaleDateString();d.querySelector('label').appendChild(sp);}
+  });
+  const c=document.getElementById('examPickCount');if(c)c.dataset.att=n?`  ·  ⚠️ ${n} student(s) already entered this exam`:'';
+  updPickCount();
+}
 
 // ── EXAM BANK: search / filter / group by subject & level ──
 function filterExams(list,p){
@@ -2030,7 +2257,7 @@ function renderAdminExams(){
       </div>
       ${sched.length?`<div style="font-size:11px;color:var(--gold);margin-bottom:10px">🗓️ ${sched.length} schedule(s)</div>`:''}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn-sm" onclick="openCreateExamModal('${e.id}')">${e.is_active?'✏️ Edit':'✏️ Continue draft'}</button> <button class="btn-sm" onclick="duplicateExam('${e.id}')">📄 Copy</button> <button class="btn-sm" onclick="openExamAnalysis('${e.id}')">📉 Analysis</button>
+        <button class="btn-sm" onclick="openCreateExamModal('${e.id}')">${e.is_active?'✏️ Edit':'✏️ Continue draft'}</button> <button class="btn-sm" onclick="duplicateExam('${e.id}')">📄 Copy</button> <button class="btn-sm" onclick="openExamAnalysis('${e.id}')">📉 Analysis</button> <button class="btn-sm" onclick="openAttendance('${e.id}')">👥 Attendance (${examEntered(e.id)})</button> <button class="btn-sm" onclick="openRemind('${e.id}')">📣 Remind</button>
         <button class="btn-sm" onclick="toggleExamActive('${e.id}',${!e.is_active})">${e.is_active?'⏸ Deactivate':'▶ Activate'}</button>
         <button class="btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteExam('${e.id}')">🗑</button>
       </div>
@@ -2054,7 +2281,7 @@ function renderTeacherExamList(){
       <div style="font-size:11px;margin-bottom:10px">
         ${e.auto_grade===false||e.result_mode==='manual'?'<span class="badge badge-manual">✏️ Manual grading</span>':'<span class="badge badge-active">⚡ Auto result</span>'}
       </div>
-      <button class="btn-sm" onclick="openCreateExamModal('${e.id}')">${e.is_active?'✏️ Edit':'✏️ Continue draft'}</button> <button class="btn-sm" onclick="duplicateExam('${e.id}')">📄 Copy</button> <button class="btn-sm" onclick="openExamAnalysis('${e.id}')">📉 Analysis</button> <button class="btn-sm" onclick="openTeacherResultsForExam('${e.id}')">📊 View Results</button> <button class="btn-sm" onclick="toggleExamActive('${e.id}',${!e.is_active})">${e.is_active?'⏸ Unpublish':'▶ Publish'}</button>
+      <button class="btn-sm" onclick="openCreateExamModal('${e.id}')">${e.is_active?'✏️ Edit':'✏️ Continue draft'}</button> <button class="btn-sm" onclick="duplicateExam('${e.id}')">📄 Copy</button> <button class="btn-sm" onclick="openExamAnalysis('${e.id}')">📉 Analysis</button> <button class="btn-sm" onclick="openAttendance('${e.id}')">👥 Attendance (${examEntered(e.id)})</button> <button class="btn-sm" onclick="openRemind('${e.id}')">📣 Remind</button> <button class="btn-sm" onclick="openTeacherResultsForExam('${e.id}')">📊 View Results</button> <button class="btn-sm" onclick="toggleExamActive('${e.id}',${!e.is_active})">${e.is_active?'⏸ Unpublish':'▶ Publish'}</button>
     </div>`;
   }).join('');
 }
@@ -2404,7 +2631,7 @@ async function startExam(examId){
     document.getElementById('examMeta').textContent=`${exam.subject||''}${exam.level?' • '+exam.level:''} • ${exam.questions.length} questions • ${exam.duration_minutes} min`;
     startTimer();renderQuestion();showPage('page-exam');return;
   }
-  if(!test&&mine.length){alert('You have already taken (or started) this exam, so it cannot be opened again.\n\nIf you need another attempt, ask your teacher/admin to press “🔁 Allow retake” for you.');renderAvailableExams();return;}
+  if(!test&&mine.length){const m0=mine.slice().sort((a,b)=>new Date(b.submitted_at)-new Date(a.submitted_at))[0];alert('⚠️ You already attended this exam on '+new Date(m0.submitted_at).toLocaleString()+(m0.admin_note===STARTED_NOTE?' (you entered but did not submit)':'')+', so it cannot be opened again.\n\nIf you need another attempt, ask your teacher/admin to press “🔁 Allow retake” for you.');renderAvailableExams();return;}
   const scs=allSchedules.filter(x=>x.exam_id===examId);
   if(!test&&scs.length){const n=new Date();
     if(!scs.some(x=>new Date(x.opens_at)<=n&&new Date(x.closes_at)>=n)){
