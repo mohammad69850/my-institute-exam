@@ -453,6 +453,8 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
         <button class="btn btn-outline" onclick="showAdminTab('discounts')">🎁 Gifts</button>
         <button class="btn btn-outline" onclick="showAdminTab('reports')">📈 Reports</button>
         <button class="btn btn-outline" onclick="showAdminTab('messages')">💬 Messages</button>
+        <button class="btn btn-outline" onclick="showAdminTab('ratings')">⭐ Ratings</button>
+        <button class="btn btn-outline" onclick="showAdminTab('visits')">👁️ Visits</button>
       </div>
     </div>
     <div id="teacherNav" style="display:none">
@@ -3371,7 +3373,7 @@ function inD(v,p){if(!v)return false;var x=new Date(v);if(isNaN(x))return false;
 function fd(v){var x=new Date(v);return x.toLocaleDateString('en-GB')+' '+x.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
 function krender(){
   var q=kin.value.trim(),ql=q.toLowerCase(),L=[],esc2=function(t){return String(t==null?'':t).replace(/</g,'&lt;')};
-  [['students','👥 الطلاب','Students'],['exams','📋 الامتحانات','Exams'],['bank','📚 بنك الأسئلة','Question Bank'],['schedule','🗓️ الجدول','Schedule'],['results','📊 النتائج','Results']].forEach(function(t){if(!ql||(t[1]+t[2]).toLowerCase().indexOf(ql)>-1)L.push([t[1],'تبويب',function(){showAdminTab(t[0])}])});
+  [['students','👥 الطلاب','Students'],['exams','📋 الامتحانات','Exams'],['bank','📚 بنك الأسئلة','Question Bank'],['schedule','🗓️ الجدول','Schedule'],['results','📊 النتائج','Results'],['ratings','⭐ التقييمات','Ratings'],['visits','👁️ الزيارات','Visits']].forEach(function(t){if(!ql||(t[1]+t[2]).toLowerCase().indexOf(ql)>-1)L.push([t[1],'تبويب',function(){showAdminTab(t[0])}])});
   if(q){
     var pd=pdate(q);
     if(pd){
