@@ -479,6 +479,8 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
       <button class="tab" onclick="switchAdminTab('discounts')" id="tabBtn-discounts">🎁 Gifts</button>
       <button class="tab" onclick="switchAdminTab('reports')" id="tabBtn-reports">📈 Reports</button>
       <button class="tab" onclick="switchAdminTab('messages')" id="tabBtn-messages">💬 Messages</button>
+      <button class="tab" onclick="switchAdminTab('ratings')" id="tabBtn-ratings">⭐ Ratings</button>
+      <button class="tab" onclick="switchAdminTab('visits')" id="tabBtn-visits">👁️ Visits</button>
     </div>
 
     <!-- STUDENTS TAB -->
@@ -585,6 +587,8 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
     </div>
 
     <!-- REPORTS TAB -->
+    <div id="adminTab-ratings" style="display:none"><div class="section-title">⭐ Teacher ratings</div><div id="ratBody"></div></div>
+    <div id="adminTab-visits" style="display:none"><div class="section-title">👁️ Platform visits</div><div id="visBody"></div></div>
     <div id="adminTab-messages" style="display:none">
       <div class="section-title">💬 Teacher ⇄ Student conversations</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
@@ -732,6 +736,15 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
       <div id="myScores"></div></div>
       <div class="card"><div class="card-h">🎁 My Gifts <span>هداياي</span></div><div id="myDiscounts"></div></div>
       <div class="card" style="grid-column:1/-1"><div class="card-h">📜 My Certificates <span>شهاداتي</span></div><div id="myCerts"></div></div>
+      <div class="card" style="grid-column:1/-1"><div class="card-h">⭐ Rate a Teacher <span>قيّم مدرسك</span></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <select id="rateTeacher" style="background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"></select>
+          <select id="rateStars" style="background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"><option value="5">★★★★★</option><option value="4">★★★★</option><option value="3">★★★</option><option value="2">★★</option><option value="1">★</option></select>
+          <input id="rateComment" type="text" placeholder="Comment (optional)" style="flex:1;min-width:200px;background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"/>
+        </div>
+        <label style="font-size:13px;display:block;margin:10px 0"><input type="checkbox" id="rateAnon"/> Anonymous to the teacher</label>
+        <button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="submitRating()">Submit</button>
+        <div id="rateMsg" style="margin-top:8px;font-size:13px"></div></div>
     </div>
   </div>
 </div>
@@ -1119,6 +1132,10 @@ async function afterLogin(){
   document.getElementById('headerAdminBtn').style.display=currentUser.role==='admin'?'inline-flex':'none';
   document.getElementById('headerTeacherBtn').style.display=currentUser.role==='teacher'?'inline-flex':'none';
   await loadAllData();
+  if(!store.get('mi_visit')){
+    store.set('mi_visit','1');
+    sb('visits',{method:'POST',prefer:'return=minimal',body:JSON.stringify({user_id:String(currentUser.id),name:currentUser.name,role:currentUser.role})}).catch(()=>{});
+  }
   hideLoading();
   if(currentUser.role==='admin'){
     document.getElementById('adminStats').style.display='grid';
@@ -1151,7 +1168,7 @@ async function afterLogin(){
 }
 
 function logout(){
-  store.del('mi_user');currentUser=null;clearInterval(timerInterval);
+  store.del('mi_visit');store.del('mi_user');currentUser=null;clearInterval(timerInterval);
   document.getElementById('mainHeader').style.display='none';
   document.getElementById('loginUsername').value='';document.getElementById('loginPassword').value='';document.getElementById('loginPassword').type='password';document.getElementById('pwToggle').textContent='Show';
   document.getElementById('loginAlert').innerHTML='';showPage('page-login');
@@ -2654,6 +2671,39 @@ async function deleteMessage(id){
   showLoading('Deleting…');await sb(`notifications?id=eq.${id}`,{method:'DELETE',prefer:''});
   await loadAllData();hideLoading();renderAdminMessages();
 }
+async function submitRating(){
+  const r=await sb('teacher_ratings',{method:'POST',prefer:'return=minimal',body:JSON.stringify({
+    student_id:String(currentUser.id),
+    teacher_id:document.getElementById('rateTeacher').value,
+    rating:+document.getElementById('rateStars').value,
+    comment:document.getElementById('rateComment').value.trim(),
+    anonymous:document.getElementById('rateAnon').checked})});
+  document.getElementById('rateMsg').textContent=r.ok?'Thank you! ✅':'Error, try again';
+  if(r.ok){document.getElementById('rateComment').value='';document.getElementById('rateAnon').checked=false;}
+}
+
+async function renderAdminRatings(){
+  const box=document.getElementById('ratBody');box.innerHTML='Loading…';
+  const rows=await (await sb('teacher_ratings?select=*&order=created_at.desc')).json();
+  if(!Array.isArray(rows)||!rows.length){box.innerHTML='<div class="empty-state"><div class="icon">⭐</div><p>No ratings yet</p></div>';return;}
+  const nm=(L,id)=>(L.find(x=>String(x.id)===String(id))||{}).name||'—';
+  const by={};rows.forEach(r=>(by[r.teacher_id]=by[r.teacher_id]||[]).push(r));
+  box.innerHTML=Object.entries(by).map(([tid,L])=>{
+    const avg=(L.reduce((s,r)=>s+(r.rating||0),0)/L.length).toFixed(1);
+    return `<div class="card" style="margin-bottom:14px"><div class="card-title">📚 ${esc(nm(allTeachers,tid))} — ⭐ ${avg}/5 <span class="text-muted" style="font-size:12px">· ${L.length} rating(s)</span></div>`
+    +L.map(r=>`<div style="border-top:1px solid var(--border);padding:8px 0;font-size:13px">${'★'.repeat(r.rating||0)}${'☆'.repeat(5-(r.rating||0))} · ${esc(nm(allStudents,r.student_id))}${r.anonymous?' <span class="text-muted">(🕶️ anonymous to teacher)</span>':''} · <span class="text-muted">${new Date(r.created_at).toLocaleDateString()}</span>${r.comment?`<div>${esc(r.comment)}</div>`:''}</div>`).join('')+'</div>';
+  }).join('');
+}
+
+async function renderAdminVisits(){
+  const box=document.getElementById('visBody');box.innerHTML='Loading…';
+  const rows=await (await sb('visits?select=*&order=created_at.desc&limit=1000')).json();
+  if(!Array.isArray(rows)||!rows.length){box.innerHTML='<div class="empty-state"><div class="icon">👁️</div><p>No visits yet</p></div>';return;}
+  const u={};rows.forEach(r=>{const k=r.user_id;if(!u[k])u[k]={name:r.name,role:r.role,last:r.created_at,n:0};u[k].n++;});
+  box.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="text-align:left"><th>Name</th><th>Role</th><th>Visits</th><th>Last visit</th></tr>'
+  +Object.values(u).map(x=>`<tr style="border-top:1px solid var(--border)"><td>${esc(x.name)}</td><td>${esc(x.role)}</td><td>${x.n}</td><td>${new Date(x.last).toLocaleString()}</td></tr>`).join('')+'</table>';
+}
+
 function renderAdminMessages(){
   const box=document.getElementById('amBody');if(!box)return;
   const sel=document.getElementById('amTeacher'),tv=sel.value,q=(document.getElementById('amSearch').value||'').toLowerCase();
@@ -2997,6 +3047,7 @@ function renderTeacherHero(id){
 }
 function renderStudentProfile(){
   if(!currentUser)return;
+  {const rt=document.getElementById('rateTeacher');if(rt)rt.innerHTML=allTeachers.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');}
   renderMyProgress();renderProfileHero();
   const myR=allResults.filter(r=>r.student_id===currentUser.id).sort((a,b)=>new Date(b.submitted_at)-new Date(a.submitted_at));
   document.getElementById('myScores').innerHTML=myR.length?myR.map(r=>{
@@ -3073,7 +3124,7 @@ function populateDropdowns(){
 // ── TABS ──────────────────────────────────────
 function showAdminTab(tab){showPage('page-admin');switchAdminTab(tab);}
 function switchAdminTab(tab){
-  const tabs=['students','bank','exams','schedule','results','discounts','reports','messages'];
+  const tabs=['students','bank','exams','schedule','results','discounts','reports','messages','ratings','visits'];
   tabs.forEach(t=>{
     const el=document.getElementById(`adminTab-${t}`);if(el)el.style.display=t===tab?'block':'none';
     const b=document.getElementById(`tabBtn-${t}`);if(b)b.classList.toggle('active',t===tab);
@@ -3086,6 +3137,8 @@ function switchAdminTab(tab){
   if(tab==='discounts'){populateDropdowns();renderDiscountsTable();}
   if(tab==='reports')populateDropdowns();
   if(tab==='messages')renderAdminMessages();
+  if(tab==='ratings')renderAdminRatings();
+  if(tab==='visits')renderAdminVisits();
 }
 
 function showTeacherTab(tab){showPage('page-teacher');switchTeacherTab(tab);}
