@@ -170,6 +170,10 @@
     .points-chip{font-family:'Cinzel',serif;font-size:11px;color:var(--gold-light);background:rgba(21,101,192,.1);border:1px solid var(--gold);border-radius:20px;padding:2px 10px;display:inline-block;margin-bottom:10px}
     .audio-record-box{border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center}
     .audio-record-box.recording{border-color:var(--danger);background:rgba(192,57,43,.05)}
+    #toastBox{position:fixed;top:12px;right:12px;z-index:100000;display:flex;flex-direction:column;gap:8px;width:min(340px,calc(100vw - 24px))}
+    .toast{background:var(--card,#fff);color:var(--text,#222);border:2px solid var(--gold,#C9A84C);border-left-width:6px;border-radius:12px;padding:10px 14px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-size:13px;cursor:pointer;animation:toastIn .25s ease;word-break:break-word}
+    @keyframes toastIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+    .msg-img{max-width:100%;max-height:260px;border-radius:10px;border:1px solid var(--border);display:block;margin-top:6px;cursor:zoom-in}
     .notif-banner{background:linear-gradient(135deg,rgba(21,101,192,.18) 0%,rgba(21,101,192,.05) 100%);border:2px solid var(--gold);border-radius:14px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
     .pending-note{background:rgba(41,128,185,.1);border:1px solid #2980b9;border-radius:10px;padding:14px;font-size:13px;color:#2980b9;margin-top:10px}
     .flex{display:flex}.gap-10{gap:10px}.gap-16{gap:16px}
@@ -418,6 +422,7 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
     <div class="header-right">
       <button class="btn-sm" id="themeBtn" onclick="toggleTheme()" title="Dark / Light">🌙</button>
       <div class="user-badge" id="headerUser">—</div>
+      <button class="btn-sm" id="headerBell" onclick="openBell()" title="Notifications">🔔<span id="bellN" style="display:none;background:var(--danger,#c0392b);color:#fff;border-radius:10px;padding:0 6px;font-size:11px;margin-inline-start:4px">0</span></button>
       <button class="btn-sm" id="headerHomeBtn" onclick="goHome()">🏠 Home</button>
       <button class="btn-sm" id="headerProfileBtn" onclick="showPage('page-profile')" style="display:none">👤 My Profile</button>
       <button class="btn-sm" id="headerHifzBtn" onclick="openHifzPage()" style="display:none">📖 Daily Hifz</button>
@@ -543,6 +548,8 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
           <option value="mcq">MCQ</option>
           <option value="audio">Audio Answer</option>
         </select>
+        <select id="bankFilterStat" onchange="renderBankList()"><option value="">All difficulty</option><option value="hard">🔥 Hard (&lt;40%)</option><option value="easy">😴 Very easy (&gt;90%)</option><option value="check">⚠️ Check key / ambiguous</option><option value="none">No / few attempts</option></select>
+        <select id="bankSort" onchange="renderBankList()"><option value="">Newest first</option><option value="hardest">Hardest first</option><option value="easiest">Easiest first</option><option value="attempts">Most attempts</option></select>
         <input type="text" id="bankSearch" placeholder="🔍 Search questions…" oninput="renderBankList()" style="min-width:200px"/>
       </div>
       <div id="bankStats" style="margin-bottom:16px;font-size:13px;color:var(--muted)"></div>
@@ -627,10 +634,11 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
     <div id="adminTab-ratings" style="display:none"><div class="section-title">⭐ Teacher ratings</div><div id="ratBody"></div></div>
     <div id="adminTab-visits" style="display:none"><div class="section-title">👁️ Platform visits</div><div id="visBody"></div></div>
     <div id="adminTab-messages" style="display:none">
-      <div class="section-title">💬 Teacher ⇄ Student conversations</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px"><div class="section-title" style="margin:0">💬 Teacher ⇄ Student conversations</div><button class="btn btn-primary" style="width:auto;padding:10px 18px" onclick="openMsgModal('all')">✉️ New message</button></div>
+      <div id="amInbox"></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
         <select id="amTeacher" onchange="renderAdminMessages()" style="background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"><option value="">All teachers</option></select>
-        <input type="text" id="amSearch" placeholder="🔍 Search student or text…" oninput="renderAdminMessages()" style="min-width:220px;background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"/>
+        <input type="text" id="amSearch" placeholder="🔍 Search by student name or message text…" oninput="renderAdminMessages()" style="min-width:220px;background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"/>
       </div>
       <div id="amBody"></div>
     </div>
@@ -709,6 +717,8 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
       <div class="bank-filters">
         <select id="tBankFilterSubject" onchange="renderTeacherBankList()"><option value="">All Subjects</option></select>
         <select id="tBankFilterLevel" onchange="renderTeacherBankList()"><option value="">All Levels</option></select>
+        <select id="tBankFilterStat" onchange="renderTeacherBankList()"><option value="">All difficulty</option><option value="hard">🔥 Hard (&lt;40%)</option><option value="easy">😴 Very easy (&gt;90%)</option><option value="check">⚠️ Check key / ambiguous</option><option value="none">No / few attempts</option></select>
+        <select id="tBankSort" onchange="renderTeacherBankList()"><option value="">Newest first</option><option value="hardest">Hardest first</option><option value="easiest">Easiest first</option><option value="attempts">Most attempts</option></select>
         <input type="text" id="tBankSearch" placeholder="🔍 Search…" oninput="renderTeacherBankList()" style="min-width:180px;background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text)"/>
       </div>
       <div id="teacherBankList"></div>
@@ -938,6 +948,14 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
   </div>
 </div>
 
+<!-- Question statistics -->
+<div class="modal-overlay" id="modalQStats">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-title"><span>📊 Question statistics</span> <button class="close-btn" onclick="closeModal('modalQStats')">✕</button></div>
+    <div id="qsBody"></div>
+  </div>
+</div>
+
 <!-- Add/Edit Bank Question -->
 <div class="modal-overlay" id="modalBankQuestion">
   <div class="modal" style="max-width:640px">
@@ -955,6 +973,11 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
       </div>
     </div>
     <div class="field"><label>Points for this question</label><input type="number" id="bankQPoints" value="1" min="0.5" step="0.5"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>Question type</label>
+        <select id="bankQType" onchange="setBankType()"><option value="mcq">Multiple choice</option><option value="tf">True / False</option><option value="fill">Fill in the blank</option><option value="match">Matching</option><option value="short">Written answer (manual)</option></select></div>
+      <div class="field" style="display:flex;align-items:flex-end"><label style="display:flex;align-items:center;gap:6px;margin:0 0 10px;cursor:pointer"><input type="checkbox" id="bankQBonus" style="width:auto"/> ⭐ Bonus question</label></div>
+    </div>
     <div class="field"><label>Question Text</label><textarea id="bankQText" placeholder="Write the question…"></textarea></div>
     <div class="field">
       <label>Attach Image (optional)</label>
@@ -983,6 +1006,14 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
       <div class="option-input"><input type="radio" name="bankQCorrect" value="2" id="bqr-2"/><label for="bqr-2">C</label><input type="text" id="bankQ-opt-2" placeholder="Option C…"/></div>
       <div class="option-input"><input type="radio" name="bankQCorrect" value="3" id="bqr-3"/><label for="bqr-3">D</label><input type="text" id="bankQ-opt-3" placeholder="Option D…"/></div>
     </div>
+    <div id="bankQTfWrap" style="display:none"><div style="font-size:12px;color:var(--muted);margin-bottom:8px">Correct answer:</div>
+      <label style="margin-right:16px"><input type="radio" name="bankQTf" value="0" style="width:auto"/> True</label>
+      <label><input type="radio" name="bankQTf" value="1" style="width:auto"/> False</label></div>
+    <div id="bankQFillWrap" style="display:none"><div style="font-size:12px;color:var(--muted);margin-bottom:6px">Accepted answers — one per line (any of them is correct)</div>
+      <textarea id="bankQFill" style="width:100%;background:#fff;border:2px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;min-height:80px"></textarea></div>
+    <div id="bankQMatchWrap" style="display:none"><div style="font-size:12px;color:var(--muted);margin-bottom:6px">Matching pairs: left item ↔ its correct match. Students see the right side shuffled.</div>
+      <div id="q-pairs-bank"></div><button class="btn-sm" type="button" onclick="addPairRow('bank')">+ Add pair</button></div>
+    <div id="bankQShortWrap" style="display:none"><div style="font-size:12px;color:var(--muted)">Student types a written answer. You grade it manually.</div></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modalBankQuestion')">Cancel</button>
       <button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="saveBankQuestion()">💾 Save to Bank</button>
@@ -1019,6 +1050,13 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
         <div class="field" style="margin-bottom:0"><label>Closes (date & time)</label><input type="datetime-local" id="examCloses"/></div>
       </div>
       <div style="font-size:12px;color:var(--muted);margin-top:8px">Leave both empty = always available. Students can only start the exam inside this window. Saving replaces any existing schedule for this exam.</div>
+    </div>
+    <div style="background:#F5FAFF;border:2px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px">🎲 Unique exam for every student (optional)</div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px;cursor:pointer"><input type="checkbox" id="examRndQ" style="width:auto"/> Shuffle the order of the questions</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px;cursor:pointer"><input type="checkbox" id="examRndO" style="width:auto"/> Shuffle the answer choices (A/B/C/D) of multiple-choice questions</label>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px">Each student gets <input type="number" id="examDrawN" min="0" placeholder="all" style="width:80px;padding:6px 8px"/> random questions out of the questions listed below</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px">Leave the number empty = every student gets all questions. To draw from the bank: add a big pool of questions below (filter the bank → “Select all shown” → add), then set how many each student receives. Avoid choices like “all of the above” when shuffling choices.</div>
     </div>
     <div class="field"><label>Description</label><textarea id="examDesc" placeholder="Brief description…" style="min-height:60px"></textarea></div>
     <hr class="divider"/>
@@ -1106,8 +1144,23 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
   <div class="modal" style="max-width:480px">
     <div class="modal-title"><span id="tmTitle">💬 Message</span> <button class="close-btn" onclick="closeModal('modalMsg')">✕</button></div>
     <input type="hidden" id="tmTarget"/>
-    <div class="field"><label>Quick template</label><select id="tmTpl" onchange="if(this.value)document.getElementById('tmText').value=this.value"><option value="">— Choose —</option><option value="Great job! Keep it up 👏">Great job 👏</option><option value="Please review your mistakes in the last exam and ask me if anything is unclear.">Review your mistakes</option><option value="Reminder: you have an upcoming exam. Good luck! 🍀">Exam reminder</option><option value="Your result needs improvement — let's talk about how I can help.">Needs improvement</option></select></div>
+    <div class="field" id="tmToField"><label>To</label>
+      <input type="text" id="tmWhoSearch" placeholder="🔍 Search student…" oninput="tmFillWho()" style="margin-bottom:6px"/>
+      <select id="tmWho" onchange="document.getElementById('tmTarget').value=this.value"></select></div>
+    <div class="field" id="tmTplField"><label>Quick template</label><select id="tmTpl" onchange="if(this.value)document.getElementById('tmText').value=this.value"><option value="">— Choose —</option><option value="Great job! Keep it up 👏">Great job 👏</option><option value="Please review your mistakes in the last exam and ask me if anything is unclear.">Review your mistakes</option><option value="Reminder: you have an upcoming exam. Good luck! 🍀">Exam reminder</option><option value="Your result needs improvement — let's talk about how I can help.">Needs improvement</option></select></div>
     <div class="field"><label>Message</label><textarea id="tmText" placeholder="Write your message…"></textarea></div>
+    <div class="field"><label>Attach image (optional) <span class="text-muted">· صورة (اختياري)</span></label>
+      <input type="file" id="tmImgFile" accept="image/*" onchange="pickMsgImage(this)"/>
+      <div id="tmImgWrap" style="display:none;margin-top:6px"><img id="tmImgPrev" class="msg-img" style="cursor:default"/><button class="btn-sm" type="button" style="margin-top:6px" onclick="clearMsgImage()">✕ Remove image</button></div>
+      <input type="hidden" id="tmImgData"/></div>
+    <div class="field"><label>Voice note (optional) <span class="text-muted">· رسالة صوتية (اختياري)</span></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn-sm" type="button" onclick="recordPrompt('tmAudData','tmAudPrev',this)">🎙️ Record</button>
+        <input type="file" id="tmAudFile" accept="audio/*" onchange="handleAudioPick(this,'tmAudPrev','tmAudData')" style="flex:1;min-width:150px"/>
+        <button class="btn-sm" type="button" onclick="clearPrompt('tmAudData','tmAudPrev','tmAudFile')">✕</button>
+      </div>
+      <audio id="tmAudPrev" controls style="display:none;width:100%;margin-top:6px"></audio>
+      <input type="hidden" id="tmAudData"/></div>
     <div id="tmAlert"></div>
     <button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="sendTeacherMsg()">Send 📨</button>
   </div>
@@ -1293,6 +1346,7 @@ async function afterLogin(){
   renderLeaderboard();updateAdminStats();renderHomeHero();showPage('page-home');
   document.getElementById('homeWelcome').textContent=`Welcome, ${currentUser.name}!`;
   renderInspiration();
+  startNotifPolling();
   initHifz().catch(e=>console.error(e));
   document.getElementById('homeSubtitle').textContent=currentUser.role==='admin'
     ?'Admin Dashboard — Manage students, exams, schedules, and results.'
@@ -1302,7 +1356,7 @@ async function afterLogin(){
 }
 
 function logout(){
-  store.del('mi_visit');store.del('mi_user');currentUser=null;clearInterval(timerInterval);
+  stopNotifPolling();store.del('mi_visit');store.del('mi_user');currentUser=null;clearInterval(timerInterval);
   document.getElementById('mainHeader').style.display='none';
   document.getElementById('loginUsername').value='';document.getElementById('loginPassword').value='';document.getElementById('loginPassword').type='password';document.getElementById('pwToggle').textContent='Show';
   document.getElementById('loginAlert').innerHTML='';showPage('page-login');
@@ -1326,11 +1380,12 @@ async function loadAllData(){
   allTeachers=allUsers.filter(u=>u.role==='teacher');
   [,allExams,allResults,allDiscounts,allSchedules,allQuestionBank,allNotifications]=
     await Promise.all([Promise.resolve(allUsers),j(eR),j(rR),j(dR),j(scR),j(bR),j(nR)]);
-  secRows=allQuestionBank.filter(q=>q.text==='__SECTIONS__');linkRow=allQuestionBank.find(q=>q.text==='__LINKS__')||null;try{links=JSON.parse(linkRow.subject)||{};}catch{links={};}langRow=allQuestionBank.find(q=>q.text==='__LANGS__')||null;try{langs=JSON.parse(langRow.subject)||{};}catch{langs={};}allQuestionBank=allQuestionBank.filter(q=>q.text!=='__SECTIONS__'&&q.text!=='__LINKS__'&&q.text!=='__LANGS__');
+  secRows=allQuestionBank.filter(q=>q.text==='__SECTIONS__');linkRow=allQuestionBank.find(q=>q.text==='__LINKS__')||null;try{links=JSON.parse(linkRow.subject)||{};}catch{links={};}langRow=allQuestionBank.find(q=>q.text==='__LANGS__')||null;try{langs=JSON.parse(langRow.subject)||{};}catch{langs={};}examCfg={};examCfgRows={};allQuestionBank.filter(q=>q.text==='__EXAMCFG__').forEach(r=>{try{const c=JSON.parse(r.subject);if(c&&c.e){examCfg[c.e]={q:!!c.q,o:!!c.o,n:parseInt(c.n)||0};examCfgRows[c.e]=r;}}catch(e){}});window._allUsers=allUsers;allQuestionBank=allQuestionBank.filter(q=>q.text!=='__SECTIONS__'&&q.text!=='__LINKS__'&&q.text!=='__LANGS__'&&q.text!=='__EXAMCFG__');
 }
 
 // ── TEACHER ↔ STUDENT LINKS (stored like sections: one hidden row in question_bank) ──
 let links={},linkRow=null,langs={},langRow=null;
+let examCfg={},examCfgRows={},examPlan=null,qk=0;
 async function saveLangs(){
   const sub=JSON.stringify(langs);
   const body=langRow?{subject:sub}:{text:'__LANGS__',subject:sub,options:['','','',''],correct:0,points:1,created_by:currentUser.id,created_at:new Date().toISOString()};
@@ -1402,14 +1457,15 @@ async function allowRetake(id){
 }
 async function duplicateExam(id){
   const e=allExams.find(x=>x.id===id);if(!e)return;showLoading('Duplicating…');
-  const r=await sb('exams',{method:'POST',prefer:'return=minimal',body:JSON.stringify({title:e.title+' (copy)',subject:e.subject,level:e.level,duration_minutes:e.duration_minutes,passing_score:e.passing_score,description:e.description,questions:e.questions,assigned_students:e.assigned_students||[],auto_grade:e.auto_grade,result_mode:e.result_mode,is_active:false,created_by:currentUser.id,created_at:new Date().toISOString()})});
+  const r=await sb('exams',{method:'POST',prefer:'return=representation',body:JSON.stringify({title:e.title+' (copy)',subject:e.subject,level:e.level,duration_minutes:e.duration_minutes,passing_score:e.passing_score,description:e.description,questions:e.questions,assigned_students:e.assigned_students||[],auto_grade:e.auto_grade,result_mode:e.result_mode,is_active:false,created_by:currentUser.id,created_at:new Date().toISOString()})});
+  try{const c=examCfg[e.id];if(r.ok&&c){const d=await r.json();if(d&&d[0])await saveExamCfg(d[0].id,c);}}catch(err){}
   await loadAllData();hideLoading();renderAdminExams();renderTeacherExamList();updateAdminStats();
   if(!r.ok)alert('Could not duplicate the exam.');
 }
 function openExamAnalysis(id){
   const ex=allExams.find(e=>e.id===id);if(!ex)return;
   const rs=allResults.filter(r=>r.exam_id===id&&r.admin_note!==STARTED_NOTE&&r.graded!==undefined&&r.answers);
-  const rows=(ex.questions||[]).map((q,i)=>{let ok=0,n=0;rs.forEach(r=>{const g=gradeQ(q,(r.answers||{})[i]);if(g.status==='manual')return;n++;if(g.status==='correct')ok++;});return{q,i,n,pct:n?Math.round(ok/n*100):null};}).sort((a,b)=>(a.pct===null)-(b.pct===null)||(a.pct-b.pct));
+  const rows=(ex.questions||[]).map((q,i)=>{let ok=0,n=0;rs.forEach(r=>{if(!wasServed(r,i))return;const g=gradeQ(q,(r.answers||{})[i]);if(g.status==='manual')return;n++;if(g.status==='correct')ok++;});return{q,i,n,pct:n?Math.round(ok/n*100):null};}).sort((a,b)=>(a.pct===null)-(b.pct===null)||(a.pct-b.pct));
   const taken=new Set(rs.map(r=>String(r.student_id)));
   const ct=allTeachers.find(x=>String(x.id)===String(ex.created_by));
   const aud=(ex.assigned_students||[]).length?allStudents.filter(s=>ex.assigned_students.map(String).includes(String(s.id))):(ct&&studentIdsOf(ct.id).length?allStudents.filter(s=>studentIdsOf(ct.id).map(String).includes(String(s.id))):allStudents);
@@ -1435,7 +1491,7 @@ function importStudentsCSV(inp){
     if(!res.ok)alert('Import failed. Please check the file and try again.');
   };rd.readAsText(f);
 }
-function saveDraft(){if(activeExam&&activeResultId)store.set('mi_draft',JSON.stringify({rid:activeResultId,examId:activeExam.id,answers,questionIndex,deadline:examStartTime+activeExam.duration_minutes*60000}));}
+function saveDraft(){if(activeExam&&activeResultId)store.set('mi_draft',JSON.stringify({rid:activeResultId,examId:activeExam.id,plan:examPlan,answers,questionIndex,deadline:examStartTime+activeExam.duration_minutes*60000}));}
 const getDraft=()=>{try{return JSON.parse(store.get('mi_draft'));}catch{return null;}};
 
 // ── AUDIO PROMPT / PROGRESS / CERT VERIFY ──
@@ -1604,7 +1660,7 @@ function renderStudentsTable(){
     const mid=isT?`<td>${s.subject?esc(s.subject):'<span style="color:var(--muted)">—</span>'}</td>`:'';
     const link=isT?`<span class="text-muted" style="font-size:12px">${studentIdsOf(s.id).length} students</span>`
       :(teachersOf(s.id).length?teachersOf(s.id).map(x=>`<span class="teacher-badge">${esc(tName(x))}</span>`).join(' '):'<span style="color:var(--muted)">—</span>');
-    const act=`<button class="btn-sm" onclick="openLinksModal('${isT?'teacher':'student'}','${s.id}')">${isT?'👥 Students':'👨‍🏫 Teachers'}</button> `;
+    const act=`<button class="btn-sm" onclick="openLinksModal('${isT?'teacher':'student'}','${s.id}')">${isT?'👥 Students':'👨‍🏫 Teachers'}</button> `+(isT?'':`<button class="btn-sm" onclick="openMsgModal('${s.id}')">💬 Message</button> `);
     return `<tr>
       <td><strong>${esc(s.name)}</strong></td>${mid}
       <td><code style="background:var(--dark);padding:2px 6px;border-radius:4px;font-size:12px">${esc(s.username)}</code></td>
@@ -1643,67 +1699,187 @@ function handleImagePick(input,previewId,hiddenId){
 
 // ── QUESTION BANK ────────────────────────────
 function openBankModal(id){
-  document.getElementById('bankQAlert').innerHTML='';
-  document.getElementById('bankModalTitle').textContent=id?'Edit Question':'Add Question to Bank';
-  document.getElementById('bankQId').value=id||'';
+  const $=x=>document.getElementById(x);
+  $('bankQAlert').innerHTML='';
+  $('bankModalTitle').textContent=id?'Edit Question':'Add Question to Bank';
+  $('bankQId').value=id||'';
+  const fillPairs=ps=>{$('q-pairs-bank').innerHTML='';(ps&&ps.length>=2?ps:[{l:'',r:''},{l:'',r:''}]).forEach(z=>addPairRow('bank',z.l,z.r));};
   if(id){
     const q=allQuestionBank.find(q=>q.id===id);if(!q)return;
-    document.getElementById('bankQSubject').value=q.subject||'';
-    document.getElementById('bankQLevel').value=q.level||'';
-    document.getElementById('bankQPoints').value=q.points||1;
-    document.getElementById('bankQText').value=q.text||'';
-    document.getElementById('bankQAudio').checked=!!q.audio_required;
-    const opts=q.options||['','','',''];
-    [0,1,2,3].forEach(i=>document.getElementById(`bankQ-opt-${i}`).value=opts[i]||'');
-    const rd=document.getElementById(`bqr-${q.correct||0}`);if(rd)rd.checked=true;
-    const prev=document.getElementById('bankQImagePreview');
-    if(q.image){prev.src=q.image;prev.style.display='block';document.getElementById('bankQImageData').value=q.image;}
-    else{prev.style.display='none';document.getElementById('bankQImageData').value='';}
+    const t=qType(q);
+    $('bankQSubject').value=q.subject||'';
+    $('bankQLevel').value=q.level||'';
+    $('bankQPoints').value=q.points||1;
+    $('bankQText').value=q.text||'';
+    $('bankQAudio').checked=!!q.audio_required;
+    $('bankQType').value=t;$('bankQBonus').checked=!!q.bonus;
+    const opts=t==='mcq'?(q.options||['','','','']):['','','',''];
+    [0,1,2,3].forEach(i=>$(`bankQ-opt-${i}`).value=opts[i]||'');
+    document.querySelectorAll('input[name="bankQCorrect"]').forEach(r=>r.checked=(t==='mcq'&&parseInt(r.value)===(q.correct||0)));
+    document.querySelectorAll('input[name="bankQTf"]').forEach(r=>r.checked=(t==='tf'&&parseInt(r.value)===(q.correct||0)));
+    $('bankQFill').value=t==='fill'?(q.answers||[]).join('\n'):'';
+    fillPairs(t==='match'?q.pairs:null);
+    const prev=$('bankQImagePreview');
+    if(q.image){prev.src=q.image;prev.style.display='block';$('bankQImageData').value=q.image;}
+    else{prev.style.display='none';$('bankQImageData').value='';}
     clearPrompt('bankQAudioData','bankQAudioPreview','bankQAudioFile');
-    if(q.audio_prompt){const ap=document.getElementById('bankQAudioPreview');ap.src=q.audio_prompt;ap.style.display='block';document.getElementById('bankQAudioData').value=q.audio_prompt;}
+    if(q.audio_prompt){const ap=$('bankQAudioPreview');ap.src=q.audio_prompt;ap.style.display='block';$('bankQAudioData').value=q.audio_prompt;}
   }else{
-    document.getElementById('bankQSubject').value='';document.getElementById('bankQLevel').value='';
-    document.getElementById('bankQPoints').value=1;document.getElementById('bankQText').value='';
-    document.getElementById('bankQAudio').checked=false;
-    [0,1,2,3].forEach(i=>document.getElementById(`bankQ-opt-${i}`).value='');
-    document.querySelectorAll('input[name="bankQCorrect"]').forEach(r=>r.checked=false);
-    document.getElementById('bankQImagePreview').style.display='none';
-    document.getElementById('bankQImageData').value='';
-    document.getElementById('bankQImageFile').value='';
+    $('bankQSubject').value='';$('bankQLevel').value='';
+    $('bankQPoints').value=1;$('bankQText').value='';
+    $('bankQAudio').checked=false;$('bankQType').value='mcq';$('bankQBonus').checked=false;
+    [0,1,2,3].forEach(i=>$(`bankQ-opt-${i}`).value='');
+    document.querySelectorAll('input[name="bankQCorrect"],input[name="bankQTf"]').forEach(r=>r.checked=false);
+    $('bankQFill').value='';fillPairs(null);
+    $('bankQImagePreview').style.display='none';
+    $('bankQImageData').value='';
+    $('bankQImageFile').value='';
     clearPrompt('bankQAudioData','bankQAudioPreview','bankQAudioFile');
   }
-  toggleBankOptionsVisibility();
+  setBankType();
   openModal('modalBankQuestion');
 }
 
 function toggleBankOptionsVisibility(){
-  document.getElementById('bankQOptionsWrap').style.opacity=document.getElementById('bankQAudio').checked?'.4':'1';
+  const on=document.getElementById('bankQAudio').checked;
+  ['bankQOptionsWrap','bankQTfWrap','bankQFillWrap','bankQMatchWrap','bankQShortWrap'].forEach(i=>document.getElementById(i).style.opacity=on?'.4':'1');
+}
+function setBankType(){
+  const t=document.getElementById('bankQType').value,m={mcq:'bankQOptionsWrap',tf:'bankQTfWrap',fill:'bankQFillWrap',match:'bankQMatchWrap',short:'bankQShortWrap'};
+  Object.keys(m).forEach(k=>document.getElementById(m[k]).style.display=k===t?'block':'none');
+  toggleBankOptionsVisibility();
 }
 
 async function saveBankQuestion(){
-  const id=document.getElementById('bankQId').value;
-  const subject=document.getElementById('bankQSubject').value.trim();
-  const level=document.getElementById('bankQLevel').value.trim();
-  const points=parseFloat(document.getElementById('bankQPoints').value)||1;
-  const text=document.getElementById('bankQText').value.trim();
-  const audio_required=document.getElementById('bankQAudio').checked;
-  const image=document.getElementById('bankQImageData').value||null;
-  const alertEl=document.getElementById('bankQAlert');
-  if(!text||!subject){alertEl.innerHTML='<div class="alert alert-error">Subject and question text are required.</div>';return;}
-  const options=[0,1,2,3].map(i=>document.getElementById(`bankQ-opt-${i}`).value.trim());
-  const cr=document.querySelector('input[name="bankQCorrect"]:checked');
-  if(!audio_required&&!options.some(o=>o)){alertEl.innerHTML='<div class="alert alert-error">Add answer options or enable audio answer.</div>';return;}
-  const payload={subject,level,points,text,options,correct:cr?parseInt(cr.value):0,audio_required,image,created_by:currentUser.id};
-  const audio_prompt=document.getElementById('bankQAudioData').value||null,hadAudio=!!(id&&(allQuestionBank.find(x=>String(x.id)===String(id))||{}).audio_prompt);
-  if(audio_prompt||hadAudio)payload.audio_prompt=audio_prompt;
+  const $=x=>document.getElementById(x);
+  const id=$('bankQId').value,t=$('bankQType').value||'mcq';
+  const subject=$('bankQSubject').value.trim(),level=$('bankQLevel').value.trim();
+  const points=parseFloat($('bankQPoints').value)||1,text=$('bankQText').value.trim();
+  const audio_required=$('bankQAudio').checked,bonus=$('bankQBonus').checked;
+  const image=$('bankQImageData').value||null,alertEl=$('bankQAlert');
+  const err=m=>{alertEl.innerHTML=`<div class="alert alert-error">${m}</div>`;};
+  if(!text||!subject){err('Subject and question text are required.');return;}
+  const old=id?allQuestionBank.find(x=>String(x.id)===String(id)):null;
+  let options=['','','',''],correct=0,answers=null,pairs=null;
+  if(t==='mcq'){
+    options=[0,1,2,3].map(i=>$(`bankQ-opt-${i}`).value.trim());
+    const cr=document.querySelector('input[name="bankQCorrect"]:checked');correct=cr?parseInt(cr.value):0;
+    if(!audio_required&&!options.some(o=>o)){err('Add answer options or enable audio answer.');return;}
+  }else if(t==='tf'){
+    options=['True','False'];const cr=document.querySelector('input[name="bankQTf"]:checked');correct=cr?parseInt(cr.value):0;
+  }else if(t==='fill'){
+    answers=$('bankQFill').value.split('\n').map(x=>x.trim()).filter(Boolean);
+    if(!answers.length){err('Add at least one accepted answer.');return;}
+  }else if(t==='match'){
+    pairs=[...document.querySelectorAll('#q-pairs-bank .pair-row')].map(r=>({l:r.querySelector('.pl').value.trim(),r:r.querySelector('.pr').value.trim()})).filter(x=>x.l&&x.r);
+    if(pairs.length<2){err('Matching needs at least 2 pairs.');return;}
+  }
+  const base={subject,level,points,text,options,correct,audio_required,image};
+  if(!id)base.created_by=currentUser.id; // editing never changes who owns the question
+  let extra={};
+  if(t!=='mcq')extra={type:t,answers,pairs,bonus};
+  else{if(old&&qType(old)!=='mcq')extra={type:'mcq',answers:null,pairs:null};if(bonus||(old&&old.bonus))extra.bonus=bonus;}
+  const audio_prompt=$('bankQAudioData').value||null,hadAudio=!!(old&&old.audio_prompt);
+  const withAudio=(audio_prompt||hadAudio)?{audio_prompt}:{};
+  const combos=[[extra,withAudio],[extra,{}]];
+  if(!extra.type)combos.push([{},withAudio],[{},{}]);
+  const tries=[],seen=new Set();
+  combos.forEach(([e,a])=>{const k=Object.keys(e).join()+'|'+Object.keys(a).join();if(!seen.has(k)){seen.add(k);tries.push({...base,...e,...a});}});
   showLoading('Saving…');
   const send=pl=>id?sb(`question_bank?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(pl)}):sb('question_bank',{method:'POST',body:JSON.stringify({...pl,created_at:new Date().toISOString()})});
-  let res=await send(payload),audioLost=false;
-  if(!res.ok&&'audio_prompt' in payload){const {audio_prompt:_a,...rest}=payload;res=await send(rest);audioLost=res.ok&&!!audio_prompt;}
+  let res=null,used=null;
+  for(const pl of tries){res=await send(pl);if(res.ok){used=pl;break;}}
   hideLoading();
-  if(audioLost)alert('Question saved, but its audio could not be stored: the question_bank table has no audio_prompt column yet.\nAsk the admin to run in Supabase:\nalter table question_bank add column audio_prompt text;');
-  if(res.ok){await loadAllData();renderBankList();renderTeacherBankList();populateDropdowns();closeModal('modalBankQuestion');}
-  else{alertEl.innerHTML='<div class="alert alert-error">Error saving question.</div>';}
+  if(!used){err(extra.type?'Could not save. The question_bank table may be missing the columns type / answers / pairs / bonus — add them in Supabase, then try again.':'Error saving question.');return;}
+  if(audio_prompt&&!('audio_prompt' in used))alert('Question saved, but its audio could not be stored: the question_bank table has no audio_prompt column yet.\nAsk the admin to run in Supabase:\nalter table question_bank add column audio_prompt text;');
+  if('bonus' in extra&&!('bonus' in used))alert('Question saved, but the bonus flag could not be stored: the question_bank table has no bonus column yet.');
+  await loadAllData();renderBankList();renderTeacherBankList();populateDropdowns();closeModal('modalBankQuestion');
+}
+
+// ── QUESTION STATS (per bank question, from every exam that used it) ──
+const STAT_MIN=5,KEY_MIN=8;
+function buildBankStats(){
+  const S={},exBy={},stuBy={};
+  allExams.forEach(e=>exBy[e.id]=e);allStudents.forEach(u=>stuBy[u.id]=u);
+  allResults.forEach(r=>{
+    if(r.admin_note===STARTED_NOTE||!r.answers||typeof r.answers!=='object')return;
+    const ex=exBy[r.exam_id];if(!ex)return;
+    const st=stuBy[r.student_id];if(st&&isTestAccount(st))return;
+    (ex.questions||[]).forEach((q,i)=>{
+      const bid=q.bank_id;if(!bid||!wasServed(r,i))return;
+      const a=r.answers[i],g=gradeQ(q,a);if(g.status==='manual')return;
+      const t=qType(q);
+      const x=S[bid]||(S[bid]={n:0,sum:0,full:0,opts:[0,0,0,0],blank:0,wrong:{},exams:new Set(),key:null,t});
+      x.n++;x.sum+=g.max?g.earned/g.max:0;if(g.status==='correct')x.full++;x.exams.add(ex.id);x.t=t;
+      if(t==='mcq'||t==='tf'){x.key=q.correct;if(typeof a==='number'&&a>=0&&a<4)x.opts[a]++;else x.blank++;}
+      else if(t==='fill'&&g.status!=='correct'){const k=normA(a);if(!k)x.blank++;else{(x.wrong[k]=x.wrong[k]||{c:0,raw:String(a).trim()}).c++;}}
+    });
+  });
+  return S;
+}
+function statInfo(x){
+  if(!x||!x.n)return{lvl:'none',pct:null,n:0,flags:[]};
+  const pct=Math.round(x.sum/x.n*100),flags=[];
+  if(x.n<STAT_MIN)return{lvl:'few',pct,n:x.n,flags};
+  if(pct<40)flags.push('hard');else if(pct>90)flags.push('easy');
+  if(x.t==='mcq'||x.t==='tf'){
+    const key=x.opts[x.key]||0;let top=-1,topC=0;x.opts.forEach((c,k)=>{if(k!==x.key&&c>topC){topC=c;top=k;}});
+    x.topWrong=top;x.topWrongC=topC;
+    if(x.n>=KEY_MIN&&top>=0&&topC>key&&topC>=3)flags.push('key');
+    else if(top>=0&&topC/x.n>=0.3)flags.push('ambig');
+  }
+  const lvl=flags.includes('key')?'key':flags.includes('hard')?'hard':flags.includes('easy')?'easy':flags.includes('ambig')?'ambig':'ok';
+  return{lvl,pct,n:x.n,flags};
+}
+const STAT_COL={ok:'var(--success)',hard:'var(--danger)',easy:'#D97706',key:'var(--danger)',ambig:'#D97706',few:'var(--muted)',none:'var(--muted)'};
+const FLAG_TXT={hard:'🔥 Hard',easy:'😴 Very easy',key:'⚠️ Check the answer key',ambig:'❓ Maybe ambiguous'};
+function bankStatHTML(q,S){
+  const x=S[q.id],i=statInfo(x),pill=(t,c)=>`<span class="tag-pill" style="border-color:${c};color:${c}">${t}</span>`;
+  if(i.lvl==='none')return `<div class="tags" style="margin-top:8px">${pill('📊 No attempts yet','var(--muted)')}</div>`;
+  const main=pill(`📊 ${i.pct}% correct · ${i.n} attempt${i.n>1?'s':''}`,STAT_COL[i.lvl==='few'?'few':i.pct<40?'hard':i.pct>90?'easy':'ok']);
+  const fl=i.lvl==='few'?pill('few attempts so far','var(--muted)'):i.flags.map(f=>pill(FLAG_TXT[f],STAT_COL[f])).join('');
+  return `<div class="tags" style="margin-top:8px;align-items:center">${main}${fl}<button class="btn-sm" onclick="openQStats('${q.id}')">📊 Details</button></div>`;
+}
+function statFilterSort(data,S,fv,sv){
+  if(fv){data=data.filter(q=>{const i=statInfo(S[q.id]);
+    if(fv==='hard')return i.flags.includes('hard');
+    if(fv==='easy')return i.flags.includes('easy');
+    if(fv==='check')return i.flags.includes('key')||i.flags.includes('ambig');
+    if(fv==='none')return i.lvl==='none'||i.lvl==='few';
+    return true;});}
+  if(sv==='hardest'||sv==='easiest'||sv==='attempts'){
+    const val=q=>{const x=S[q.id];return x&&x.n?(sv==='attempts'?x.n:x.sum/x.n):null;};
+    data=data.slice().sort((a,b)=>{const p=val(a),r=val(b);if(p===null&&r===null)return 0;if(p===null)return 1;if(r===null)return -1;return sv==='hardest'?p-r:r-p;});
+  }
+  return data;
+}
+function openQStats(id){
+  const q=allQuestionBank.find(z=>String(z.id)===String(id));if(!q)return;
+  const S=buildBankStats(),x=S[q.id],i=statInfo(x),t=qType(q),L=['A','B','C','D'];
+  const bar=(label,c,n,isKey)=>{const p=n?Math.round(c/n*100):0;return `<div style="display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px"><div style="min-width:0;flex:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}${isKey?' ✅':''}</div><div style="flex:2;height:10px;background:#E9F5FB;border-radius:6px"><div style="height:10px;width:${p}%;background:${isKey?'var(--success)':'#94A3B8'};border-radius:6px"></div></div><div style="min-width:70px;text-align:right">${p}% <span class="text-muted">(${c})</span></div></div>`;};
+  let h=`<div style="font-size:15px;font-weight:600;margin-bottom:10px">${esc(q.text)}</div>`;
+  if(!x||!x.n)h+='<div class="text-muted">No student has answered this question yet (only submitted attempts of real students are counted).</div>';
+  else{
+    const col=STAT_COL[i.lvl==='few'?'few':i.pct<40?'hard':i.pct>90?'easy':'ok'];
+    h+=`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px"><div class="card" style="padding:10px 14px;text-align:center"><div style="font-size:22px;font-weight:700;color:${col}">${i.pct}%</div><div class="text-muted" style="font-size:12px">correct</div></div><div class="card" style="padding:10px 14px;text-align:center"><div style="font-size:22px;font-weight:700">${x.n}</div><div class="text-muted" style="font-size:12px">attempts</div></div><div class="card" style="padding:10px 14px;text-align:center"><div style="font-size:22px;font-weight:700">${x.exams.size}</div><div class="text-muted" style="font-size:12px">exam(s)</div></div></div>`;
+    if(i.lvl==='few')h+=`<div class="alert alert-info" style="margin-bottom:10px">Only ${x.n} attempt(s) so far — wait for at least ${STAT_MIN} before judging the question.</div>`;
+    if(i.flags.includes('key'))h+=`<div class="alert alert-error" style="margin-bottom:10px">⚠️ More students chose <strong>${L[x.topWrong]}</strong> (${x.topWrongC}) than the saved correct answer <strong>${L[x.key]}</strong> (${x.opts[x.key]||0}). Re-check which answer is really correct.</div>`;
+    else if(i.flags.includes('ambig'))h+=`<div class="alert alert-info" style="margin-bottom:10px">❓ ${Math.round(x.topWrongC/x.n*100)}% chose <strong>${L[x.topWrong]}</strong>, a wrong option. The wording or that option may be confusing.</div>`;
+    if(i.flags.includes('hard'))h+='<div class="alert alert-info" style="margin-bottom:10px">🔥 Under 40% got it right — very hard, ambiguous, or the key is wrong.</div>';
+    if(i.flags.includes('easy'))h+='<div class="alert alert-info" style="margin-bottom:10px">😴 Over 90% got it right — it probably does not separate strong students from weak ones.</div>';
+    if(t==='mcq'||t==='tf'){
+      const names=t==='tf'?['True','False']:(q.options||[]);
+      h+='<div style="font-weight:600;margin:10px 0 4px">How students answered</div>';
+      names.forEach((o,k)=>{if(o||x.opts[k])h+=bar(`${L[k]}. ${esc(o)}`,x.opts[k],x.n,k===x.key);});
+      if(x.blank)h+=bar('— no answer —',x.blank,x.n,false);
+      if(x.key!=null&&q.correct!==x.key)h+='<div class="text-muted" style="font-size:12px;margin-top:8px">ℹ️ The answer saved in the bank now differs from the one in the exams that were already taken. Old results keep the key they were graded with.</div>';
+    }else if(t==='fill'){
+      const w=Object.values(x.wrong).sort((a,b)=>b.c-a.c).slice(0,8);
+      h+='<div style="font-weight:600;margin:10px 0 4px">Most common wrong answers</div>'+(w.length?w.map(z=>bar(esc(z.raw),z.c,x.n,false)).join(''):'<div class="text-muted">None</div>')+'<div class="text-muted" style="font-size:12px;margin-top:8px">If one of these is actually correct (spelling / diacritics), add it to the accepted answers.</div>';
+    }else if(t==='match')h+=`<div class="text-muted">Fully correct: ${x.full} of ${x.n} · average score ${i.pct}% (partial credit counts).</div>`;
+  }
+  h+=`<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('modalQStats')">Close</button><button class="btn btn-primary" style="width:auto;padding:10px 20px" onclick="closeModal('modalQStats');openBankModal('${q.id}')">✏️ Edit question</button></div>`;
+  document.getElementById('qsBody').innerHTML=h;openModal('modalQStats');
 }
 
 function getBankData(){
@@ -1734,6 +1910,7 @@ function renderBankList(){
   if(type==='mcq')data=data.filter(q=>!q.audio_required);
   if(type==='audio')data=data.filter(q=>q.audio_required);
   if(search)data=data.filter(q=>(q.text||'').toLowerCase().includes(search)||(q.subject||'').toLowerCase().includes(search));
+  const S=buildBankStats();data=statFilterSort(data,S,document.getElementById('bankFilterStat')?.value||'',document.getElementById('bankSort')?.value||'');
   const statsEl=document.getElementById('bankStats');
   if(statsEl)statsEl.textContent=`Showing ${data.length} of ${allQuestionBank.length} questions`;
   if(!data.length){container.innerHTML='<div class="empty-state"><div class="icon">📚</div><p>No questions yet. Start adding!</p></div>';return;}
@@ -1750,10 +1927,11 @@ function renderBankList(){
       ${q.image?`<img src="${q.image}" class="q-img-preview"/>`:'' }
       ${q.audio_prompt?`<audio controls src="${q.audio_prompt}" style="width:100%;max-width:340px;margin-top:6px;display:block"></audio>`:''}
       ${bankDetail(q)}
+      ${bankStatHTML(q,S)}
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
         <span style="font-size:11px;color:var(--muted)">By: ${creator.name}</span>
         <div style="display:flex;gap:8px">
-          ${qType(q)==='mcq'?`<button class="btn-sm" onclick="openBankModal('${q.id}')">✏️ Edit</button>`:'<span class="text-muted" style="font-size:11px">edit inside the exam</span>'}
+          <button class="btn-sm" onclick="openBankModal('${q.id}')">✏️ Edit</button>
           <button class="btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteBankQuestion('${q.id}')">🗑</button>
         </div>
       </div>
@@ -1770,6 +1948,7 @@ function renderTeacherBankList(){
   if(subj)data=data.filter(q=>inSec(q.subject,subj));
   if(lvl)data=data.filter(q=>q.level===lvl);
   if(search)data=data.filter(q=>(q.text||'').toLowerCase().includes(search));
+  const S=buildBankStats();data=statFilterSort(data,S,document.getElementById('tBankFilterStat')?.value||'',document.getElementById('tBankSort')?.value||'');
   if(!data.length){container.innerHTML='<div class="empty-state"><div class="icon">📚</div><p>No questions yet.</p></div>';return;}
   container.innerHTML=data.map(q=>`
     <div class="bank-card">
@@ -1781,10 +1960,11 @@ function renderTeacherBankList(){
       </div>
       <div style="font-size:14px;margin-bottom:8px">${q.text}</div>
       ${bankDetail(q)}
+      ${bankStatHTML(q,S)}
       ${q.image?`<img src="${q.image}" class="q-img-preview"/>`:'' }
       ${q.audio_prompt?`<audio controls src="${q.audio_prompt}" style="width:100%;max-width:340px;margin-top:6px;display:block"></audio>`:''}
       <div style="display:flex;gap:8px;margin-top:10px">
-        ${qType(q)==='mcq'?`<button class="btn-sm" onclick="openBankModal('${q.id}')">✏️ Edit</button>`:'<span class="text-muted" style="font-size:11px">edit inside the exam</span>'}
+        <button class="btn-sm" onclick="openBankModal('${q.id}')">✏️ Edit</button>
         <button class="btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteBankQuestion('${q.id}')">🗑</button>
       </div>
     </div>`).join('');
@@ -1861,6 +2041,39 @@ async function saveExamWindow(exId,o,c){
   for(const x of old)await sb(`schedules?id=eq.${x.id}`,{method:'DELETE',prefer:''});
   if(o)await sb('schedules',{method:'POST',body:JSON.stringify({exam_id:exId,opens_at:o,closes_at:c,notes:'',created_at:new Date().toISOString()})});
 }
+// ── PER-STUDENT RANDOMISED EXAMS ─────────────
+// Settings per exam live in one hidden row of question_bank (same trick as sections/links), so no SQL change is needed.
+// Each student's own plan {o:[question indexes in his order], p:{qIndex:[option order]}} is stored inside his result row (answers.__m).
+// Answers are ALWAYS keyed by the ORIGINAL question/option index, so grading, review and old results keep working.
+const shufArr=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const drawCount=e=>{const c=examCfg[e.id],n=(e.questions||[]).length;return c&&c.n>0&&c.n<n?c.n:n;};
+const cfgBadge=e=>{const c=examCfg[e.id];return c&&(c.q||c.o||c.n>0)?` 🎲${c.n>0?' draw '+c.n:''}`:'';};
+function makePlan(exam){
+  const c=examCfg[exam.id],n=(exam.questions||[]).length;
+  if(!c||!(c.q||c.o||(c.n>0&&c.n<n)))return null;
+  let o=[...Array(n).keys()];
+  if(c.n>0&&c.n<n){shufArr(o);o=o.slice(0,c.n);}
+  if(c.q)shufArr(o);else o.sort((a,b)=>a-b);
+  const p={};
+  if(c.o)o.forEach(i=>{const q=exam.questions[i];if(qType(q)==='mcq'&&!q.audio_required){const idx=[0,1,2,3].filter(k=>(q.options||[])[k]);if(idx.length>1)p[i]=shufArr(idx);}});
+  return{o,p};
+}
+const planOf=r=>{const m=r&&r.answers?r.answers.__m:null;return m&&Array.isArray(m.o)?m:null;};
+const wasServed=(r,i)=>{const m=planOf(r);return !m||m.o.includes(i);};
+const servedIdx=(ex,plan)=>plan&&Array.isArray(plan.o)?plan.o.slice():(ex.questions||[]).map((q,i)=>i);
+const examOrder=()=>servedIdx(activeExam,examPlan);
+const optList=(q,i,plan)=>{const p=plan&&plan.p&&plan.p[i];return(p||[0,1,2,3]).map((oi,pos)=>[oi,(q.options||[])[oi],pos]);};
+async function saveExamCfg(exId,c){
+  if(!exId)return true;
+  const on=c.q||c.o||c.n>0,row=examCfgRows[exId];
+  if(!on&&!row)return true;
+  if(!on){const r=await sb(`question_bank?id=eq.${row.id}`,{method:'DELETE',prefer:''});return r.ok;}
+  const sub=JSON.stringify({e:exId,q:c.q?1:0,o:c.o?1:0,n:c.n||0});
+  const body=row?{subject:sub}:{text:'__EXAMCFG__',subject:sub,options:['','','',''],correct:0,points:1,created_by:currentUser.id,created_at:new Date().toISOString()};
+  const res=await sb(row?`question_bank?id=eq.${row.id}`:'question_bank',{method:row?'PATCH':'POST',body:JSON.stringify(body),prefer:'return=minimal'});
+  return res.ok;
+}
+
 function gradeQ(q,a){
   const max=q.points||1,t=qType(q);
   if(q.audio_required||t==='short')return{max,earned:0,status:'manual'};
@@ -1881,6 +2094,7 @@ function openCreateExamModal(examId){
   set('examTitle',ex?ex.title:'');set('examSubject',ex?ex.subject||'':'');set('examLevel',ex?ex.level||'':'');
   set('examDesc',ex?ex.description||'':'');set('examDuration',ex?ex.duration_minutes:30);
   set('examPass',ex?ex.passing_score:60);set('examResultMode',ex?ex.result_mode||'auto':'auto');
+  {const c=(ex&&examCfg[ex.id])||{};document.getElementById('examRndQ').checked=!!c.q;document.getElementById('examRndO').checked=!!c.o;document.getElementById('examDrawN').value=c.n||'';}
   const sc=ex?allSchedules.filter(x=>x.exam_id===ex.id).sort((a,b)=>new Date(a.opens_at)-new Date(b.opens_at)):[];
   const cur=sc.find(x=>new Date(x.closes_at)>=new Date())||sc[0];
   set('examOpens',cur?toLocalInput(cur.opens_at):'');set('examCloses',cur?toLocalInput(cur.closes_at):'');
@@ -1970,6 +2184,7 @@ async function saveExam(publish=true){
   const pass=parseInt(document.getElementById('examPass').value)||60;
   const desc=document.getElementById('examDesc').value.trim();
   const resultMode=document.getElementById('examResultMode').value;
+  const cfg={q:document.getElementById('examRndQ').checked,o:document.getElementById('examRndO').checked,n:parseInt(document.getElementById('examDrawN').value)||0};
   const alertEl=document.getElementById('createExamAlert');
   const fail=m=>{alertEl.innerHTML=`<div class="alert alert-error">${m}</div>`;alertEl.scrollIntoView({behavior:'smooth'});};
   if(!title){fail('Exam title is required.');return;}
@@ -2000,6 +2215,8 @@ async function saveExam(publish=true){
   });
   if(bad&&publish){fail(bad);return;}
   if(!questions.length&&publish){fail('Add at least one question (or use Save as draft).');return;}
+  if(cfg.n>questions.length&&questions.length){fail('You asked for '+cfg.n+' random questions per student but the exam only has '+questions.length+' questions in its pool. Add more questions or lower the number.');return;}
+  if(cfg.n>=questions.length)cfg.n=0;
   const oV=document.getElementById('examOpens').value,cV=document.getElementById('examCloses').value;
   if((oV||cV)&&!(oV&&cV)){fail('Fill both Opens and Closes, or leave both empty.');return;}
   if(oV&&new Date(oV)>=new Date(cV)){fail('Closes time must be after the Opens time.');return;}
@@ -2031,6 +2248,7 @@ async function saveExam(publish=true){
   const data=await res.json();
   if(res.ok){
     await saveExamWindow(editingExamId||(data&&data[0]&&data[0].id),opensISO,closesISO);
+    if(!(await saveExamCfg(editingExamId||(data&&data[0]&&data[0].id),cfg)))alert('The exam was saved, but the shuffle settings could not be saved. Open the exam and press Save again.');
     let bankFailed=0;
     if(publish){
       const exId=editingExamId||(data&&data[0]&&data[0].id);
@@ -2108,7 +2326,7 @@ function defaultRemindText(ex){
 
 📝 Your exam "${ex.title}"${ex.subject?` (${ex.subject}${ex.level?' • '+ex.level:''})`:''} {status}.
 🗓 Available until: {until}
-⏱ Duration: ${ex.duration_minutes} minutes • ${(ex.questions||[]).length} questions
+⏱ Duration: ${ex.duration_minutes} minutes • ${drawCount(ex)} questions
 ⚠️ You can enter the exam only once — please make sure you have a stable internet connection before you start.
 
 Open the exam portal: {link}
@@ -2249,7 +2467,7 @@ function renderAdminExams(){
         <div class="card-title">${e.title}</div>
         <span class="badge ${e.is_active?'badge-active':'badge-draft'}">${e.is_active?'Active':'Draft · hidden'}</span>
       </div>
-      <div class="card-meta">${e.subject||''}${e.level?' • '+e.level:''} • ⏱ ${e.duration_minutes}min • ${(e.questions||[]).length} Qs • ${attempts} attempts</div>
+      <div class="card-meta">${e.subject||''}${e.level?' • '+e.level:''} • ⏱ ${e.duration_minutes}min • ${(e.questions||[]).length} Qs${cfgBadge(e)} • ${attempts} attempts</div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:8px">By: ${creator.name}</div>
       <div style="font-size:11px;margin-bottom:8px">
         ${e.auto_grade===false||e.result_mode==='manual'?'<span class="badge badge-manual">✏️ Manual grading</span>':'<span class="badge badge-active">⚡ Auto result</span>'}
@@ -2277,7 +2495,7 @@ function renderTeacherExamList(){
         <div class="card-title">${e.title}</div>
         <span class="badge ${e.is_active?'badge-active':'badge-draft'}">${e.is_active?'Active':'Draft · hidden'}</span>
       </div>
-      <div class="card-meta">${e.subject||''}${e.level?' • '+e.level:''} • ⏱ ${e.duration_minutes}min • ${(e.questions||[]).length} Qs • ${attempts} attempts</div>
+      <div class="card-meta">${e.subject||''}${e.level?' • '+e.level:''} • ⏱ ${e.duration_minutes}min • ${(e.questions||[]).length} Qs${cfgBadge(e)} • ${attempts} attempts</div>
       <div style="font-size:11px;margin-bottom:10px">
         ${e.auto_grade===false||e.result_mode==='manual'?'<span class="badge badge-manual">✏️ Manual grading</span>':'<span class="badge badge-active">⚡ Auto result</span>'}
       </div>
@@ -2292,7 +2510,9 @@ async function toggleExamActive(id,val){
 }
 async function deleteExam(id){
   if(!confirm('Delete this exam?'))return;showLoading();
-  await sb(`exams?id=eq.${id}`,{method:'DELETE',prefer:''});await loadAllData();renderAdminExams();updateAdminStats();hideLoading();
+  await sb(`exams?id=eq.${id}`,{method:'DELETE',prefer:''});
+  if(examCfgRows[id])await sb(`question_bank?id=eq.${examCfgRows[id].id}`,{method:'DELETE',prefer:''});
+  await loadAllData();renderAdminExams();updateAdminStats();hideLoading();
 }
 
 // ── SCHEDULE ─────────────────────────────────
@@ -2601,7 +2821,7 @@ function renderAvailableExams(){
     return `<div class="card" style="border-top:4px solid ${borders[idx%6]};background:${bgs[idx%6]}">
       <div style="font-size:36px;margin-bottom:10px">${icons[idx%6]}</div>
       <div class="card-title">${e.title}</div>
-      <div class="card-meta">${e.subject||''}${e.level?' • '+e.level:''} • ⏱ ${e.duration_minutes} min • ${(e.questions||[]).length} questions</div>
+      <div class="card-meta">${e.subject||''}${e.level?' • '+e.level:''} • ⏱ ${e.duration_minutes} min • ${drawCount(e)} questions</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:12px">${e.description||''}</div>
       ${sched?`<div style="font-size:11px;color:var(--success);margin-bottom:10px">🟢 Open until ${new Date(sched.closes_at).toLocaleString()}</div>`:''}
       ${test?`<div class="alert alert-info" style="margin-bottom:10px;font-size:12px">🧪 Test account — you can open this exam any time and retake it as many times as you want.</div>`:''}
@@ -2625,10 +2845,10 @@ async function startExam(examId){
   const mine=allResults.filter(r=>r.student_id===currentUser.id&&r.exam_id===examId);
   const dr=getDraft();
   if(!test&&dr&&dr.examId===examId&&dr.deadline>Date.now()&&mine.some(r=>r.id===dr.rid&&r.admin_note===STARTED_NOTE)){
-    activeResultId=dr.rid;activeExam=exam;answers=dr.answers||{};audioAnswers={};questionIndex=dr.questionIndex||0;lastResult=null;
+    activeResultId=dr.rid;activeExam=exam;examPlan=dr.plan||null;answers=dr.answers||{};audioAnswers={};questionIndex=dr.questionIndex||0;lastResult=null;
     examStartTime=dr.deadline-exam.duration_minutes*60000;timeLeft=Math.round((dr.deadline-Date.now())/1000);
     document.getElementById('examName').textContent=exam.title;
-    document.getElementById('examMeta').textContent=`${exam.subject||''}${exam.level?' • '+exam.level:''} • ${exam.questions.length} questions • ${exam.duration_minutes} min`;
+    document.getElementById('examMeta').textContent=`${exam.subject||''}${exam.level?' • '+exam.level:''} • ${examPlan?examPlan.o.length:exam.questions.length} questions • ${exam.duration_minutes} min`;
     startTimer();renderQuestion();showPage('page-exam');return;
   }
   if(!test&&mine.length){const m0=mine.slice().sort((a,b)=>new Date(b.submitted_at)-new Date(a.submitted_at))[0];alert('⚠️ You already attended this exam on '+new Date(m0.submitted_at).toLocaleString()+(m0.admin_note===STARTED_NOTE?' (you entered but did not submit)':'')+', so it cannot be opened again.\n\nIf you need another attempt, ask your teacher/admin to press “🔁 Allow retake” for you.');renderAvailableExams();return;}
@@ -2637,24 +2857,25 @@ async function startExam(examId){
     if(!scs.some(x=>new Date(x.opens_at)<=n&&new Date(x.closes_at)>=n)){
       const w=scs.slice().sort((a,b)=>new Date(a.opens_at)-new Date(b.opens_at));const nx=w.find(x=>new Date(x.opens_at)>n)||w[w.length-1];
       alert('This exam is not open right now.\n\nOpen window: '+new Date(nx.opens_at).toLocaleString()+'  →  '+new Date(nx.closes_at).toLocaleString());renderAvailableExams();return;}}
+  const plan=makePlan(exam);
   const warn=test?'🧪 Test account: you can retake this exam any time (your previous attempt will be replaced).':'⚠️ You can enter this exam ONLY ONCE. Do not close or refresh the page until you submit.';
-  if(!confirm(`Start "${exam.title}"?\n⏱ Duration: ${exam.duration_minutes} minutes\n❓ Questions: ${exam.questions.length}\n\n${warn}`))return;
+  if(!confirm(`Start "${exam.title}"?\n⏱ Duration: ${exam.duration_minutes} minutes\n❓ Questions: ${plan?plan.o.length:exam.questions.length}\n\n${warn}`))return;
   showLoading('Starting exam…');
   if(test&&mine.length){
     try{for(const r of mine)await sb(`results?id=eq.${r.id}`,{method:'DELETE',prefer:''});
       allResults=allResults.filter(r=>!(r.student_id===currentUser.id&&r.exam_id===examId));}catch(e){}
   }
   try{
-    const res=await sb('results',{method:'POST',body:JSON.stringify({student_id:currentUser.id,exam_id:examId,score:null,answers:{},audio_answers:{},time_used_seconds:0,passed:null,graded:false,pending_manual:[],earned_points:0,total_points:0,submitted_at:new Date().toISOString(),attempt_date:todayStr(),admin_note:STARTED_NOTE})});
+    const res=await sb('results',{method:'POST',body:JSON.stringify({student_id:currentUser.id,exam_id:examId,score:null,answers:(plan?{__m:plan}:{}),audio_answers:{},time_used_seconds:0,passed:null,graded:false,pending_manual:[],earned_points:0,total_points:0,submitted_at:new Date().toISOString(),attempt_date:todayStr(),admin_note:STARTED_NOTE})});
     const d=await res.json();
     if(!res.ok||!d[0])throw new Error(d.message||'save failed');
     activeResultId=d[0].id;allResults.unshift(d[0]);
   }catch(e){hideLoading();alert('Could not start the exam. Check your connection and try again.');return;}
   hideLoading();
-  activeExam=exam;answers={};audioAnswers={};questionIndex=0;lastResult=null;
+  activeExam=exam;examPlan=plan||null;answers={};audioAnswers={};questionIndex=0;lastResult=null;
   timeLeft=exam.duration_minutes*60;examStartTime=Date.now();
   document.getElementById('examName').textContent=exam.title;
-  document.getElementById('examMeta').textContent=`${exam.subject||''}${exam.level?' • '+exam.level:''} • ${exam.questions.length} questions • ${exam.duration_minutes} min`;
+  document.getElementById('examMeta').textContent=`${exam.subject||''}${exam.level?' • '+exam.level:''} • ${examPlan?examPlan.o.length:exam.questions.length} questions • ${exam.duration_minutes} min`;
   startTimer();renderQuestion();showPage('page-exam');
 }
 
@@ -2671,12 +2892,12 @@ function updateTimerDisplay(){
 
 function renderQuestion(){
   if(!activeExam)return;
-  const q=activeExam.questions[questionIndex];const total=activeExam.questions.length;
+  const ord=examOrder();qk=ord[questionIndex];const q=activeExam.questions[qk];const total=ord.length;
   document.getElementById('examProgress').style.width=((questionIndex+1)/total*100)+'%';
   document.getElementById('questionCounter').textContent=`${questionIndex+1} / ${total}`;
   document.getElementById('prevBtn').disabled=questionIndex===0;
   document.getElementById('nextBtn').textContent=questionIndex===total-1?'Submit Exam ✓':'Next →';
-  const ans=answers[questionIndex];const letters=['A','B','C','D'];
+  const ans=answers[qk];const letters=['A','B','C','D'];
   const hasOptions=(q.options||[]).some(o=>o);
   document.getElementById('questionContainer').innerHTML=`<div class="question-card fade-in">
     <div class="question-num">Question ${questionIndex+1} of ${total}</div>
@@ -2685,10 +2906,10 @@ function renderQuestion(){
     ${q.image?`<img src="${q.image}" style="max-width:100%;max-height:260px;border-radius:8px;margin-bottom:16px;border:1px solid var(--border)"/>`:'' }
     ${q.audio_prompt?`<div style="margin-bottom:16px"><div style="font-size:13px;color:var(--muted);margin-bottom:6px">🔊 Listen carefully, then answer</div><audio controls controlsList="nodownload" src="${q.audio_prompt}" style="width:100%"></audio></div>`:''}
     ${q.audio_required?`
-      <div class="audio-record-box" id="recBox-${questionIndex}">
+      <div class="audio-record-box" id="recBox-${qk}">
         <div style="font-size:13px;color:var(--muted);margin-bottom:10px">🎙️ Record your audio answer for this question</div>
-        <button class="btn btn-outline" id="recBtn-${questionIndex}" onclick="toggleRecording(${questionIndex})" style="width:auto">⏺️ Start Recording</button>
-        <div id="recPlayback-${questionIndex}" style="margin-top:10px">${audioAnswers[questionIndex]?`<audio controls src="${audioAnswers[questionIndex]}" style="width:100%"></audio>`:''}</div>
+        <button class="btn btn-outline" id="recBtn-${qk}" onclick="toggleRecording(${qk})" style="width:auto">⏺️ Start Recording</button>
+        <div id="recPlayback-${qk}" style="margin-top:10px">${audioAnswers[qk]?`<audio controls src="${audioAnswers[qk]}" style="width:100%"></audio>`:''}</div>
       </div>`:''}
     ${answerArea(q)}
   </div>`;
@@ -2725,10 +2946,10 @@ async function toggleRecording(qIndex){
 }
 
 function answerArea(q){
-  const t=qType(q),a=answers[questionIndex],L=['A','B','C','D'];
+  const t=qType(q),a=answers[qk],L=['A','B','C','D'];
   const box='width:100%;margin-top:16px;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;font-family:inherit';
-  if(t==='fill')return `<input type="text" value="${esc(a)}" placeholder="Type your answer…" oninput="answers[questionIndex]=this.value" style="${box}"/>`;
-  if(t==='short')return `<textarea placeholder="Write your answer…" oninput="answers[questionIndex]=this.value" style="${box};min-height:120px">${esc(a)}</textarea>`;
+  if(t==='fill')return `<input type="text" value="${esc(a)}" placeholder="Type your answer…" oninput="answers[qk]=this.value" style="${box}"/>`;
+  if(t==='short')return `<textarea placeholder="Write your answer…" oninput="answers[qk]=this.value" style="${box};min-height:120px">${esc(a)}</textarea>`;
   if(t==='match'){
     const P=q.pairs||[];if(!q._shuf)q._shuf=P.map(x=>x.r).sort(()=>Math.random()-.5);
     return `<div style="margin-top:16px">${P.map((x,k)=>`<div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
@@ -2737,14 +2958,16 @@ function answerArea(q){
       ${q._shuf.map(r=>`<option value="${esc(r)}" ${a&&a[k]===r?'selected':''}>${esc(r)}</option>`).join('')}</select></div>`).join('')}</div>`;
   }
   if(!(q.options||[]).some(o=>o))return '';
-  return `<div class="options" style="margin-top:16px">${q.options.map((opt,i)=>opt?`<div class="option ${a===i?'selected':''}" onclick="selectAnswer(${i})"><div class="option-letter">${L[i]}</div><span>${esc(opt)}</span></div>`:'').join('')}</div>`;
+  const perm=examPlan&&examPlan.p&&examPlan.p[qk];
+  return `<div class="options" style="margin-top:16px">${(perm||[0,1,2,3]).map((i,pos)=>q.options[i]?`<div class="option ${a===i?'selected':''}" onclick="selectAnswer(${i})"><div class="option-letter">${L[perm?pos:i]}</div><span>${esc(q.options[i])}</span></div>`:'').join('')}</div>`;
 }
-function setMatch(k,v){const a=Array.isArray(answers[questionIndex])?answers[questionIndex]:(answers[questionIndex]=[]);a[k]=v;}
-function selectAnswer(i){answers[questionIndex]=i;saveDraft();renderQuestion();}
+function setMatch(k,v){const a=Array.isArray(answers[qk])?answers[qk]:(answers[qk]=[]);a[k]=v;}
+function selectAnswer(i){answers[qk]=i;saveDraft();renderQuestion();}
 
 function nextQuestion(){
-  if(questionIndex===activeExam.questions.length-1){
-    const ua=activeExam.questions.filter((q,i)=>!q.audio_required&&answers[i]===undefined).length;
+  const ord=examOrder();
+  if(questionIndex===ord.length-1){
+    const ua=ord.filter(i=>!activeExam.questions[i].audio_required&&answers[i]===undefined).length;
     if(ua>0&&!confirm(`${ua} unanswered question(s). Submit anyway?`))return;
     submitExam(false);
   }else{questionIndex++;renderQuestion();}
@@ -2756,12 +2979,12 @@ async function submitExam(timeUp){
   const timeUsed=Math.floor((Date.now()-examStartTime)/1000);
   let correct=0,earnedPoints=0,totalPoints=0;
   const pendingManual=[];
-  activeExam.questions.forEach((q,i)=>{
-    const g=gradeQ(q,answers[i]);if(!q.bonus)totalPoints+=g.max;
+  examOrder().forEach(i=>{
+    const q=activeExam.questions[i];const g=gradeQ(q,answers[i]);if(!q.bonus)totalPoints+=g.max;
     if(g.status==='manual'){pendingManual.push({index:i,maxPoints:g.max});return;}
     earnedPoints+=g.earned;if(g.status==='correct')correct++;
   });
-  const total=activeExam.questions.length;
+  const total=examOrder().length;
   // Grading mode: auto_grade=true AND no audio = instant result
   const forceManual=activeExam.result_mode==='manual';
   const hasAudio=pendingManual.length>0;
@@ -2769,17 +2992,29 @@ async function submitExam(timeUp){
   const score=graded?(totalPoints?(earnedPoints/totalPoints)*100:0):null;
   const passed=graded?score>=(activeExam.passing_score||60):null;
   showLoading('Submitting…');
-  const payload={student_id:currentUser.id,exam_id:activeExam.id,score,answers,audio_answers:audioAnswers,
+  const payload={student_id:currentUser.id,exam_id:activeExam.id,score,answers:(examPlan?{...answers,__m:examPlan}:answers),audio_answers:audioAnswers,
     time_used_seconds:timeUsed,passed,graded,pending_manual:pendingManual,
     earned_points:earnedPoints,total_points:totalPoints,
     submitted_at:new Date().toISOString(),attempt_date:todayStr(),admin_note:null};
   await sb(activeResultId?`results?id=eq.${activeResultId}`:'results',{method:activeResultId?'PATCH':'POST',body:JSON.stringify(payload)});
   activeResultId=null;
+  try{await notifyExamDone(graded,score,passed);}catch(e){console.error('notify failed',e);}
   lastResult={score,correct,total,passed,timeUsed,graded,examTitle:activeExam.title};
   await loadAllData();hideLoading();
   showResultPage(score,correct,total,passed,graded);
 }
 
+async function notifyExamDone(graded,score,passed){
+  if(!currentUser||currentUser.role!=='student')return;
+  const sid=String(currentUser.id),rec=new Set(teachersOf(sid));
+  (window._allUsers||[]).filter(u=>u.role==='admin').forEach(u=>rec.add(String(u.id)));
+  rec.delete(sid);if(!rec.size)return;
+  const res=graded?`${Math.round(score)}% — ${passed?'passed ✅':'not passed ❌'}`:'⏳ waiting for grading';
+  const msg=`⟦${sid}⟧📝 ${esc(currentUser.name)} finished “${esc(activeExam.title)}” — ${res}`,now=new Date().toISOString();
+  const mk=extra=>JSON.stringify([...rec].map(id=>({student_id:id,message:msg,read:false,created_at:now,...extra})));
+  const r=await sb('notifications',{method:'POST',body:mk({}),prefer:'return=minimal'});
+  if(!r.ok)await sb('notifications',{method:'POST',body:mk({exam_id:activeExam.id}),prefer:'return=minimal'});
+}
 function showResultPage(score,correct,total,passed,graded=true){
   store.del('mi_draft');
   document.getElementById('pendingNote').style.display=graded?'none':'block';
@@ -2815,40 +3050,40 @@ function showResultPage(score,correct,total,passed,graded=true){
   if(passed&&graded&&currentUser.role==='student'&&lastResult&&lastResult.graded)setTimeout(downloadCertificate,700);
 }
 
-function reviewHTML(ex,ans,audio,pmList){
+function reviewHTML(ex,ans,audio,pmList,plan){
   const L=['A','B','C','D'];const pmMap={};(pmList||[]).forEach(p=>pmMap[p.index]=p);
   const sideCol={correct:'var(--success)',wrong:'var(--danger)',partial:'#D97706',manual:'#2980b9'};
   const badge={correct:['✓ Correct','var(--success)'],wrong:['✗ Wrong','var(--danger)'],partial:['◐ Partial','#D97706'],manual:['✏️ Manual','#2980b9']};
-  return (ex.questions||[]).map((q,i)=>{
-    const a=ans[i],g=gradeQ(q,a),t=qType(q),b=badge[g.status];let body='';
+  return servedIdx(ex,plan).map((i,pos)=>{
+    const q=ex.questions[i];const a=ans[i],g=gradeQ(q,a),t=qType(q),b=badge[g.status];let body='';
     if(t==='fill')body=`<div>Student: <strong style="color:${g.status==='correct'?'var(--success)':'var(--danger)'}">${esc(a)||'— no answer —'}</strong></div><div style="color:var(--muted);font-size:13px">Accepted: ${(q.answers||[]).map(esc).join(' / ')}</div>`;
     else if(t==='short')body=`<div style="background:#F5FAFF;border:2px solid var(--border);border-radius:10px;padding:10px">${esc(a)||'— no answer —'}</div>`;
     else if(t==='match')body=(q.pairs||[]).map((x,k)=>{const ok=a&&normA(a[k])===normA(x.r);return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:4px 0"><span>${esc(x.l)}</span><span>↔</span><strong style="color:${ok?'var(--success)':'var(--danger)'}">${esc(a&&a[k])||'—'}</strong>${ok?'':`<span style="color:var(--muted)">(correct: ${esc(x.r)})</span>`}</div>`;}).join('');
-    else if((q.options||[]).some(o=>o))body='<div class="options">'+q.options.map((o,oi)=>o?`<div class="option ${oi===q.correct?'correct':oi===a?'wrong':''}"><div class="option-letter">${L[oi]}</div><span>${esc(o)}</span>${oi===q.correct?'<span style="color:var(--success);font-size:12px;margin-left:auto">✓ Correct</span>':''}${oi===a&&a!==q.correct?'<span style="color:var(--danger);font-size:12px;margin-left:auto">✗ Student answer</span>':''}</div>`:'').join('')+'</div>'+((a===undefined||a===null)&&g.status!=='manual'?'<div style="color:var(--danger);font-size:12px;margin-top:6px">No answer given</div>':'');
+    else if((q.options||[]).some(o=>o))body='<div class="options">'+optList(q,i,plan).map(([oi,o,op])=>o?`<div class="option ${oi===q.correct?'correct':oi===a?'wrong':''}"><div class="option-letter">${L[(plan&&plan.p&&plan.p[i])?op:oi]}</div><span>${esc(o)}</span>${oi===q.correct?'<span style="color:var(--success);font-size:12px;margin-left:auto">✓ Correct</span>':''}${oi===a&&a!==q.correct?'<span style="color:var(--danger);font-size:12px;margin-left:auto">✗ Student answer</span>':''}</div>`:'').join('')+'</div>'+((a===undefined||a===null)&&g.status!=='manual'?'<div style="color:var(--danger);font-size:12px;margin-top:6px">No answer given</div>':'');
     if(audio&&audio[i])body+=`<audio controls src="${audio[i]}" style="width:100%;margin-top:8px"></audio>`;
-    return `<div id="rvq-${i}" class="question-card ${g.status==='correct'?'rv-ok':''}" style="margin-bottom:14px;border-inline-start:5px solid ${sideCol[g.status]}"><div style="display:flex;justify-content:space-between;gap:8px"><div class="question-num">Question ${i+1}${q.bonus?' ⭐ Bonus':''}</div><div style="color:${b[1]};font-weight:600;font-size:13px">${b[0]} · ${g.status==='manual'?((pmMap[i]&&pmMap[i].awarded!=null)?+pmMap[i].awarded:'?'):+g.earned.toFixed(2)}/${g.max}</div></div><div class="question-text">${esc(q.text)}</div>${q.image?`<img src="${q.image}" style="max-width:100%;max-height:200px;border-radius:8px;margin-bottom:10px"/>`:''}${body}</div>`;
+    return `<div id="rvq-${i}" class="question-card ${g.status==='correct'?'rv-ok':''}" style="margin-bottom:14px;border-inline-start:5px solid ${sideCol[g.status]}"><div style="display:flex;justify-content:space-between;gap:8px"><div class="question-num">Question ${pos+1}${q.bonus?' ⭐ Bonus':''}</div><div style="color:${b[1]};font-weight:600;font-size:13px">${b[0]} · ${g.status==='manual'?((pmMap[i]&&pmMap[i].awarded!=null)?+pmMap[i].awarded:'?'):+g.earned.toFixed(2)}/${g.max}</div></div><div class="question-text">${esc(q.text)}</div>${q.image?`<img src="${q.image}" style="max-width:100%;max-height:200px;border-radius:8px;margin-bottom:10px"/>`:''}${body}</div>`;
   }).join('');
 }
 function openReview(id){
   const r=allResults.find(x=>x.id===id);if(!r)return;
   const ex=allExams.find(e=>e.id===r.exam_id);if(!ex){alert('Exam not found (deleted?).');return;}
   const st=allStudents.find(x=>x.id===r.student_id)||{name:'Unknown'};
-  const G=(ex.questions||[]).map((q,i)=>gradeQ(q,(r.answers||{})[i]).status);
+  const PL=planOf(r),S=servedIdx(ex,PL),G=S.map(i=>gradeQ(ex.questions[i],(r.answers||{})[i]).status);
   const c=k=>G.filter(x=>x===k).length;
-  const mistakes=G.map((x,i)=>x==='wrong'||x==='partial'?i:-1).filter(i=>i>=0);
+  const mistakes=S.filter((i,k)=>G[k]==='wrong'||G[k]==='partial');
   const notSubmitted=r.admin_note===STARTED_NOTE;
   document.getElementById('rvTitle').textContent=`${st.name} — ${ex.title}`;
   document.getElementById('rvSummary').innerHTML=`${r.graded===false?'⏳ Pending':'Score: <strong>'+Math.round(r.score)+'%</strong>'} • ✓ ${c('correct')} correct • ✗ ${c('wrong')} wrong • ◐ ${c('partial')} partial • ✏️ ${c('manual')} manual`
     +(notSubmitted?'<div style="margin-top:8px;color:var(--danger)">⚠️ The student started this exam but never submitted — no answers were saved.</div>':'')
-    +(mistakes.length&&!notSubmitted?`<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span style="color:var(--danger);font-weight:600">Mistakes in:</span>${mistakes.map(i=>`<button class="btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="document.getElementById('rvq-${i}').scrollIntoView({behavior:'smooth',block:'center'})">Q${i+1}</button>`).join('')}</div>`:'');
+    +(mistakes.length&&!notSubmitted?`<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span style="color:var(--danger);font-weight:600">Mistakes in:</span>${mistakes.map(i=>`<button class="btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="document.getElementById('rvq-${i}').scrollIntoView({behavior:'smooth',block:'center'})">Q${S.indexOf(i)+1}</button>`).join('')}</div>`:'');
   const rb=document.getElementById('rvBody');rb.classList.remove('only-wrong');
-  rb.innerHTML=reviewHTML(ex,r.answers||{},r.audio_answers||{},r.pending_manual||[]);
+  rb.innerHTML=reviewHTML(ex,r.answers||{},r.audio_answers||{},r.pending_manual||[],PL);
   document.querySelector('#modalReview input[type=checkbox]').checked=false;
   openModal('modalReview');
 }
 function startReview(){
   const sec=document.getElementById('reviewSection');sec.style.display='block';
-  sec.innerHTML=reviewHTML(activeExam,answers,audioAnswers);
+  sec.innerHTML=reviewHTML(activeExam,answers,audioAnswers,undefined,examPlan);
   sec.scrollIntoView({behavior:'smooth'});
 }
 
@@ -2901,26 +3136,91 @@ function openStudentDetail(sid){
   }).join(''):'<div class="text-muted">No attempts on your exams yet.</div>')+`<div style="margin-top:14px"><button class="btn btn-primary" style="width:auto;padding:10px 20px" onclick="closeModal('modalStudent');openMsgModal('${s.id}')">💬 Send message</button></div>`;
   openModal('modalStudent');
 }
+const msgStudents=()=>currentUser.role==='admin'?allStudents:teacherScope(currentUser.id).students;
+function tmFillWho(){
+  const sel=document.getElementById('tmWho'),cur=document.getElementById('tmTarget').value||'all';
+  const q=(document.getElementById('tmWhoSearch').value||'').toLowerCase();
+  const list=msgStudents().slice().sort((a,b)=>a.name.localeCompare(b.name)),adm=currentUser.role==='admin';
+  let h=`<option value="all">${adm?'📢 All students':'📢 All my students'} (${list.length})</option>`;
+  if(adm)h+=allTeachers.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(t=>`<option value="t:${esc(t.id)}">👨‍🏫 All students of ${esc(t.name)} (${studentIdsOf(t.id).length})</option>`).join('');
+  h+=list.filter(x=>String(x.id)===cur||!q||x.name.toLowerCase().includes(q)).map(x=>`<option value="${esc(x.id)}">🎓 ${esc(x.name)}</option>`).join('');
+  sel.innerHTML=h;sel.value=cur;
+  if(sel.value!==cur){sel.value='all';document.getElementById('tmTarget').value='all';}
+}
+// ── MESSAGE IMAGES (stored inside the message text, so no database change is needed) ──
+const msgRich=s=>String(s||'').replace(/⟪IMG⟫(data:image\/(?:jpeg|png|gif|webp);base64,[A-Za-z0-9+\/=]+)⟪\/IMG⟫/g,(m,u)=>`<img class="msg-img" src="${u}" onclick="viewMsgImg(this.src)"/>`)
+  .replace(/⟪AUD⟫(data:audio\/[a-z0-9.+-]+;base64,[A-Za-z0-9+\/=]+)⟪\/AUD⟫/gi,(m,u)=>`<audio controls src="${u}" style="display:block;width:100%;max-width:300px;margin-top:6px"></audio>`);
+function viewMsgImg(src){
+  const o=document.createElement('div');
+  o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;padding:16px';
+  const im=document.createElement('img');im.src=src;im.style.cssText='max-width:100%;max-height:100%;border-radius:10px';
+  o.appendChild(im);o.onclick=()=>o.remove();document.body.appendChild(o);
+}
+function clearMsgImage(){
+  const f=document.getElementById('tmImgFile');if(f)f.value='';
+  document.getElementById('tmImgData').value='';
+  document.getElementById('tmImgWrap').style.display='none';
+  document.getElementById('tmImgPrev').removeAttribute('src');
+}
+function pickMsgImage(input){
+  const file=input.files&&input.files[0],al=document.getElementById('tmAlert');if(!file)return;
+  if(!/^image\//.test(file.type)){al.innerHTML='<div class="alert alert-error">Please choose an image file.</div>';clearMsgImage();return;}
+  const reader=new FileReader();
+  const done=url=>{document.getElementById('tmImgData').value=url;document.getElementById('tmImgPrev').src=url;document.getElementById('tmImgWrap').style.display='block';al.innerHTML='';};
+  reader.onload=()=>{
+    const im=new Image();
+    im.onload=()=>{ // shrink to max 900px JPEG so messages stay light
+      const k=Math.min(1,900/Math.max(im.width,im.height)),c=document.createElement('canvas');
+      c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+      const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);
+      done(c.toDataURL('image/jpeg',0.72));
+    };
+    im.onerror=()=>{al.innerHTML='<div class="alert alert-error">Could not read this image.</div>';clearMsgImage();};
+    im.src=reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+function openReplyModal(tid){
+  clearMsgImage();clearPrompt('tmAudData','tmAudPrev','tmAudFile');
+  const u=(window._allUsers||[]).find(x=>String(x.id)===String(tid));
+  document.getElementById('tmTarget').value=tid;
+  document.getElementById('tmToField').style.display='none';document.getElementById('tmTplField').style.display='none';
+  document.getElementById('tmTitle').textContent='↩️ Reply'+(u?' to '+u.name:'');
+  document.getElementById('tmText').value='';document.getElementById('tmAlert').innerHTML='';
+  openModal('modalMsg');
+}
 function openMsgModal(target){
-  const s=target==='all'?null:allStudents.find(x=>String(x.id)===String(target));
-  document.getElementById('tmTarget').value=target;
-  document.getElementById('tmTitle').textContent=s?'💬 Message to '+s.name:'📢 Message to all my students';
+  clearMsgImage();clearPrompt('tmAudData','tmAudPrev','tmAudFile');
+  document.getElementById('tmToField').style.display='';document.getElementById('tmTplField').style.display='';
+  document.getElementById('tmTarget').value=target||'all';
+  document.getElementById('tmWhoSearch').value='';tmFillWho();
+  document.getElementById('tmTitle').textContent='💬 New message';
   document.getElementById('tmText').value='';document.getElementById('tmTpl').value='';document.getElementById('tmAlert').innerHTML='';
   openModal('modalMsg');
 }
 async function sendTeacherMsg(){
-  const al=document.getElementById('tmAlert'),text=document.getElementById('tmText').value.trim(),t=document.getElementById('tmTarget').value;
-  if(!text){al.innerHTML='<div class="alert alert-error">Write a message first.</div>';return;}
-  const {students,exams}=teacherScope(currentUser.id);
-  const targets=t==='all'?students:students.filter(x=>String(x.id)===String(t));
+  const al=document.getElementById('tmAlert'),text=document.getElementById('tmText').value.trim(),t=document.getElementById('tmTarget').value||'all';
+  const img=document.getElementById('tmImgData').value;
+  const aud=(document.getElementById('tmAudData').value||'').replace(/^(data:audio\/[a-z0-9.+-]+)(;[^,]*?)?;base64,/i,'$1;base64,');
+  if(!text&&!img&&!aud){al.innerHTML='<div class="alert alert-error">Write a message, attach an image, or add a voice note first.</div>';return;}
+  if(currentUser.role==='student'){ // a student replying to a teacher / admin
+    const body=`⟦${currentUser.id}⟧↩️ ${esc(currentUser.name)}: ${esc(text)}${img?'⟪IMG⟫'+img+'⟪/IMG⟫':''}${aud?'⟪AUD⟫'+aud+'⟪/AUD⟫':''}`;
+    showLoading('Sending…');
+    const r=await sb('notifications',{method:'POST',body:JSON.stringify([{student_id:t,message:body,read:false,created_at:new Date().toISOString()}]),prefer:'return=minimal'});
+    hideLoading();
+    if(r.ok){closeModal('modalMsg');alert('Reply sent ✅');}else al.innerHTML='<div class="alert alert-error">Could not send your reply. Please try again.</div>';
+    return;
+  }
+  const adm=currentUser.role==='admin',pool=msgStudents(),exams=adm?allExams:teacherScope(currentUser.id).exams;
+  const targets=t==='all'?pool:t.startsWith('t:')?pool.filter(x=>studentIdsOf(t.slice(2)).map(String).includes(String(x.id))):pool.filter(x=>String(x.id)===String(t));
   if(!targets.length){al.innerHTML='<div class="alert alert-error">No students to message.</div>';return;}
-  const msg=`⟦${currentUser.id}⟧💬 ${esc(currentUser.name)}: ${esc(text)}`,now=new Date().toISOString();
+  const msg=`⟦${currentUser.id}⟧💬 ${esc(currentUser.name)}: ${esc(text)}${img?'⟪IMG⟫'+img+'⟪/IMG⟫':''}${aud?'⟪AUD⟫'+aud+'⟪/AUD⟫':''}`,now=new Date().toISOString();
   const mk=extra=>JSON.stringify(targets.map(x=>({student_id:x.id,message:msg,read:false,created_at:now,...extra})));
   showLoading('Sending…');
   let res=await sb('notifications',{method:'POST',body:mk({}),prefer:'return=minimal'});
   if(!res.ok&&exams[0])res=await sb('notifications',{method:'POST',body:mk({exam_id:exams[0].id}),prefer:'return=minimal'});
   hideLoading();
-  if(res.ok){closeModal('modalMsg');alert(`Message sent to ${targets.length} student${targets.length>1?'s':''} ✅`);}
+  if(res.ok){closeModal('modalMsg');if(adm){await loadAllData();renderAdminMessages();}alert(`Message sent to ${targets.length} student${targets.length>1?'s':''} ✅`);}
   else al.innerHTML='<div class="alert alert-error">Could not send. Please try again.</div>';
 }
 
@@ -2983,30 +3283,25 @@ function renderInsights(){
   box.innerHTML=ex.length?ex.map(e=>{
     const rs=gradedOf(allResults.filter(r=>r.exam_id===e.id));
     const rows=rs.length?(e.questions||[]).map((q,i)=>{
-      const gs=rs.map(r=>gradeQ(q,(r.answers||{})[i])).filter(g=>g.status!=='manual');if(!gs.length)return '';
+      const gs=rs.filter(r=>wasServed(r,i)).map(r=>gradeQ(q,(r.answers||{})[i])).filter(g=>g.status!=='manual');if(!gs.length)return '';
       const pct=Math.round(gs.reduce((a,g)=>a+g.earned/g.max,0)/gs.length*100),col=pct<40?'var(--danger)':pct>90?'#D97706':'var(--success)';
       return `<div style="margin:8px 0"><div style="font-size:13px;display:flex;justify-content:space-between;gap:8px"><span>Q${i+1}. ${esc((q.text||'').slice(0,70))}</span><strong style="color:${col}">${pct}%${pct<40?' 🔥 hard':pct>90?' 😴 easy':''}</strong></div><div style="height:8px;background:#E9F5FB;border-radius:6px"><div style="height:8px;width:${pct}%;background:${col};border-radius:6px"></div></div></div>`;
     }).join(''):'<div class="text-muted">No graded attempts yet.</div>';
     return `<div class="card" style="margin-bottom:14px"><div class="card-title">${esc(e.title)} <span class="text-muted" style="font-size:12px">· ${rs.length} attempts</span></div>${rows}</div>`;
   }).join(''):'<div class="empty-state"><div class="icon">📈</div><p>Create an exam to see question insights</p></div>';
 }
-function renderTeacherInbox(){
-  const box=document.getElementById('tsInbox');if(!box)return;
+function renderTeacherInbox(bid){
+  const box=document.getElementById(bid||'tsInbox');if(!box)return;
   const L=allNotifications.filter(n=>String(n.student_id)===String(currentUser.id)&&!n.read&&/^⟦.*?⟧↩️/.test(n.message||''));
-  box.innerHTML=L.length?`<div class="card" style="margin-bottom:14px"><div class="card-title">📥 Student replies (${L.length})</div>${L.map(n=>{const sid=n.message.match(/^⟦(.*?)⟧/)[1];return `<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--border)"><div>${n.message.replace(/^⟦.*?⟧/,'')}</div><div style="display:flex;gap:6px"><button class="btn-sm" onclick="openMsgModal('${sid}')">💬 Reply</button><button class="btn-sm" onclick="markReplyRead('${n.id}')">✔ Read</button></div></div>`;}).join('')}</div>`:'';
+  box.innerHTML=L.length?`<div class="card" style="margin-bottom:14px"><div class="card-title">📥 Student replies (${L.length})</div>${L.map(n=>{const sid=n.message.match(/^⟦(.*?)⟧/)[1];return `<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--border)"><div>${msgRich(n.message.replace(/^⟦.*?⟧/,''))}</div><div style="display:flex;gap:6px"><button class="btn-sm" onclick="openMsgModal('${sid}')">💬 Reply</button><button class="btn-sm" onclick="markReplyRead('${n.id}')">✔ Read</button></div></div>`;}).join('')}</div>`:'';
 }
-async function markReplyRead(id){await sb(`notifications?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({read:true}),prefer:'return=minimal'});const n=allNotifications.find(x=>x.id===id);if(n)n.read=true;renderTeacherInbox();}
-async function replyTo(tid){
-  const t=(prompt('Write your reply:')||'').trim();if(!t)return;
-  showLoading('Sending…');
-  const res=await sb('notifications',{method:'POST',body:JSON.stringify([{student_id:tid,message:`⟦${currentUser.id}⟧↩️ ${esc(currentUser.name)}: ${esc(t)}`,read:false,created_at:new Date().toISOString()}]),prefer:'return=minimal'});
-  hideLoading();alert(res.ok?'Reply sent ✅':'Could not send your reply.');
-}
+async function markReplyRead(id){await sb(`notifications?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({read:true}),prefer:'return=minimal'});const n=allNotifications.find(x=>x.id===id);if(n)n.read=true;refreshNotifUI();}
+function replyTo(tid){openReplyModal(tid);}
 let prQ=[],prI=0,prOk=0;
 function openPractice(){
   prQ=[];allResults.filter(r=>String(r.student_id)===String(currentUser.id)&&r.graded!==false&&r.admin_note!==STARTED_NOTE).forEach(r=>{
     const ex=allExams.find(e=>e.id===r.exam_id);if(!ex)return;
-    (ex.questions||[]).forEach((q,i)=>{const t=qType(q);if(q.audio_required||t==='short'||t==='match')return;if(gradeQ(q,(r.answers||{})[i]).status==='wrong')prQ.push(q);});
+    (ex.questions||[]).forEach((q,i)=>{const t=qType(q);if(q.audio_required||t==='short'||t==='match'||!wasServed(r,i))return;if(gradeQ(q,(r.answers||{})[i]).status==='wrong')prQ.push(q);});
   });
   prQ=prQ.sort(()=>Math.random()-.5).slice(0,20);prI=0;prOk=0;drawPractice();openModal('modalPractice');
 }
@@ -3032,6 +3327,7 @@ renderStudentProfile=function(){
 };
 
 // ── ADMIN: MESSAGES OVERVIEW ──────────────────
+const adminName=id=>{const u=(window._allUsers||[]).find(x=>String(x.id)===String(id));return u?u.name+(u.role==='admin'?' (Admin)':''):null;};
 function parseMsg(n){
   const m=n.message||'',mk=m.match(/^⟦(.*?)⟧/),body=m.replace(/^⟦.*?⟧/,''),isReply=body.startsWith('↩️');
   if(!isReply&&!body.startsWith('💬'))return null;
@@ -3078,8 +3374,9 @@ async function renderAdminVisits(){
 
 function renderAdminMessages(){
   const box=document.getElementById('amBody');if(!box)return;
+  renderTeacherInbox('amInbox');
   const sel=document.getElementById('amTeacher'),tv=sel.value,q=(document.getElementById('amSearch').value||'').toLowerCase();
-  sel.innerHTML='<option value="">All teachers</option>'+allTeachers.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');sel.value=tv;
+  sel.innerHTML='<option value="">All teachers</option>'+allTeachers.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('')+`<option value="${esc(currentUser.id)}">Admin (me)</option>`;sel.value=tv;
   const nm=(L,id)=>(L.find(x=>String(x.id)===String(id))||{}).name;
   const groups={};
   allNotifications.map(parseMsg).filter(Boolean).forEach(m=>{
@@ -3087,13 +3384,13 @@ function renderAdminMessages(){
     const k=m.teacherId+'|'+m.studentId;(groups[k]=groups[k]||{teacherId:m.teacherId,studentId:m.studentId,list:[]}).list.push(m);
   });
   const G=Object.values(groups).map(g=>{
-    g.tName=nm(allTeachers,g.teacherId)||'Unknown teacher (older message)';g.sName=nm(allStudents,g.studentId)||'Unknown student';
+    g.tName=nm(allTeachers,g.teacherId)||adminName(g.teacherId)||'Unknown teacher (older message)';g.sName=nm(allStudents,g.studentId)||'Unknown student';
     g.list.sort((a,b)=>new Date(a.n.created_at)-new Date(b.n.created_at));return g;
-  }).filter(g=>!q||g.tName.toLowerCase().includes(q)||g.sName.toLowerCase().includes(q)||g.list.some(m=>m.body.toLowerCase().includes(q)))
+  }).filter(g=>!q||g.tName.toLowerCase().includes(q)||g.sName.toLowerCase().includes(q)||g.list.some(m=>msgPlain(m.body).toLowerCase().includes(q)))
     .sort((a,b)=>new Date(b.list[b.list.length-1].n.created_at)-new Date(a.list[a.list.length-1].n.created_at));
-  box.innerHTML=G.length?G.map(g=>`<div class="card" style="margin-bottom:14px"><div class="card-title" style="margin-bottom:10px">📚 ${esc(g.tName)} ⇄ 🎓 ${esc(g.sName)} <span class="text-muted" style="font-size:12px">· ${g.list.length} message${g.list.length>1?'s':''}</span></div>${g.list.map(m=>{
+  box.innerHTML=G.length?G.map(g=>`<div class="card" style="margin-bottom:14px"><div class="card-title" style="margin-bottom:10px">📚 ${esc(g.tName)} ⇄ 🎓 ${esc(g.sName)} <span class="text-muted" style="font-size:12px">· ${g.list.length} message${g.list.length>1?'s':''}</span> <button class="btn-sm" style="margin-inline-start:8px" onclick="openMsgModal('${g.studentId}')">💬 Message</button></div>${g.list.map(m=>{
     let dt='';try{dt=new Date(m.n.created_at).toLocaleString();}catch{}
-    return `<div style="display:flex;justify-content:${m.isReply?'flex-end':'flex-start'};margin:6px 0"><div style="max-width:80%;background:${m.isReply?'#DCFCE7':'#EAF6FF'};border:1px solid var(--border);border-radius:12px;padding:8px 12px"><div style="font-size:13px">${m.body}</div><div class="text-muted" style="font-size:11px;margin-top:4px;display:flex;gap:8px;align-items:center">${dt} · ${m.n.read?'✔ read':'● unread'}<button class="btn-sm" style="color:var(--danger);border-color:var(--danger);padding:1px 6px" onclick="deleteMessage('${m.n.id}')">🗑</button></div></div></div>`;
+    return `<div style="display:flex;justify-content:${m.isReply?'flex-end':'flex-start'};margin:6px 0"><div style="max-width:80%;background:${m.isReply?'#DCFCE7':'#EAF6FF'};border:1px solid var(--border);border-radius:12px;padding:8px 12px"><div style="font-size:13px">${msgRich(m.body)}</div><div class="text-muted" style="font-size:11px;margin-top:4px;display:flex;gap:8px;align-items:center">${dt} · ${m.n.read?'✔ read':'● unread'}<button class="btn-sm" style="color:var(--danger);border-color:var(--danger);padding:1px 6px" onclick="deleteMessage('${m.n.id}')">🗑</button></div></div></div>`;
   }).join('')}</div>`).join(''):'<div class="empty-state"><div class="icon">💬</div><p>No teacher–student messages yet</p></div>';
 }
 
@@ -3353,21 +3650,99 @@ function sendResultWA(){
 }
 
 // ── NOTIFICATIONS ─────────────────────────────
+function notifKind(n){const m=n.message||'';if(/^⟦.*?⟧💬/.test(m))return'msg';if(/^⟦.*?⟧↩️/.test(m))return'reply';if(/^⟦.*?⟧📝/.test(m))return'exam';return'other';}
+const notifSender=n=>{const k=(n.message||'').match(/^⟦(.*?)⟧/);return k?k[1]:null;};
+function msgPlain(s){return String(s||'').replace(/⟪IMG⟫[^⟪]*⟪\/IMG⟫/g,' 📷 Photo ').replace(/⟪AUD⟫[^⟪]*⟪\/AUD⟫/g,' 🎙️ Voice note ');}
+function openResultsTab(){if(currentUser.role==='admin'){showPage('page-admin');switchAdminTab('results');}else{showPage('page-teacher');switchTeacherTab('results');}}
 function renderNotifBanner(){
-  const area=document.getElementById('notifBannerArea');if(!area)return;
-  const mine=allNotifications.filter(n=>n.student_id===currentUser.id&&!n.read);
+  const area=document.getElementById('notifBannerArea');if(!area||!currentUser)return;
+  const mine=allNotifications.filter(n=>String(n.student_id)===String(currentUser.id)&&!n.read);
   if(!mine.length){area.innerHTML='';return;}
-  area.innerHTML=mine.map(n=>`
-    <div class="notif-banner">
-      <div>🔔 ${(n.message||'').replace(/^⟦.*?⟧/,'')}</div>
-      <div style="display:flex;gap:6px">${/^⟦.*?⟧💬/.test(n.message||'')?`<button class="btn-sm" onclick="replyTo('${n.message.match(/^⟦(.*?)⟧/)[1]}')">↩️ Reply</button>`:''}<button class="btn-sm" onclick="markNotificationRead('${n.id}')">Mark read ✔</button></div>
-    </div>`).join('');
+  const isS=currentUser.role==='student';
+  const act=n=>{const k=notifKind(n),sid=notifSender(n);let b='';
+    if(k==='msg'&&isS)b+=`<button class="btn-sm" onclick="openReplyModal('${sid}')">↩️ Reply</button>`;
+    if(k==='reply'&&!isS)b+=`<button class="btn-sm" onclick="openMsgModal('${sid}')">💬 Reply</button>`;
+    if(k==='exam')b+=`<button class="btn-sm" onclick="openResultsTab()">📊 Results</button>`;
+    return b+`<button class="btn-sm" onclick="markNotificationRead('${n.id}')">Mark read ✔</button>`;};
+  area.innerHTML=(mine.length>1?`<div style="text-align:end;margin-bottom:6px"><button class="btn-sm" onclick="markAllNotifRead()">✔ Mark all read (${mine.length})</button></div>`:'')
+    +mine.map(n=>`<div class="notif-banner"><div>🔔 ${msgRich((n.message||'').replace(/^⟦.*?⟧/,''))}</div><div style="display:flex;gap:6px;flex-wrap:wrap">${act(n)}</div></div>`).join('');
+}
+function updateBell(){
+  if(!currentUser)return;
+  const c=allNotifications.filter(n=>String(n.student_id)===String(currentUser.id)&&!n.read).length;
+  const b=document.getElementById('bellN');if(b){b.textContent=c;b.style.display=c?'inline-block':'none';}
+  document.title=(c?`(${c}) `:'')+'MY Institute – Exam Portal';
+}
+function refreshNotifUI(){
+  if(!currentUser)return;
+  try{renderNotifBanner();}catch(e){}
+  try{if(currentUser.role==='student')renderStudentProfile();else{renderTeacherInbox();renderTeacherInbox('amInbox');}}catch(e){}
+  try{if(currentUser.role==='admin'){const t=document.getElementById('adminTab-messages');if(t&&t.style.display!=='none')renderAdminMessages();}}catch(e){}
+  updateBell();
 }
 async function markNotificationRead(id){
-  await sb(`notifications?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({read:true})});
-  const n=allNotifications.find(n=>n.id===id);if(n)n.read=true;
-  renderNotifBanner();renderStudentProfile();
+  await sb(`notifications?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({read:true}),prefer:'return=minimal'});
+  const n=allNotifications.find(x=>String(x.id)===String(id));if(n)n.read=true;
+  refreshNotifUI();
 }
+async function markAllNotifRead(){
+  allNotifications.filter(n=>String(n.student_id)===String(currentUser.id)&&!n.read).forEach(n=>n.read=true);
+  refreshNotifUI();
+  await sb(`notifications?student_id=eq.${encodeURIComponent(currentUser.id)}&read=eq.false`,{method:'PATCH',body:JSON.stringify({read:true}),prefer:'return=minimal'});
+}
+// ── LIVE ALERTS (checks for new messages every 15 s while the site is open) ──
+let notifTimer=null,notifSeen=new Set(),_actx=null;
+document.addEventListener('click',()=>{try{_actx=_actx||new(window.AudioContext||window.webkitAudioContext)();_actx.resume();}catch(e){}},{once:true});
+function notifBeep(){try{if(!_actx)return;const o=_actx.createOscillator(),g=_actx.createGain(),t=_actx.currentTime;o.type='sine';o.frequency.value=880;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.25,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.35);o.connect(g);g.connect(_actx.destination);o.start(t);o.stop(t+.4);}catch(e){}}
+function askNotifPerm(){try{if('Notification' in window&&Notification.permission==='default')Notification.requestPermission();}catch(e){}}
+function osNotify(title,html){try{if(!('Notification' in window)||Notification.permission!=='granted'||!document.hidden)return;const d=document.createElement('textarea');d.innerHTML=html;new Notification(title,{body:d.value.slice(0,140)});}catch(e){}}
+function showToast(html,onclick){
+  let box=document.getElementById('toastBox');if(!box){box=document.createElement('div');box.id='toastBox';document.body.appendChild(box);}
+  const t=document.createElement('div');t.className='toast';t.innerHTML=html;
+  t.onclick=()=>{t.remove();if(onclick)onclick();};box.appendChild(t);setTimeout(()=>t.remove(),9000);
+}
+function openBell(){
+  askNotifPerm();
+  const ex=document.getElementById('page-exam');if(ex&&ex.classList.contains('active'))return;
+  goHome();setTimeout(()=>{const a=document.getElementById('notifBannerArea');if(a)a.scrollIntoView({behavior:'smooth',block:'start'});},60);
+}
+function handleIncoming(list){
+  const adm=currentUser.role==='admin';let any=false;
+  list.forEach(n=>{
+    const mine=String(n.student_id)===String(currentUser.id),k=notifKind(n),text=msgPlain((n.message||'').replace(/^⟦.*?⟧/,'')).replace(/^\s*(💬|↩️|📝)\s*/,'').slice(0,140);
+    if(mine&&!n.read){
+      any=true;const head=k==='msg'?'💬 New message':k==='reply'?'↩️ Student reply':k==='exam'?'📝 Exam submitted':'🔔 Notification';
+      showToast(`<strong>${head}</strong><div>${text}</div>`,openBell);osNotify(head,text);
+    }else if(adm&&!mine&&(k==='msg'||k==='reply')&&notifSender(n)!==String(currentUser.id)){
+      const pm=parseMsg(n);if(!pm)return;any=true;
+      const sN=(allStudents.find(x=>String(x.id)===String(pm.studentId))||{}).name||'student',tN=(allTeachers.find(x=>String(x.id)===String(pm.teacherId))||{}).name||adminName(pm.teacherId)||'teacher';
+      showToast(`<strong>👁 ${esc(tN)} ⇄ ${esc(sN)}</strong><div>${text}</div>`,()=>{showPage('page-admin');switchAdminTab('messages');});
+    }
+  });
+  if(any)notifBeep();
+  refreshNotifUI();
+}
+async function pollNotifs(){
+  if(!currentUser)return;
+  try{
+    const q=currentUser.role==='admin'?'notifications?select=id,student_id,read&order=created_at.desc&limit=400':`notifications?select=id,student_id,read&student_id=eq.${encodeURIComponent(currentUser.id)}&order=created_at.desc&limit=200`;
+    const r=await sb(q);if(!r.ok)return;const rows=await r.json();if(!Array.isArray(rows))return;
+    let changed=false;
+    rows.forEach(x=>{const n=allNotifications.find(y=>String(y.id)===String(x.id));if(n&&n.read!==x.read&&String(n.student_id)===String(currentUser.id)){n.read=x.read;changed=true;}});
+    const unseen=rows.filter(x=>!notifSeen.has(String(x.id)));if(!unseen.length){if(changed)refreshNotifUI();return;}
+    unseen.forEach(x=>notifSeen.add(String(x.id)));
+    const need=unseen.filter(x=>!allNotifications.some(y=>String(y.id)===String(x.id))).slice(0,30);
+    if(need.length){const r2=await sb(`notifications?select=*&id=in.(${need.map(x=>encodeURIComponent(x.id)).join(',')})&order=created_at.desc`);const full=r2.ok?await r2.json():[];if(Array.isArray(full))allNotifications=[...full,...allNotifications];}
+    handleIncoming(unseen.map(x=>allNotifications.find(y=>String(y.id)===String(x.id))).filter(Boolean).reverse());
+  }catch(e){}
+}
+function startNotifPolling(){
+  stopNotifPolling();notifSeen=new Set(allNotifications.map(n=>String(n.id)));
+  notifTimer=setInterval(pollNotifs,15000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollNotifs();});
+  renderNotifBanner();updateBell();
+}
+function stopNotifPolling(){clearInterval(notifTimer);notifTimer=null;document.title='MY Institute – Exam Portal';}
 
 // ── STUDENT PROFILE ───────────────────────────
 function phHTML(o){
@@ -3536,7 +3911,8 @@ function goHome(){try{renderHomeHero();}catch(e){}
   if(!currentUser)return;
   if(document.getElementById('page-exam').classList.contains('active')){alert('Please finish and submit your exam first.');return;}
   showPage('page-home');renderLeaderboard();updateAdminStats();
-  if(currentUser.role==='student'){renderNotifBanner();renderAvailableExams();}
+  renderNotifBanner();updateBell();
+  if(currentUser.role==='student')renderAvailableExams();
 }
 function showPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
