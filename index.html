@@ -507,6 +507,7 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
       <button class="tab" onclick="switchAdminTab('reports')" id="tabBtn-reports">📈 Reports</button>
       <button class="tab" onclick="switchAdminTab('messages')" id="tabBtn-messages">💬 Messages</button>
       <button class="tab" onclick="switchAdminTab('ratings')" id="tabBtn-ratings">⭐ Ratings</button>
+      <button class="tab" onclick="switchAdminTab('hifz')" id="tabBtn-hifz">📖 Daily Hifz</button>
       <button class="tab" onclick="switchAdminTab('visits')" id="tabBtn-visits">👁️ Visits</button>
     </div>
 
@@ -614,6 +615,7 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
     </div>
 
     <!-- REPORTS TAB -->
+    <div id="adminTab-hifz" style="display:none"><div id="hifzAdminBody"></div></div>
     <div id="adminTab-ratings" style="display:none"><div class="section-title">⭐ Teacher ratings</div><div id="ratBody"></div></div>
     <div id="adminTab-visits" style="display:none"><div class="section-title">👁️ Platform visits</div><div id="visBody"></div></div>
     <div id="adminTab-messages" style="display:none">
@@ -3194,7 +3196,7 @@ function populateDropdowns(){
 // ── TABS ──────────────────────────────────────
 function showAdminTab(tab){showPage('page-admin');switchAdminTab(tab);}
 function switchAdminTab(tab){
-  const tabs=['students','bank','exams','schedule','results','discounts','reports','messages','ratings','visits'];
+  const tabs=['students','bank','exams','schedule','results','discounts','reports','messages','ratings','visits','hifz'];
   tabs.forEach(t=>{
     const el=document.getElementById(`adminTab-${t}`);if(el)el.style.display=t===tab?'block':'none';
     const b=document.getElementById(`tabBtn-${t}`);if(b)b.classList.toggle('active',t===tab);
@@ -3209,6 +3211,7 @@ function switchAdminTab(tab){
   if(tab==='messages')renderAdminMessages();
   if(tab==='ratings')renderAdminRatings();
   if(tab==='visits')renderAdminVisits();
+  if(tab==='hifz')renderTeacherHifz();
 }
 
 function showTeacherTab(tab){showPage('page-teacher');switchTeacherTab(tab);}
@@ -3487,18 +3490,21 @@ async function hifzFinish(rating){
 
 // ── teacher side ──
 async function renderTeacherHifz(){
-  const el=document.getElementById('hifzTeacherBody');if(!el)return;
+  const el=document.getElementById(hifzBodyId());if(!el)return;
   el.innerHTML='<div class="text-muted" style="padding:20px">Loading…</div>';
   await loadHifz();drawTeacherHifz();
 }
+const hifzBodyId=()=>currentUser&&currentUser.role==='admin'?'hifzAdminBody':'hifzTeacherBody';
 function drawTeacherHifz(){
-  const el=document.getElementById('hifzTeacherBody');if(!el)return;
+  const el=document.getElementById(hifzBodyId());if(!el)return;
+  const isAd=currentUser.role==='admin';
   const head=`<div class="section-header"><div class="section-title" style="margin:0">📖 Daily Hifz <span style="font-family:'Amiri',serif;color:var(--muted)">الحفظ اليومي</span></div>
     <button class="btn btn-primary" style="width:auto;padding:10px 18px" onclick="openHifzAssign()">+ Assign task</button></div>`;
   if(!hifzReady){el.innerHTML=head+hifzSetupBox();return;}
   const fs=(document.getElementById('hifzFStudent')||{}).value||'',fst=(document.getElementById('hifzFStatus')||{}).value||'active';
   const all=hifzMine(),today=hDay();
   const nameOf=id=>{const u=allStudents.find(x=>String(x.id)===String(id));return u?u.name:'(student)';};
+  const tchOf=id=>{const u=allTeachers.find(x=>String(x.id)===String(id));return u?u.name:(String(id)===String(currentUser.id)?'You':'—');};
   const stuIds=[...new Set(all.map(t=>String(t.student_id)))];
   const todayDone=new Set(hifzLogs.filter(l=>l.day===today&&stuIds.includes(String(l.student_id))).map(l=>String(l.student_id)));
   const overdue=all.filter(t=>t.status==='active'&&(t.next_review||t.start_date||'9999')<today).length;
@@ -3510,7 +3516,7 @@ function drawTeacherHifz(){
     const due=t.next_review||t.start_date||'',late=t.status==='active'&&due&&due<today;
     const dots=[0,1,2,3,4].map(i=>`<span class="hz-dot${t.status==='memorized'||(t.box||0)>i?' on':''}"></span>`).join('');
     const hasAud=logs.some(l=>l.has_audio);
-    return `<tr><td>${esc(nameOf(t.student_id))}</td><td><b>${esc(t.title)}</b></td><td>${dots}</td>
+    return `<tr><td>${esc(nameOf(t.student_id))}</td>${isAd?`<td>${esc(tchOf(t.teacher_id))}</td>`:''}<td><b>${esc(t.title)}</b></td><td>${dots}</td>
       <td style="${late?'color:var(--danger);font-weight:600':''}">${t.status==='memorized'?'✅ Memorized':due===today?'Today':hFmt(due)+(late?' (overdue)':'')}</td>
       <td>${last?hFmt(last):'—'}</td><td>🔥 ${stOf(t.student_id).cur}</td>
       <td>${hasAud?`<button class="btn-sm" title="Recitations" onclick="openHifzAudio(${t.id})">🎧</button> `:''}<button class="btn-sm" title="Delete" style="color:var(--danger);border-color:var(--danger)" onclick="hifzDelete(${t.id})">🗑</button></td></tr>`;
@@ -3521,8 +3527,8 @@ function drawTeacherHifz(){
       <select id="hifzFStudent" onchange="drawTeacherHifz()" style="background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"><option value="">All students</option>${stuOpts}</select>
       <select id="hifzFStatus" onchange="drawTeacherHifz()" style="background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"><option value="active"${fst==='active'?' selected':''}>Active</option><option value="memorized"${fst==='memorized'?' selected':''}>Memorized</option><option value="all"${fst==='all'?' selected':''}>All</option></select>
     </div>
-    <div class="table-wrap"><table><thead><tr><th>Student</th><th>Task</th><th>Progress</th><th>Next</th><th>Last</th><th>Streak</th><th>Actions</th></tr></thead>
-    <tbody>${body||'<tr><td colspan="7" class="text-muted" style="text-align:center;padding:20px">No tasks yet. Tap “Assign task” to start.</td></tr>'}</tbody></table></div>`;
+    <div class="table-wrap"><table><thead><tr><th>Student</th>${isAd?'<th>Teacher</th>':''}<th>Task</th><th>Progress</th><th>Next</th><th>Last</th><th>Streak</th><th>Actions</th></tr></thead>
+    <tbody>${body||'<tr><td colspan="8" class="text-muted" style="text-align:center;padding:20px">No tasks yet. Tap “Assign task” to start.</td></tr>'}</tbody></table></div>`;
 }
 function openHifzAssign(){
   const ids=currentUser.role==='teacher'?studentIdsOf(currentUser.id).map(String):[];
