@@ -747,7 +747,7 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
         <div class="section-title" style="margin:0">👥 My Students</div>
         <button class="btn btn-primary" style="width:auto;padding:10px 18px" onclick="openMsgModal('all')">📢 Message all</button>
       </div>
-      <div id="tsInbox"></div><div id="tsAlerts"></div>
+      <div id="tsInbox"></div><div id="tsThreads"></div><div id="tsAlerts"></div>
       <div id="tsStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px"></div>
       <input type="text" id="tsSearch" placeholder="🔍 Search student…" oninput="renderTeacherStudents()" style="width:100%;max-width:320px;margin-bottom:12px;background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"/>
       <div class="table-wrap"><table><thead><tr><th>Student</th><th>Exams</th><th>Avg</th><th>Last exam</th><th>Status</th><th>Actions</th></tr></thead><tbody id="tsTable"></tbody></table></div>
@@ -832,6 +832,7 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
       <div class="card"><div class="card-h">📊 My Exam History <span>سجل الامتحانات</span></div><div id="myProgress" style="margin-bottom:16px"></div>
       <div id="myScores"></div></div>
       <div class="card"><div class="card-h">🎁 My Gifts <span>هداياي</span></div><div id="myDiscounts"></div></div>
+      <div class="card" style="grid-column:1/-1"><div class="card-h">💬 My Messages</div><div id="myThreads"></div></div>
       <div class="card" style="grid-column:1/-1"><div class="card-h">📜 My Certificates <span>شهاداتي</span></div><div id="myCerts"></div></div>
       <div class="card" style="grid-column:1/-1"><div class="card-h">⭐ Rate a Teacher <span>قيّم مدرسك</span></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
@@ -3122,7 +3123,7 @@ function renderTeacherStudents(){
   const pend=rows.reduce((a,r)=>a+r.st.pending,0);
   const card=(i,v,l)=>`<div class="card" style="padding:14px;text-align:center"><div style="font-size:22px">${i}</div><div style="font-size:20px;font-weight:700">${v}</div><div class="text-muted" style="font-size:12px">${l}</div></div>`;
   document.getElementById('tsStats').innerHTML=card('👥',students.length,'Students')+card('📊',classAvg===null?'—':Math.round(classAvg)+'%','Class average')+card('✅',passRate===null?'—':passRate+'%','Passing')+card('⏳',pend,'Awaiting grading');
-  renderTeacherInbox();
+  renderTeacherInbox();try{renderThreads('tsThreads')}catch(e){}
   const low=rows.filter(r=>{const g=gradedOf(r.st.rs).pop();return g&&g.score<50;});
   document.getElementById('tsAlerts').innerHTML=low.length?`<div class="alert alert-error" style="margin-bottom:14px">⚠️ Latest score below 50%: ${low.map(r=>`<strong>${esc(r.s.name)}</strong> <button class="btn-sm" onclick="openMsgModal('${r.s.id}')">💬</button>`).join(' · ')}</div>`:'';
   const f=rows.filter(r=>r.s.name.toLowerCase().includes(q));
@@ -3217,7 +3218,7 @@ async function sendTeacherMsg(){
     showLoading('Sending…');
     const r=await sb('notifications',{method:'POST',body:JSON.stringify([{student_id:t,message:body,read:false,created_at:new Date().toISOString()}]),prefer:'return=minimal'});
     hideLoading();
-    if(r.ok){closeModal('modalMsg');alert('Reply sent ✅');}else al.innerHTML='<div class="alert alert-error">Could not send your reply. Please try again.</div>';
+    if(r.ok){closeModal('modalMsg');try{await loadAllData();refreshNotifUI();}catch(e){}alert('Reply sent ✅');}else al.innerHTML='<div class="alert alert-error">Could not send your reply. Please try again.</div>';
     return;
   }
   const adm=currentUser.role==='admin',pool=msgStudents(),exams=adm?allExams:teacherScope(currentUser.id).exams;
@@ -3229,7 +3230,7 @@ async function sendTeacherMsg(){
   let res=await sb('notifications',{method:'POST',body:mk({}),prefer:'return=minimal'});
   if(!res.ok&&exams[0])res=await sb('notifications',{method:'POST',body:mk({exam_id:exams[0].id}),prefer:'return=minimal'});
   hideLoading();
-  if(res.ok){closeModal('modalMsg');if(adm){await loadAllData();renderAdminMessages();}alert(`Message sent to ${targets.length} student${targets.length>1?'s':''} ✅`);}
+  if(res.ok){closeModal('modalMsg');if(adm){await loadAllData();renderAdminMessages();}else{try{await loadAllData();refreshNotifUI();}catch(e){}}alert(`Message sent to ${targets.length} student${targets.length>1?'s':''} ✅`);}
   else al.innerHTML='<div class="alert alert-error">Could not send. Please try again.</div>';
 }
 
@@ -3306,6 +3307,28 @@ function renderTeacherInbox(bid){
 }
 async function markReplyRead(id){await sb(`notifications?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({read:true}),prefer:'return=minimal'});const n=allNotifications.find(x=>x.id===id);if(n)n.read=true;refreshNotifUI();}
 function replyTo(tid){openReplyModal(tid);}
+// ── CONVERSATION HISTORY (student ⇄ teacher), always available so replies never get lost ──
+function renderThreads(bid){
+  const box=document.getElementById(bid);if(!box||!currentUser||currentUser.role==='admin')return;
+  const me=String(currentUser.id),isS=currentUser.role==='student',G={};
+  allNotifications.map(parseMsg).filter(Boolean).forEach(m=>{
+    if(String(isS?m.studentId:m.teacherId)!==me)return;
+    const other=String(isS?m.teacherId:m.studentId);(G[other]=G[other]||[]).push(m);
+  });
+  const nameOf=id=>{const u=(window._allUsers||[]).find(x=>String(x.id)===String(id));return u?u.name+(u.role==='admin'?' (Admin)':''):'Unknown';};
+  const T=Object.keys(G).map(id=>{G[id].sort((a,b)=>new Date(a.n.created_at)-new Date(b.n.created_at));return{id,list:G[id]};})
+    .sort((a,b)=>new Date(b.list[b.list.length-1].n.created_at)-new Date(a.list[a.list.length-1].n.created_at));
+  const dt=t=>{try{return new Date(t).toLocaleString()}catch{return ''}};
+  const body=T.length?T.map(g=>{
+    const shown=g.list.slice(-15),hidden=g.list.length-shown.length;
+    return `<div style="border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px"><strong>${isS?'👨‍🏫':'🎓'} ${esc(nameOf(g.id))}</strong><button class="btn-sm" onclick="${isS?`openReplyModal('${esc(g.id)}')`:`openMsgModal('${esc(g.id)}')`}">${isS?'↩️ Reply':'💬 Message'}</button></div>
+      ${hidden>0?`<div class="text-muted" style="font-size:11px;text-align:center;margin-bottom:6px">… ${hidden} earlier message${hidden>1?'s':''}</div>`:''}
+      ${shown.map(m=>{const mine=isS?m.isReply:!m.isReply;
+        return `<div style="display:flex;justify-content:${mine?'flex-end':'flex-start'};margin:6px 0"><div style="max-width:85%;background:${mine?'#DCFCE7':'#EAF6FF'};border:1px solid var(--border);border-radius:12px;padding:8px 12px"><div style="font-size:13px">${msgRich(m.body)}</div><div class="text-muted" style="font-size:11px;margin-top:4px">${dt(m.n.created_at)}</div></div></div>`;}).join('')}
+    </div>`;}).join(''):'<div class="text-muted" style="padding:10px 0;text-align:center">No messages yet</div>';
+  box.innerHTML=isS?body:`<div class="card" style="margin-bottom:14px"><div class="card-title">💬 Conversations</div>${body}</div>`;
+}
 let prQ=[],prI=0,prOk=0;
 function openPractice(){
   prQ=[];allResults.filter(r=>String(r.student_id)===String(currentUser.id)&&r.graded!==false&&r.admin_note!==STARTED_NOTE).forEach(r=>{
@@ -3685,7 +3708,7 @@ function updateBell(){
 function refreshNotifUI(){
   if(!currentUser)return;
   try{renderNotifBanner();}catch(e){}
-  try{if(currentUser.role==='student')renderStudentProfile();else{renderTeacherInbox();renderTeacherInbox('amInbox');}}catch(e){}
+  try{if(currentUser.role==='student')renderStudentProfile();else{renderTeacherInbox();renderTeacherInbox('amInbox');renderThreads('tsThreads');}}catch(e){}
   try{if(currentUser.role==='admin'){const t=document.getElementById('adminTab-messages');if(t&&t.style.display!=='none')renderAdminMessages();}}catch(e){}
   updateBell();
 }
@@ -3803,6 +3826,7 @@ function renderTeacherHero(id){
 }
 function renderStudentProfile(){
   if(!currentUser)return;
+  try{renderThreads('myThreads')}catch(e){}
   {const rt=document.getElementById('rateTeacher');if(rt)rt.innerHTML=allTeachers.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');}
   renderMyProgress();renderProfileHero();
   const myR=allResults.filter(r=>r.student_id===currentUser.id).sort((a,b)=>new Date(b.submitted_at)-new Date(a.submitted_at));
