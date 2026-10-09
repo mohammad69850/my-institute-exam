@@ -3817,7 +3817,7 @@ function renderStudentProfile(){
   const passed=myR.filter(r=>r.passed);
   document.getElementById('myCerts').innerHTML=passed.length?`<div class="cert-grid">${passed.map(r=>{
     const ex=allExams.find(e=>e.id===r.exam_id)||{title:'?'},no=r.submitted_at?certNo(currentUser.id,r.exam_id,Math.round(r.score||0),new Date(r.submitted_at)):'';
-    return `<div class="cert-card">${no?`<button class="seal" title="Verify this certificate" onclick="openVerify('${no}')">✔ موثّقة</button>`:''}
+    return `<div class="cert-card">${no?`<button class="seal" title="Verify this certificate" onclick="openVerify('${no}')">✔ Verified</button>`:''}
       <div class="sc">${Math.round(r.score)}%</div><div class="tt">${esc(ex.title)}</div><div class="mt">${r.submitted_at?new Date(r.submitted_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}):''}</div>
       ${no?`<div class="no">${no}</div>`:''}<button class="btn-sm" onclick="downloadCertForResult('${r.id}')">⬇ Download certificate</button></div>`;}).join('')}</div>`:'<div style="color:var(--muted);font-size:13px;padding:12px">Pass an exam to earn a certificate! · انجح في امتحان لتحصل على شهادتك</div>';
 }
@@ -4295,23 +4295,45 @@ function burst(x,y){
     s.style.left=x+'px';s.style.top=y+'px';s.style.setProperty('--dx',Math.cos(a)*r+'px');s.style.setProperty('--dy',Math.sin(a)*r+'px');
     document.body.appendChild(s);setTimeout(function(n){n.remove()}.bind(null,s),1400);}
 }
+var FREE_EVERY=8; /* a free 30-min session every N distinct exams completed */
 var BD=[
-['first','🌱','أول خطوة','Exam taken',function(m){return m.n>=1}],
-['pass','🏅','أول نجاح','First pass',function(m){return m.p>=1}],
-['perfect','💯','الدرجة الكاملة','Score 100%',function(m){return m.best>=100}],
-['five','📚','مثابر','5 exams',function(m){return m.n>=5}],
-['star','⭐','متفوق','Avg ≥ 85%',function(m){return m.n>=3&&m.avg>=85}],
-['master','👑','متقن','5 exams passed',function(m){return m.p>=5}],
-['streak','🔥','مواظب','2 weeks in a row',function(m){return m.run>=2}],
-['month','🌙','نشيط الشهر','3 this month',function(m){return m.mo>=3}]];
+['first','🌱','First Step','Exam taken',function(m){return m.n>=1}],
+['pass','🏅','First Pass','Passed an exam',function(m){return m.p>=1}],
+['perfect','💯','Perfect Score','Score 100%',function(m){return m.best>=100}],
+['five','📚','Persistent','5 exams',function(m){return m.n>=5}],
+['star','⭐','Top Performer','Avg ≥ 85%',function(m){return m.n>=3&&m.avg>=85}],
+['master','👑','Master','5 exams passed',function(m){return m.p>=5}],
+['streak','🔥','Consistent','2 weeks in a row',function(m){return m.run>=2}],
+['month','🌙','Monthly Star','3 this month',function(m){return m.mo>=3}],
+['free','🎓','Free Session','8 exams = 30 min free',function(m){return m.d>=FREE_EVERY}]];
 function metrics(){
   var mine=allResults.filter(function(r){return String(r.student_id)===String(currentUser.id)&&r.admin_note!==STARTED_NOTE}),g=gradedOf(mine);
   var wk=[...new Set(g.map(function(r){return Math.floor(new Date(r.submitted_at)/6048e5)}))].sort(function(a,b){return a-b}),run=wk.length?1:0,mx=run;
   for(var i=1;i<wk.length;i++){run=wk[i]===wk[i-1]+1?run+1:1;mx=Math.max(mx,run)}
   var now=new Date();
-  return{n:g.length,p:new Set(mine.filter(function(r){return r.passed}).map(function(r){return r.exam_id})).size,
+  return{n:g.length,d:new Set(g.map(function(r){return r.exam_id})).size,p:new Set(mine.filter(function(r){return r.passed}).map(function(r){return r.exam_id})).size,
     best:g.length?Math.max.apply(null,g.map(function(r){return r.score})):0,avg:g.length?g.reduce(function(a,r){return a+r.score},0)/g.length:0,run:mx,
     mo:g.filter(function(r){var d=new Date(r.submitted_at);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()}).length};
+}
+var gBusy=false,gFail=false;
+async function grantFree(m){
+  if(gBusy||gFail||typeof currentUser==='undefined'||!currentUser||currentUser.role!=='student')return;
+  var earned=Math.floor(m.d/FREE_EVERY),have=allDiscounts.filter(function(d){return String(d.student_id)===String(currentUser.id)&&/^FREE30-/.test(d.code||'')}).length;
+  if(earned<=have)return;
+  gBusy=true;
+  try{
+    for(var k=have+1;k<=earned;k++){
+      var row={student_id:currentUser.id,code:'FREE30-'+k,value:'Free 30-minute session',message:'🎓 Congratulations! You completed '+(k*FREE_EVERY)+' exams and earned a free 30-minute session. Contact the institute to book it.',used:false,created_at:new Date().toISOString()};
+      var r=await sb('discounts',{method:'POST',body:JSON.stringify(row)});
+      if(!r.ok){gFail=true;break}
+      var j=await r.json();allDiscounts.push(Array.isArray(j)&&j[0]?j[0]:row);
+    }
+  }catch(e){gFail=true}
+  gBusy=false;
+}
+function freeLine(m){
+  var pr=m.d%FREE_EVERY;
+  return m.d>0&&pr===0?'🎓 You earned a free 30-minute session! See My Gifts.':'🎓 Free 30-minute session every '+FREE_EVERY+' exams · '+pr+'/'+FREE_EVERY+' done';
 }
 function badges(root){
   if(typeof currentUser==='undefined'||!currentUser||currentUser.role!=='student')return;
@@ -4319,9 +4341,10 @@ function badges(root){
     if(ph.querySelector('.fx-badges'))return;
     var m;try{m=metrics()}catch(e){return}
     var seen=[];try{seen=JSON.parse(localStorage.getItem('mi_badges_'+currentUser.id)||'[]')}catch(e){}
-    var got=[],h='<h4>الأوسمة · Badges</h4>';
+    var got=[],h='<h4>Badges</h4>';
     BD.forEach(function(b){var on=b[4](m);if(on)got.push(b[0]);
       h+='<div class="fx-b '+(on?'on':'off')+'" title="'+b[3]+'"><i>'+b[1]+'</i><b>'+b[2]+'</b><small>'+b[3]+'</small></div>'});
+    h+='<div style="width:100%;font-size:12px;color:#E6CC85;margin-top:2px">'+freeLine(m)+'</div>';grantFree(m);
     var d=document.createElement('div');d.className='fx-badges';d.innerHTML=h;ph.appendChild(d);
     if(got.some(function(x){return seen.indexOf(x)<0})&&seen.length){var r=d.getBoundingClientRect();burst(r.left+r.width/2,r.top+20);vib([40,30,40])}
     try{localStorage.setItem('mi_badges_'+currentUser.id,JSON.stringify(got))}catch(e){}
@@ -4378,7 +4401,7 @@ es:{n:'Español',btn:'📤 Compartir mi logro',prev:'Tu promedio anterior',now:'
 function lang(){
   var v=null;try{v=langs[currentUser.id]}catch(e){}
   if(v&&typeof v==='object'){var t=v.t||'{score}%';return{n:v.n,rtl:/[\u0590-\u08FF]/.test(t),btn:'📤 '+(v.b||'Share'),prev:'—',now:'—',tr:'',m:[t,t,t,t],share:function(p){return t.replace('{score}',p)},c:t}}
-  return LG[v]||LG.ar;
+  return LG[v]||LG.en;
 }
 function msgFor(p){var m=lang().m,t=p>=90?m[0]:p>=70?m[1]:p>=50?m[2]:m[3];return t.replace('{score}',Math.round(p))}
 function langUI(){
@@ -4388,11 +4411,11 @@ function langUI(){
     var b=tr.querySelector("button[onclick^=\"openLinksModal('student'\"]");if(!b)return;
     var id=b.getAttribute('onclick').match(/'student','([^']+)'/)[1],cur=langs[id],sel=document.createElement('select');sel.className='fx-lang';sel.title='لغة مشاركة الإنجاز · Share language';
     var h='';Object.keys(LG).forEach(function(k){h+='<option value="'+k+'">'+LG[k].n+'</option>'});h+='<option value="__c">'+(cur&&typeof cur==='object'?'✎ '+cur.n:'أخرى… Other')+'</option>';sel.innerHTML=h;
-    sel.value=cur&&typeof cur==='object'?'__c':(LG[cur]?cur:'ar');
+    sel.value=cur&&typeof cur==='object'?'__c':(LG[cur]?cur:'en');
     sel.onchange=async function(){
       var v=sel.value,val=v;
-      if(v==='__c'){var n=prompt('اسم اللغة (مثال: Deutsch)\nLanguage name:');if(!n){sel.value=LG[langs[id]]?langs[id]:'ar';return}
-        var t=prompt('رسالة المشاركة بهذه اللغة، واكتب {score} مكان النسبة\nShare message in this language, use {score} for the percentage:','{score}%');if(!t){sel.value=LG[langs[id]]?langs[id]:'ar';return}
+      if(v==='__c'){var n=prompt('اسم اللغة (مثال: Deutsch)\nLanguage name:');if(!n){sel.value=LG[langs[id]]?langs[id]:'en';return}
+        var t=prompt('رسالة المشاركة بهذه اللغة، واكتب {score} مكان النسبة\nShare message in this language, use {score} for the percentage:','{score}%');if(!t){sel.value=LG[langs[id]]?langs[id]:'en';return}
         var bb=prompt('نص الزر (اختياري)\nButton text (optional):','Share');val={n:n,t:t,b:bb||'Share'}}
       langs[id]=val;sel.disabled=true;var ok=await saveLangs();sel.disabled=false;if(!ok)alert('تعذّر الحفظ · Could not save');
     };
@@ -4408,7 +4431,7 @@ function result(){
   var prev=null;try{var g=gradedOf(allResults.filter(function(r){return String(r.student_id)===String(currentUser.id)&&r.admin_note!==STARTED_NOTE})).slice().sort(function(a,b){return new Date(a.submitted_at)-new Date(b.submitted_at)});
     if(g.length>1){var o=g.slice(0,-1);prev=o.reduce(function(a,r){return a+r.score},0)/o.length}}catch(e){}
   var d=document.createElement('div');d.id='fxRes';d.dataset.k=key;
-  d.innerHTML='<div class="msg" dir="'+(lang().rtl?'rtl':'ltr')+'">'+msgFor(pct)+'</div>'+(prev==null||lang().prev==='—'?'':'<div class="cmp"><span>'+lang().prev+' · '+Math.round(prev)+'%</span><div class="bar"><i data-w="'+prev+'"></i></div><span>'+lang().now+' · '+pct+'%</span><div class="bar"><i data-w="'+pct+'"></i></div></div>')+'<button class="btn btn-outline" id="fxShare">'+lang().btn+'</button>';
+  d.innerHTML='<div class="msg" dir="'+(lang().rtl?'rtl':'ltr')+'">'+msgFor(pct)+'</div>'+(prev==null||lang().prev==='—'?'':'<div class="cmp"><span>'+lang().prev+' · '+Math.round(prev)+'%</span><div class="bar"><i data-w="'+prev+'"></i></div><span>'+lang().now+' · '+pct+'%</span><div class="bar"><i data-w="'+pct+'"></i></div></div>')+(function(){try{var mm=metrics();grantFree(mm);return '<div class="msg" style="margin-top:10px">'+freeLine(mm)+'</div>'}catch(e){return ''}})()+'<button class="btn btn-outline" id="fxShare">'+lang().btn+'</button>';
   document.getElementById('resultDetail').after(d);
   setTimeout(function(){d.querySelectorAll('.bar i').forEach(function(i){i.style.width=i.dataset.w+'%'})},60);
   document.getElementById('fxShare').onclick=function(){shareImg(pct)};
