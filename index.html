@@ -528,6 +528,10 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
         </div>
       </div>
       <div class="tabs" style="margin-bottom:16px"><button class="tab active" id="uvBtn-students" onclick="setUsersView('students')">🎓 Students</button><button class="tab" id="uvBtn-teachers" onclick="setUsersView('teachers')">👨‍🏫 Teachers</button></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <input type="search" id="usersSearch" oninput="renderStudentsTable()" placeholder="🔍 Search by name, username, email or WhatsApp…" autocomplete="off" style="flex:1;min-width:220px;padding:10px 14px;border:2px solid var(--border);border-radius:10px;background:#F5FAFF;font-size:14px"/>
+        <span id="usersCount" class="text-muted" style="font-size:12px"></span>
+      </div>
       <div class="table-wrap">
         <table><thead id="usersHead"></thead>
         <tbody id="studentsTable"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px">No users yet</td></tr></tbody></table>
@@ -1634,7 +1638,7 @@ async function addUser(role){
 
 let usersView='students';
 function setUsersView(v){
-  usersView=v;
+  usersView=v;{const q=document.getElementById('usersSearch');if(q)q.value='';}
   ['students','teachers'].forEach(k=>document.getElementById('uvBtn-'+k).classList.toggle('active',k===v));
   document.getElementById('uvImport').style.display=v==='students'?'inline-flex':'none';
   document.getElementById('uvAddS').style.display=v==='students'?'inline-flex':'none';
@@ -1653,8 +1657,13 @@ function renderStudentsTable(){
   let list=(isT?allTeachers:allStudents).slice().sort((a,b)=>a.name.localeCompare(b.name));
   if(f==='__none')list=list.filter(u=>!teachersOf(u.id).length);
   else if(f)list=list.filter(u=>teachersOf(u.id).includes(String(f)));
+  const total=list.length,qi=document.getElementById('usersSearch'),
+    uNorm=t=>String(t??'').toLowerCase().replace(/[٠-٩]/g,c=>c.charCodeAt(0)-1632).replace(/[\u064B-\u0652\u0640]/g,'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/\s+/g,' ').trim(),
+    q=qi?uNorm(qi.value):'';
+  if(q)list=list.filter(u=>q.split(' ').every(w=>uNorm([u.name,u.username,u.email,u.whatsapp,u.subject].join(' ')).includes(w)));
+  const uc=document.getElementById('usersCount');if(uc)uc.textContent=q?`${list.length} of ${total}`:`${total} ${isT?'teachers':'students'}`;
   const cols=isT?8:7;
-  if(!list.length){tbody.innerHTML=`<tr><td colspan="${cols}" style="text-align:center;color:var(--muted);padding:32px">${isT?'No teachers yet':'No students'}</td></tr>`;return;}
+  if(!list.length){tbody.innerHTML=`<tr><td colspan="${cols}" style="text-align:center;color:var(--muted);padding:32px">${q?'No matches for “'+esc(qi.value)+'”':(isT?'No teachers yet':'No students')}</td></tr>`;return;}
   tbody.innerHTML=list.map(s=>{
     const wa=s.whatsapp?`<a href="https://wa.me/${s.whatsapp.replace(/\D/g,'')}" target="_blank" style="color:#25D366;font-size:12px">📲 ${s.whatsapp}</a>`:'<span style="color:var(--muted)">—</span>';
     const mid=isT?`<td>${s.subject?esc(s.subject):'<span style="color:var(--muted)">—</span>'}</td>`:'';
