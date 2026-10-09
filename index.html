@@ -4295,7 +4295,7 @@ function burst(x,y){
     s.style.left=x+'px';s.style.top=y+'px';s.style.setProperty('--dx',Math.cos(a)*r+'px');s.style.setProperty('--dy',Math.sin(a)*r+'px');
     document.body.appendChild(s);setTimeout(function(n){n.remove()}.bind(null,s),1400);}
 }
-var FREE_EVERY=8; /* a free 30-min session every N distinct exams completed */
+var FREE_EVERY=5; /* a free 30-min session for every N distinct exams scored 100% */
 var BD=[
 ['first','🌱','First Step','Exam taken',function(m){return m.n>=1}],
 ['pass','🏅','First Pass','Passed an exam',function(m){return m.p>=1}],
@@ -4305,25 +4305,25 @@ var BD=[
 ['master','👑','Master','5 exams passed',function(m){return m.p>=5}],
 ['streak','🔥','Consistent','2 weeks in a row',function(m){return m.run>=2}],
 ['month','🌙','Monthly Star','3 this month',function(m){return m.mo>=3}],
-['free','🎓','Free Session','8 exams = 30 min free',function(m){return m.d>=FREE_EVERY}]];
+['free','🎓','Free Session','5 exams at 100% = 30 min free',function(m){return m.h>=FREE_EVERY}]];
 function metrics(){
   var mine=allResults.filter(function(r){return String(r.student_id)===String(currentUser.id)&&r.admin_note!==STARTED_NOTE}),g=gradedOf(mine);
   var wk=[...new Set(g.map(function(r){return Math.floor(new Date(r.submitted_at)/6048e5)}))].sort(function(a,b){return a-b}),run=wk.length?1:0,mx=run;
   for(var i=1;i<wk.length;i++){run=wk[i]===wk[i-1]+1?run+1:1;mx=Math.max(mx,run)}
   var now=new Date();
-  return{n:g.length,d:new Set(g.map(function(r){return r.exam_id})).size,p:new Set(mine.filter(function(r){return r.passed}).map(function(r){return r.exam_id})).size,
+  return{n:g.length,h:new Set(g.filter(function(r){return r.score>=100}).map(function(r){return r.exam_id})).size,p:new Set(mine.filter(function(r){return r.passed}).map(function(r){return r.exam_id})).size,
     best:g.length?Math.max.apply(null,g.map(function(r){return r.score})):0,avg:g.length?g.reduce(function(a,r){return a+r.score},0)/g.length:0,run:mx,
     mo:g.filter(function(r){var d=new Date(r.submitted_at);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()}).length};
 }
 var gBusy=false,gFail=false;
 async function grantFree(m){
   if(gBusy||gFail||typeof currentUser==='undefined'||!currentUser||currentUser.role!=='student')return;
-  var earned=Math.floor(m.d/FREE_EVERY),have=allDiscounts.filter(function(d){return String(d.student_id)===String(currentUser.id)&&/^FREE30-/.test(d.code||'')}).length;
+  var earned=Math.floor(m.h/FREE_EVERY),have=allDiscounts.filter(function(d){return String(d.student_id)===String(currentUser.id)&&/^PERFECT30-/.test(d.code||'')}).length;
   if(earned<=have)return;
   gBusy=true;
   try{
     for(var k=have+1;k<=earned;k++){
-      var row={student_id:currentUser.id,code:'FREE30-'+k,value:'Free 30-minute session',message:'🎓 Congratulations! You completed '+(k*FREE_EVERY)+' exams and earned a free 30-minute session. Contact the institute to book it.',used:false,created_at:new Date().toISOString()};
+      var row={student_id:currentUser.id,code:'PERFECT30-'+k,value:'Free 30-minute session',message:'🎓 Congratulations! You scored 100% in '+(k*FREE_EVERY)+' exams and earned a free 30-minute session. Contact the institute to book it.',used:false,created_at:new Date().toISOString()};
       var r=await sb('discounts',{method:'POST',body:JSON.stringify(row)});
       if(!r.ok){gFail=true;break}
       var j=await r.json();allDiscounts.push(Array.isArray(j)&&j[0]?j[0]:row);
@@ -4332,8 +4332,8 @@ async function grantFree(m){
   gBusy=false;
 }
 function freeLine(m){
-  var pr=m.d%FREE_EVERY;
-  return m.d>0&&pr===0?'🎓 You earned a free 30-minute session! See My Gifts.':'🎓 Free 30-minute session every '+FREE_EVERY+' exams · '+pr+'/'+FREE_EVERY+' done';
+  var pr=m.h%FREE_EVERY;
+  return m.h>0&&pr===0?'🎓 You earned a free 30-minute session! See My Gifts.':'🎓 Free 30-minute session for every '+FREE_EVERY+' exams scored 100% · '+pr+'/'+FREE_EVERY+' done';
 }
 function badges(root){
   if(typeof currentUser==='undefined'||!currentUser||currentUser.role!=='student')return;
