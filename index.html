@@ -455,8 +455,9 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
       </div>
     </div>
     <div class="leaderboard-section">
-      <div class="section-title"><span>🏆</span> Hall of Excellence — Top Students</div>
-      <div id="leaderboardList"><div class="empty-state"><div class="icon">🎓</div><p>No results yet. Be the first!</p></div></div>
+      <div class="section-title"><span>🏆</span> Weekly Honor List · لوحة الشرف الأسبوعية</div>
+      <div id="honorWeek" style="font-size:12px;color:var(--muted);margin:-6px 0 12px"></div>
+      <div id="leaderboardList"><div class="empty-state"><div class="icon">🎓</div><p>No results yet this week. Be the first!</p></div></div>
     </div>
     <div id="tipsRow" style="display:none">
       <div class="tips-row">
@@ -778,6 +779,7 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
       </div>
     </div>
     <div class="progress-bar"><div class="progress-fill" id="examProgress" style="width:0%"></div></div>
+    <div id="trBar" style="display:none;margin:8px 0;text-align:end"><button class="btn-sm" type="button" id="trBtn" onclick="trToggle()">🌐</button></div>
     <div id="questionContainer"></div>
     <div class="exam-nav">
       <button class="btn btn-ghost" id="prevBtn" onclick="prevQuestion()">← Previous</button>
@@ -1063,6 +1065,10 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px">Each student gets <input type="number" id="examDrawN" min="0" placeholder="all" style="width:80px;padding:6px 8px"/> random questions out of the questions listed below</div>
       <div style="font-size:12px;color:var(--muted);margin-top:8px">Leave the number empty = every student gets all questions. To draw from the bank: add a big pool of questions below (filter the bank → “Select all shown” → add), then set how many each student receives. Avoid choices like “all of the above” when shuffling choices.</div>
     </div>
+    <div style="background:#F5FAFF;border:2px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="examNoTr" style="width:auto"/> 🌐 Do NOT auto-translate this exam (use for Arabic / Quran / language exams) · لا تترجم هذا الاختبار</label>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">By default the questions and choices are translated automatically into the language set for each student in the Students tab.</div>
+    </div>
     <div class="field"><label>Description</label><textarea id="examDesc" placeholder="Brief description…" style="min-height:60px"></textarea></div>
     <hr class="divider"/>
     <div id="bankImportSection" style="background:#FFFBEF;border:2px solid var(--gold);border-radius:12px;padding:12px;margin-bottom:12px">
@@ -1128,6 +1134,32 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modalSchedule')">Cancel</button>
       <button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="saveSchedule()">📅 Save Schedule</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reopen exam for selected students -->
+<div class="modal-overlay" id="modalReopen">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-title"><span id="roTitle">🔓 Reopen exam</span> <button class="close-btn" onclick="closeModal('modalReopen')">✕</button></div>
+    <div id="roAlert"></div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:10px">Choose the students who have <b>not</b> taken this exam yet and set a new time window. Only they will be able to open it. · اختر الطلاب الذين لم يحضروا الاختبار وحدد وقتاً جديداً.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>Opens</label><input type="datetime-local" id="roOpen"/></div>
+      <div class="field"><label>Closes</label><input type="datetime-local" id="roClose"/></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <input type="text" id="roSearch" placeholder="🔍 Search student…" oninput="renderReopenList()" style="flex:1;min-width:160px;background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"/>
+      <button class="btn-sm" type="button" onclick="roPickAll(true)">Select all shown</button>
+      <button class="btn-sm" type="button" onclick="roPickAll(false)">Clear</button>
+    </div>
+    <div id="roCount" style="font-size:12px;color:var(--muted);margin-bottom:6px"></div>
+    <div id="roList" style="max-height:280px;overflow:auto;border:2px solid var(--border);border-radius:10px;padding:4px 10px;margin-bottom:10px"></div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px;cursor:pointer"><input type="checkbox" id="roKeep" style="width:auto"/> Also keep the students already assigned to this exam (otherwise only the selected students will see it)</label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:12px;cursor:pointer"><input type="checkbox" id="roNotify" style="width:auto" checked/> Send them an in-app notification</label>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modalReopen')">Cancel</button>
+      <button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="saveReopen()">🔓 Reopen</button>
     </div>
   </div>
 </div>
@@ -1230,7 +1262,7 @@ window.onload=async()=>{
     const saved=store.get('mi_user');
     if(saved){currentUser=JSON.parse(saved);await afterLogin();}
   }catch(e){store.del('mi_user');currentUser=null;hideLoading();showPage('page-login');}
-  setInterval(updateScheduleCountdowns,1000);
+  setInterval(updateScheduleCountdowns,1000);setInterval(()=>{if(currentUser)renderLeaderboard();},60000);
   const vq=new URLSearchParams(location.search).get('verify');if(vq)openVerify(vq);
 };
 
@@ -1385,7 +1417,7 @@ async function loadAllData(){
   allTeachers=allUsers.filter(u=>u.role==='teacher');
   [,allExams,allResults,allDiscounts,allSchedules,allQuestionBank,allNotifications]=
     await Promise.all([Promise.resolve(allUsers),j(eR),j(rR),j(dR),j(scR),j(bR),j(nR)]);
-  secRows=allQuestionBank.filter(q=>q.text==='__SECTIONS__');linkRow=allQuestionBank.find(q=>q.text==='__LINKS__')||null;try{links=JSON.parse(linkRow.subject)||{};}catch{links={};}langRow=allQuestionBank.find(q=>q.text==='__LANGS__')||null;try{langs=JSON.parse(langRow.subject)||{};}catch{langs={};}examCfg={};examCfgRows={};allQuestionBank.filter(q=>q.text==='__EXAMCFG__').forEach(r=>{try{const c=JSON.parse(r.subject);if(c&&c.e){examCfg[c.e]={q:!!c.q,o:!!c.o,n:parseInt(c.n)||0};examCfgRows[c.e]=r;}}catch(e){}});window._allUsers=allUsers;allQuestionBank=allQuestionBank.filter(q=>q.text!=='__SECTIONS__'&&q.text!=='__LINKS__'&&q.text!=='__LANGS__'&&q.text!=='__EXAMCFG__');
+  secRows=allQuestionBank.filter(q=>q.text==='__SECTIONS__');linkRow=allQuestionBank.find(q=>q.text==='__LINKS__')||null;try{links=JSON.parse(linkRow.subject)||{};}catch{links={};}langRow=allQuestionBank.find(q=>q.text==='__LANGS__')||null;try{langs=JSON.parse(langRow.subject)||{};}catch{langs={};}examCfg={};examCfgRows={};allQuestionBank.filter(q=>q.text==='__EXAMCFG__').forEach(r=>{try{const c=JSON.parse(r.subject);if(c&&c.e){examCfg[c.e]={q:!!c.q,o:!!c.o,n:parseInt(c.n)||0,t:!!c.t};examCfgRows[c.e]=r;}}catch(e){}});window._allUsers=allUsers;allQuestionBank=allQuestionBank.filter(q=>q.text!=='__SECTIONS__'&&q.text!=='__LINKS__'&&q.text!=='__LANGS__'&&q.text!=='__EXAMCFG__');
 }
 
 // ── TEACHER ↔ STUDENT LINKS (stored like sections: one hidden row in question_bank) ──
@@ -1561,13 +1593,25 @@ async function verifyCert(){
   }catch(err){out.innerHTML='<div class="alert alert-error">Could not check right now. Please try again.</div>';}
 }
 // ── LEADERBOARD ──────────────────────────────
+// Honor list = best graded score per student for the CURRENT week (Saturday 00:00 -> next Saturday 00:00, local time).
+// Nothing is stored or deleted: every Saturday morning the window simply moves forward, so the list starts fresh.
+function honorWeekStart(d){d=d||new Date();const s=new Date(d.getFullYear(),d.getMonth(),d.getDate());s.setDate(s.getDate()-((s.getDay()+1)%7));return s;}
 function renderLeaderboard(){
-  const lb=document.getElementById('leaderboardList');
-  const gradedResults=allResults.filter(r=>r.graded!==false);
+  const lb=document.getElementById('leaderboardList');if(!lb)return;
+  const ws=honorWeekStart(),we=new Date(ws);we.setDate(we.getDate()+7);
+  const wk=document.getElementById('honorWeek');
+  if(wk){
+    const fmt=d=>d.toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'});
+    const last=new Date(we);last.setDate(last.getDate()-1);
+    const ms=we-new Date(),dd=Math.floor(ms/864e5),hh=Math.floor(ms%864e5/36e5);
+    wk.textContent=`📅 ${fmt(ws)} → ${fmt(last)} · resets Saturday morning (in ${dd}d ${hh}h) · تتجدد صباح السبت`;
+  }
+  const inWeek=r=>{const t=new Date(r.submitted_at);return t>=ws&&t<we;};
+  const gradedResults=allResults.filter(r=>r.graded!==false&&r.score!=null&&inWeek(r));
   const scoreMap={};
-  gradedResults.forEach(r=>{if(!scoreMap[r.student_id]||r.score>scoreMap[r.student_id].score)scoreMap[r.student_id]=r;});
-  const sorted=Object.values(scoreMap).sort((a,b)=>b.score-a.score).slice(0,10);
-  if(!sorted.length){lb.innerHTML='<div class="empty-state"><div class="icon">🎓</div><p>No results yet. Be the first!</p></div>';return;}
+  gradedResults.forEach(r=>{const c=scoreMap[r.student_id];if(!c||r.score>c.score||(r.score===c.score&&new Date(r.submitted_at)<new Date(c.submitted_at)))scoreMap[r.student_id]=r;});
+  const sorted=Object.values(scoreMap).sort((a,b)=>b.score-a.score||new Date(a.submitted_at)-new Date(b.submitted_at)).slice(0,10);
+  if(!sorted.length){lb.innerHTML='<div class="empty-state"><div class="icon">🎓</div><p>No results yet this week. Be the first!</p></div>';return;}
   const colors=['#1565C0','#16A34A','#0EA5E9','#0891B2','#059669','#2563EB'];
   lb.innerHTML=sorted.map((r,i)=>{
     const s=allStudents.find(s=>s.id===r.student_id)||{name:'Unknown'};
@@ -2075,10 +2119,10 @@ const examOrder=()=>servedIdx(activeExam,examPlan);
 const optList=(q,i,plan)=>{const p=plan&&plan.p&&plan.p[i];return(p||[0,1,2,3]).map((oi,pos)=>[oi,(q.options||[])[oi],pos]);};
 async function saveExamCfg(exId,c){
   if(!exId)return true;
-  const on=c.q||c.o||c.n>0,row=examCfgRows[exId];
+  const on=c.q||c.o||c.n>0||c.t,row=examCfgRows[exId];
   if(!on&&!row)return true;
   if(!on){const r=await sb(`question_bank?id=eq.${row.id}`,{method:'DELETE',prefer:''});return r.ok;}
-  const sub=JSON.stringify({e:exId,q:c.q?1:0,o:c.o?1:0,n:c.n||0});
+  const sub=JSON.stringify({e:exId,q:c.q?1:0,o:c.o?1:0,n:c.n||0,t:c.t?1:0});
   const body=row?{subject:sub}:{text:'__EXAMCFG__',subject:sub,options:['','','',''],correct:0,points:1,created_by:currentUser.id,created_at:new Date().toISOString()};
   const res=await sb(row?`question_bank?id=eq.${row.id}`:'question_bank',{method:row?'PATCH':'POST',body:JSON.stringify(body),prefer:'return=minimal'});
   return res.ok;
@@ -2104,7 +2148,7 @@ function openCreateExamModal(examId){
   set('examTitle',ex?ex.title:'');set('examSubject',ex?ex.subject||'':'');set('examLevel',ex?ex.level||'':'');
   set('examDesc',ex?ex.description||'':'');set('examDuration',ex?ex.duration_minutes:30);
   set('examPass',ex?ex.passing_score:60);set('examResultMode',ex?ex.result_mode||'auto':'auto');
-  {const c=(ex&&examCfg[ex.id])||{};document.getElementById('examRndQ').checked=!!c.q;document.getElementById('examRndO').checked=!!c.o;document.getElementById('examDrawN').value=c.n||'';}
+  {const c=(ex&&examCfg[ex.id])||{};document.getElementById('examRndQ').checked=!!c.q;document.getElementById('examRndO').checked=!!c.o;document.getElementById('examDrawN').value=c.n||'';document.getElementById('examNoTr').checked=!!c.t;}
   const sc=ex?allSchedules.filter(x=>x.exam_id===ex.id).sort((a,b)=>new Date(a.opens_at)-new Date(b.opens_at)):[];
   const cur=sc.find(x=>new Date(x.closes_at)>=new Date())||sc[0];
   set('examOpens',cur?toLocalInput(cur.opens_at):'');set('examCloses',cur?toLocalInput(cur.closes_at):'');
@@ -2194,7 +2238,7 @@ async function saveExam(publish=true){
   const pass=parseInt(document.getElementById('examPass').value)||60;
   const desc=document.getElementById('examDesc').value.trim();
   const resultMode=document.getElementById('examResultMode').value;
-  const cfg={q:document.getElementById('examRndQ').checked,o:document.getElementById('examRndO').checked,n:parseInt(document.getElementById('examDrawN').value)||0};
+  const cfg={q:document.getElementById('examRndQ').checked,o:document.getElementById('examRndO').checked,n:parseInt(document.getElementById('examDrawN').value)||0,t:document.getElementById('examNoTr').checked};
   const alertEl=document.getElementById('createExamAlert');
   const fail=m=>{alertEl.innerHTML=`<div class="alert alert-error">${m}</div>`;alertEl.scrollIntoView({behavior:'smooth'});};
   if(!title){fail('Exam title is required.');return;}
@@ -2485,7 +2529,7 @@ function renderAdminExams(){
       </div>
       ${sched.length?`<div style="font-size:11px;color:var(--gold);margin-bottom:10px">🗓️ ${sched.length} schedule(s)</div>`:''}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn-sm" onclick="openCreateExamModal('${e.id}')">${e.is_active?'✏️ Edit':'✏️ Continue draft'}</button> <button class="btn-sm" onclick="duplicateExam('${e.id}')">📄 Copy</button> <button class="btn-sm" onclick="openExamAnalysis('${e.id}')">📉 Analysis</button> <button class="btn-sm" onclick="openAttendance('${e.id}')">👥 Attendance (${examEntered(e.id)})</button> <button class="btn-sm" onclick="openRemind('${e.id}')">📣 Remind</button>
+        <button class="btn-sm" onclick="openCreateExamModal('${e.id}')">${e.is_active?'✏️ Edit':'✏️ Continue draft'}</button> <button class="btn-sm" onclick="duplicateExam('${e.id}')">📄 Copy</button> <button class="btn-sm" onclick="openExamAnalysis('${e.id}')">📉 Analysis</button> <button class="btn-sm" onclick="openReopen('${e.id}')">🔓 Reopen for students</button> <button class="btn-sm" onclick="openAttendance('${e.id}')">👥 Attendance (${examEntered(e.id)})</button> <button class="btn-sm" onclick="openRemind('${e.id}')">📣 Remind</button>
         <button class="btn-sm" onclick="toggleExamActive('${e.id}',${!e.is_active})">${e.is_active?'⏸ Deactivate':'▶ Activate'}</button>
         <button class="btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteExam('${e.id}')">🗑</button>
       </div>
@@ -2509,7 +2553,7 @@ function renderTeacherExamList(){
       <div style="font-size:11px;margin-bottom:10px">
         ${e.auto_grade===false||e.result_mode==='manual'?'<span class="badge badge-manual">✏️ Manual grading</span>':'<span class="badge badge-active">⚡ Auto result</span>'}
       </div>
-      <button class="btn-sm" onclick="openCreateExamModal('${e.id}')">${e.is_active?'✏️ Edit':'✏️ Continue draft'}</button> <button class="btn-sm" onclick="duplicateExam('${e.id}')">📄 Copy</button> <button class="btn-sm" onclick="openExamAnalysis('${e.id}')">📉 Analysis</button> <button class="btn-sm" onclick="openAttendance('${e.id}')">👥 Attendance (${examEntered(e.id)})</button> <button class="btn-sm" onclick="openRemind('${e.id}')">📣 Remind</button> <button class="btn-sm" onclick="openTeacherResultsForExam('${e.id}')">📊 View Results</button> <button class="btn-sm" onclick="toggleExamActive('${e.id}',${!e.is_active})">${e.is_active?'⏸ Unpublish':'▶ Publish'}</button>
+      <button class="btn-sm" onclick="openCreateExamModal('${e.id}')">${e.is_active?'✏️ Edit':'✏️ Continue draft'}</button> <button class="btn-sm" onclick="duplicateExam('${e.id}')">📄 Copy</button> <button class="btn-sm" onclick="openExamAnalysis('${e.id}')">📉 Analysis</button> <button class="btn-sm" onclick="openReopen('${e.id}')">🔓 Reopen for students</button> <button class="btn-sm" onclick="openAttendance('${e.id}')">👥 Attendance (${examEntered(e.id)})</button> <button class="btn-sm" onclick="openRemind('${e.id}')">📣 Remind</button> <button class="btn-sm" onclick="openTeacherResultsForExam('${e.id}')">📊 View Results</button> <button class="btn-sm" onclick="toggleExamActive('${e.id}',${!e.is_active})">${e.is_active?'⏸ Unpublish':'▶ Publish'}</button>
     </div>`;
   }).join('');
 }
@@ -2859,6 +2903,7 @@ async function startExam(examId){
     examStartTime=dr.deadline-exam.duration_minutes*60000;timeLeft=Math.round((dr.deadline-Date.now())/1000);
     document.getElementById('examName').textContent=exam.title;
     document.getElementById('examMeta').textContent=`${exam.subject||''}${exam.level?' • '+exam.level:''} • ${examPlan?examPlan.o.length:exam.questions.length} questions • ${exam.duration_minutes} min`;
+    await prepTr(exam,examPlan);
     startTimer();renderQuestion();showPage('page-exam');return;
   }
   if(!test&&mine.length){const m0=mine.slice().sort((a,b)=>new Date(b.submitted_at)-new Date(a.submitted_at))[0];alert('⚠️ You already attended this exam on '+new Date(m0.submitted_at).toLocaleString()+(m0.admin_note===STARTED_NOTE?' (you entered but did not submit)':'')+', so it cannot be opened again.\n\nIf you need another attempt, ask your teacher/admin to press “🔁 Allow retake” for you.');renderAvailableExams();return;}
@@ -2870,6 +2915,7 @@ async function startExam(examId){
   const plan=makePlan(exam);
   const warn=test?'🧪 Test account: you can retake this exam any time (your previous attempt will be replaced).':'⚠️ You can enter this exam ONLY ONCE. Do not close or refresh the page until you submit.';
   if(!confirm(`Start "${exam.title}"?\n⏱ Duration: ${exam.duration_minutes} minutes\n❓ Questions: ${plan?plan.o.length:exam.questions.length}\n\n${warn}`))return;
+  await prepTr(exam,plan);
   showLoading('Starting exam…');
   if(test&&mine.length){
     try{for(const r of mine)await sb(`results?id=eq.${r.id}`,{method:'DELETE',prefer:''});
@@ -2902,7 +2948,7 @@ function updateTimerDisplay(){
 
 function renderQuestion(){
   if(!activeExam)return;
-  const ord=examOrder();qk=ord[questionIndex];const q=activeExam.questions[qk];const total=ord.length;
+  const ord=examOrder();qk=ord[questionIndex];const q=activeExam.questions[qk];const tv=trView(q,qk);const total=ord.length;trBarUpdate();
   document.getElementById('examProgress').style.width=((questionIndex+1)/total*100)+'%';
   document.getElementById('questionCounter').textContent=`${questionIndex+1} / ${total}`;
   document.getElementById('prevBtn').disabled=questionIndex===0;
@@ -2912,7 +2958,7 @@ function renderQuestion(){
   document.getElementById('questionContainer').innerHTML=`<div class="question-card fade-in">
     <div class="question-num">Question ${questionIndex+1} of ${total}</div>
     <div class="points-chip">${q.bonus?'⭐ Bonus · ':''}${q.points||1} point${(q.points||1)>1?'s':''}</div>
-    <div class="question-text">${q.text}</div>
+    <div class="question-text" dir="auto">${tv.text}</div>
     ${q.image?`<img src="${q.image}" style="max-width:100%;max-height:260px;border-radius:8px;margin-bottom:16px;border:1px solid var(--border)"/>`:'' }
     ${q.audio_prompt?`<div style="margin-bottom:16px"><div style="font-size:13px;color:var(--muted);margin-bottom:6px">🔊 Listen carefully, then answer</div><audio controls controlsList="nodownload" src="${q.audio_prompt}" style="width:100%"></audio></div>`:''}
     ${q.audio_required?`
@@ -2921,7 +2967,7 @@ function renderQuestion(){
         <button class="btn btn-outline" id="recBtn-${qk}" onclick="toggleRecording(${qk})" style="width:auto">⏺️ Start Recording</button>
         <div id="recPlayback-${qk}" style="margin-top:10px">${audioAnswers[qk]?`<audio controls src="${audioAnswers[qk]}" style="width:100%"></audio>`:''}</div>
       </div>`:''}
-    ${answerArea(q)}
+    ${answerArea(q,tv)}
   </div>`;
 }
 
@@ -2955,21 +3001,21 @@ async function toggleRecording(qIndex){
   }catch(e){alert('Microphone access denied. Please allow microphone in browser settings.');}
 }
 
-function answerArea(q){
-  const t=qType(q),a=answers[qk],L=['A','B','C','D'];
+function answerArea(q,tv){
+  tv=tv||q;const t=qType(q),a=answers[qk],L=['A','B','C','D'];
   const box='width:100%;margin-top:16px;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;font-family:inherit';
-  if(t==='fill')return `<input type="text" value="${esc(a)}" placeholder="Type your answer…" oninput="answers[qk]=this.value" style="${box}"/>`;
+  if(t==='fill')return (tv!==q?`<div style="font-size:12px;color:var(--muted);margin-top:10px">✍️ Type the answer in the ORIGINAL language of the question · اكتب الإجابة بلغة السؤال الأصلية</div>`:'')+`<input type="text" value="${esc(a)}" placeholder="Type your answer…" oninput="answers[qk]=this.value" style="${box}"/>`;
   if(t==='short')return `<textarea placeholder="Write your answer…" oninput="answers[qk]=this.value" style="${box};min-height:120px">${esc(a)}</textarea>`;
   if(t==='match'){
     const P=q.pairs||[];if(!q._shuf)q._shuf=P.map(x=>x.r).sort(()=>Math.random()-.5);
     return `<div style="margin-top:16px">${P.map((x,k)=>`<div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
-      <div style="flex:1;min-width:120px;padding:10px 12px;background:#EFF8FF;border:2px solid var(--border);border-radius:10px">${esc(x.l)}</div><span>↔</span>
+      <div style="flex:1;min-width:120px;padding:10px 12px;background:#EFF8FF;border:2px solid var(--border);border-radius:10px">${esc(tv.pairs[k]?tv.pairs[k].l:x.l)}</div><span>↔</span>
       <select onchange="setMatch(${k},this.value)" style="flex:1;min-width:120px;padding:10px;border:2px solid var(--border);border-radius:10px"><option value="">Choose…</option>
-      ${q._shuf.map(r=>`<option value="${esc(r)}" ${a&&a[k]===r?'selected':''}>${esc(r)}</option>`).join('')}</select></div>`).join('')}</div>`;
+      ${q._shuf.map(r=>`<option value="${esc(r)}" ${a&&a[k]===r?'selected':''}>${esc((tv._rt&&tv._rt[r])||r)}</option>`).join('')}</select></div>`).join('')}</div>`;
   }
   if(!(q.options||[]).some(o=>o))return '';
   const perm=examPlan&&examPlan.p&&examPlan.p[qk];
-  return `<div class="options" style="margin-top:16px">${(perm||[0,1,2,3]).map((i,pos)=>q.options[i]?`<div class="option ${a===i?'selected':''}" onclick="selectAnswer(${i})"><div class="option-letter">${L[perm?pos:i]}</div><span>${esc(q.options[i])}</span></div>`:'').join('')}</div>`;
+  return `<div class="options" style="margin-top:16px">${(perm||[0,1,2,3]).map((i,pos)=>q.options[i]?`<div class="option ${a===i?'selected':''}" onclick="selectAnswer(${i})"><div class="option-letter">${L[perm?pos:i]}</div><span dir="auto">${esc(tv.options[i])}</span></div>`:'').join('')}</div>`;
 }
 function setMatch(k,v){const a=Array.isArray(answers[qk])?answers[qk]:(answers[qk]=[]);a[k]=v;}
 function selectAnswer(i){answers[qk]=i;saveDraft();renderQuestion();}
@@ -4296,6 +4342,143 @@ async function openHifzAudio(id){
   }catch(e){box.innerHTML='<div class="alert alert-error">Could not load recordings.</div>';}
 }
 </script>
+<script id="ro-script">
+// ── REOPEN AN EXAM FOR SELECTED STUDENTS ─────
+// Makes an older exam available again, but only to the students you tick (those who have not entered it yet).
+// It re-activates the exam, narrows "assigned students" to the selection and sets a new open/close window.
+let roExamId=null,roSel=new Set();
+function openReopen(id){
+  const ex=allExams.find(e=>e.id===id);if(!ex)return;
+  roExamId=id;roSel=new Set();
+  document.getElementById('roTitle').textContent='🔓 Reopen — '+ex.title;
+  document.getElementById('roAlert').innerHTML='';document.getElementById('roSearch').value='';
+  const now=new Date(),end=new Date(now.getTime()+7*864e5);
+  document.getElementById('roOpen').value=toLocalInput(now.toISOString());
+  document.getElementById('roClose').value=toLocalInput(end.toISOString());
+  document.getElementById('roKeep').checked=false;
+  renderReopenList();openModal('modalReopen');
+}
+function roShown(){
+  const ex=allExams.find(e=>e.id===roExamId);if(!ex)return[];
+  const map=examAttMap(ex.id),q=normA(document.getElementById('roSearch').value||'');
+  return allStudents.filter(u=>!isTestAccount(u)&&(!q||normA(u.name).includes(q))).map(u=>({u,a:map[u.id]||null}))
+    .sort((x,y)=>(x.a?1:0)-(y.a?1:0)||x.u.name.localeCompare(y.u.name));
+}
+function renderReopenList(){
+  const rows=roShown();
+  document.getElementById('roList').innerHTML=rows.length?rows.map(({u,a})=>{
+    const id=String(u.id),dis=!!a;
+    const st=!a?'<span class="badge badge-draft">❌ Not entered</span>':a.status==='started'?'<span class="badge badge-manual">⚠️ Entered, not submitted</span>':'<span class="badge badge-active">✅ Attended</span>';
+    return `<label style="display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--border);${dis?'opacity:.55;cursor:not-allowed':'cursor:pointer'}">
+      <input type="checkbox" style="width:auto" ${dis?'disabled':''} ${roSel.has(id)?'checked':''} onchange="roToggle('${id}',this.checked)"/>
+      <span style="flex:1;font-size:13px;font-weight:600">${esc(u.name)}</span>${st}
+      ${dis?'<span class="text-muted" style="font-size:10px">use 🔁 Allow retake in Attendance</span>':''}</label>`;
+  }).join(''):'<div class="text-muted" style="padding:16px;text-align:center">Nobody matches</div>';
+  document.getElementById('roCount').textContent=roSel.size+' student(s) selected';
+}
+function roToggle(id,on){on?roSel.add(id):roSel.delete(id);document.getElementById('roCount').textContent=roSel.size+' student(s) selected';}
+function roPickAll(on){roShown().forEach(({u,a})=>{if(a)return;on?roSel.add(String(u.id)):roSel.delete(String(u.id));});renderReopenList();}
+async function saveReopen(){
+  const ex=allExams.find(e=>e.id===roExamId);if(!ex)return;
+  const al=document.getElementById('roAlert'),fail=m=>{al.innerHTML='<div class="alert alert-error">'+m+'</div>';};
+  const oV=document.getElementById('roOpen').value,cV=document.getElementById('roClose').value;
+  if(!roSel.size){fail('Select at least one student.');return;}
+  if(!oV||!cV){fail('Set both the Opens and Closes time.');return;}
+  if(new Date(oV)>=new Date(cV)){fail('Closes time must be after the Opens time.');return;}
+  if(new Date(cV)<=new Date()){fail('The closing time is already in the past.');return;}
+  const keep=document.getElementById('roKeep').checked,old=(ex.assigned_students||[]).map(String);
+  const assigned=keep?(old.length?[...new Set([...old,...roSel])]:[]):[...roSel];
+  showLoading('Reopening…');
+  try{
+    const r=await sb(`exams?id=eq.${ex.id}`,{method:'PATCH',prefer:'return=minimal',body:JSON.stringify({assigned_students:assigned,is_active:true})});
+    if(!r.ok)throw new Error('exam update failed');
+    await saveExamWindow(ex.id,new Date(oV).toISOString(),new Date(cV).toISOString());
+    if(document.getElementById('roNotify').checked){
+      const msg=`🔓 The exam "${ex.title}" is now open for you. Available from ${new Date(oV).toLocaleString()} until ${new Date(cV).toLocaleString()}.`,now=new Date().toISOString();
+      const mk=extra=>JSON.stringify([...roSel].map(id=>({student_id:id,message:msg,read:false,created_at:now,...extra})));
+      let n=await sb('notifications',{method:'POST',body:mk({exam_id:ex.id}),prefer:'return=minimal'});
+      if(!n.ok)await sb('notifications',{method:'POST',body:mk({}),prefer:'return=minimal'});
+    }
+    await loadAllData();
+    renderAdminExams();renderTeacherExamList();renderAvailableExams();hideLoading();
+    closeModal('modalReopen');
+    alert(`Done ✅ "${ex.title}" is open for ${roSel.size} student(s).`);
+  }catch(e){hideLoading();console.error(e);fail('Could not reopen the exam. Check your connection / permissions and try again.');}
+}
+</script>
+<script id="tr-script">
+// ── EXAM TRANSLATION ─────────────────────────
+// Questions / choices / matching items are translated on the student's device when the exam starts, into the language
+// the admin picked for that student (Students tab). Only what is DISPLAYED changes: answers are still stored and graded
+// by the original index/text, so grading, review and old results are unaffected.
+// Uses Google's free web translate endpoint (no API key). Translations are cached in this browser (localStorage).
+let trMap=null,trOn=true;
+const TR={cache:{},fail:0,
+  load(){try{this.cache=JSON.parse(localStorage.getItem('mi_trc')||'{}')||{};}catch(e){this.cache={};}},
+  save(){try{localStorage.setItem('mi_trc',JSON.stringify(this.cache));}catch(e){}}};
+TR.load();
+function trLang(){
+  let v=null;try{v=langs[currentUser.id];}catch(e){}
+  if(!v)return null;                       // no language chosen for this student -> original exam
+  return typeof v==='object'?(v.k||null):v; // custom language needs a code (asked when you pick "Other")
+}
+async function trS(s,lang){
+  s=String(s==null?'':s);
+  if(!s.trim()||/^[\s\d.,:;()\-+*\/=%<>_]+$/.test(s))return s;
+  const c=TR.cache[lang]||(TR.cache[lang]={});if(s in c)return c[s];
+  const url='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+encodeURIComponent(lang)+'&dt=t&q='+encodeURIComponent(s);
+  if(url.length>1900){TR.fail++;return s;}
+  try{
+    const r=await fetch(url);if(!r.ok)throw new Error(r.status);
+    const d=await r.json(),out=(d[0]||[]).map(x=>x&&x[0]||'').join('');
+    const from=String(d[2]||'').toLowerCase().split('-')[0],to=lang.toLowerCase().split('-')[0];
+    const res=(from&&from===to)||!out?s:out;  // already in the student's language -> keep as is
+    c[s]=res;return res;
+  }catch(e){TR.fail++;return s;}
+}
+async function trHTML(h,lang){
+  h=String(h==null?'':h);
+  if(!/<[a-z!\/]/i.test(h))return trS(h,lang);
+  const t=document.createElement('template');t.innerHTML=h;
+  const w=document.createTreeWalker(t.content,NodeFilter.SHOW_TEXT),ns=[];while(w.nextNode())ns.push(w.currentNode);
+  await Promise.all(ns.map(async n=>{if(n.nodeValue.trim())n.nodeValue=await trS(n.nodeValue,lang);}));
+  return t.innerHTML;
+}
+async function trPool(tasks,n){let i=0;await Promise.all(Array.from({length:n},async()=>{while(i<tasks.length){const f=tasks[i++];await f();}}));}
+async function prepTr(exam,plan){
+  trMap=null;trOn=true;
+  const L=trLang(),cfg=examCfg[exam.id];
+  if(!L||(cfg&&cfg.t))return;
+  TR.fail=0;const m={},tasks=[];
+  servedIdx(exam,plan).forEach(i=>{
+    const q=exam.questions[i],e=m[i]={o:[],pl:[],rt:{}};
+    tasks.push(async()=>{e.t=await trHTML(q.text||'',L);});
+    (q.options||[]).forEach((o,k)=>{if(o)tasks.push(async()=>{e.o[k]=await trS(o,L);});});
+    if(qType(q)==='match')(q.pairs||[]).forEach((p,k)=>{
+      tasks.push(async()=>{e.pl[k]=await trS(p.l,L);});
+      tasks.push(async()=>{e.rt[p.r]=await trS(p.r,L);});
+    });
+  });
+  showLoading('🌐 Translating exam… · جاري ترجمة الاختبار');
+  try{await trPool(tasks,8);}finally{hideLoading();}
+  trMap=m;TR.save();
+  if(TR.fail)alert('⚠️ Part of the translation could not be loaded (translation service unreachable). Those parts are shown in their original language.\nلم يتم تحميل جزء من الترجمة وسيظهر بلغته الأصلية.');
+}
+function trView(q,i){
+  const e=trMap&&trOn&&trMap[i];if(!e)return q;
+  return Object.assign({},q,{
+    text:e.t!=null?e.t:q.text,
+    options:(q.options||[]).map((o,k)=>e.o[k]!=null?e.o[k]:o),
+    pairs:(q.pairs||[]).map((p,k)=>({l:e.pl[k]!=null?e.pl[k]:p.l,r:p.r})),
+    _rt:e.rt});
+}
+function trBarUpdate(){
+  const b=document.getElementById('trBar'),bt=document.getElementById('trBtn');if(!b||!bt)return;
+  b.style.display=trMap?'block':'none';
+  bt.textContent=trOn?'🌐 Show original · عرض الأصل':'🌐 Show translation · عرض الترجمة';
+}
+function trToggle(){trOn=!trOn;renderQuestion();}
+</script>
 <script id="fx-script">
 (function(){
 var V=['﴿ وَقُل رَّبِّ زِدْنِي عِلْمًا ﴾','﴿ اقْرَأْ بِاسْمِ رَبِّكَ الَّذِي خَلَقَ ﴾','﴿ وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا ﴾','﴿ فَاذْكُرُونِي أَذْكُرْكُمْ ﴾','﴿ إِنَّ مَعَ الْعُسْرِ يُسْرًا ﴾','« خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ »','« مَنْ سَلَكَ طَرِيقًا يَلْتَمِسُ فِيهِ عِلْمًا سَهَّلَ اللَّهُ لَهُ طَرِيقًا إِلَى الْجَنَّةِ »'];
@@ -4449,7 +4632,8 @@ function langUI(){
       var v=sel.value,val=v;
       if(v==='__c'){var n=prompt('اسم اللغة (مثال: Deutsch)\nLanguage name:');if(!n){sel.value=LG[langs[id]]?langs[id]:'en';return}
         var t=prompt('رسالة المشاركة بهذه اللغة، واكتب {score} مكان النسبة\nShare message in this language, use {score} for the percentage:','{score}%');if(!t){sel.value=LG[langs[id]]?langs[id]:'en';return}
-        var bb=prompt('نص الزر (اختياري)\nButton text (optional):','Share');val={n:n,t:t,b:bb||'Share'}}
+        var kc=prompt('كود اللغة لترجمة الاختبار (مثال: de, it, ru, zh-CN, fa)\nLanguage code for exam translation (e.g. de, it, ru, zh-CN, fa):','');if(!kc){sel.value=LG[langs[id]]?langs[id]:'en';return}
+        var bb=prompt('نص الزر (اختياري)\nButton text (optional):','Share');val={n:n,t:t,b:bb||'Share',k:kc.trim()}}
       langs[id]=val;sel.disabled=true;var ok=await saveLangs();sel.disabled=false;if(!ok)alert('تعذّر الحفظ · Could not save');
     };
     var w=document.createElement('div');w.style.marginTop='6px';w.appendChild(sel);b.parentNode.appendChild(w);
