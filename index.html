@@ -456,7 +456,8 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
     </div>
     <div class="leaderboard-section">
       <div class="section-title"><span>🏆</span> Weekly Honor List · لوحة الشرف الأسبوعية</div>
-      <div id="honorWeek" style="font-size:12px;color:var(--muted);margin:-6px 0 12px"></div>
+      <div id="honorWeek" style="font-size:12px;color:var(--muted);margin:-6px 0 8px"></div>
+      <div id="honorStats" style="display:none;gap:8px;flex-wrap:wrap;margin:0 0 12px"></div>
       <div id="leaderboardList"><div class="empty-state"><div class="icon">🎓</div><p>No results yet this week. Be the first!</p></div></div>
     </div>
     <div id="tipsRow" style="display:none">
@@ -1622,6 +1623,20 @@ function renderLeaderboard(){
     wk.textContent=`📅 ${fmt(ws)} → ${fmt(last)} · resets Saturday morning (in ${dd}d ${hh}h) · تتجدد صباح السبت`;
   }
   const inWeek=r=>{const t=new Date(r.submitted_at);return t>=ws&&t<we;};
+  const hs=document.getElementById('honorStats');
+  if(hs){
+    const staff=currentUser&&(currentUser.role==='admin'||currentUser.role==='teacher');
+    hs.style.display=staff?'flex':'none';
+    if(staff){
+      const real=new Set(allStudents.filter(u=>!isTestAccount(u)).map(u=>String(u.id)));
+      const wr=allResults.filter(r=>inWeek(r)&&real.has(String(r.student_id)));
+      const done=wr.filter(r=>r.admin_note!==STARTED_NOTE);
+      const chip=(t,c)=>`<span style="padding:6px 12px;border-radius:20px;border:2px solid ${c};color:${c};font-size:12px;font-weight:600">${t}</span>`;
+      hs.innerHTML=chip('📝 Exams this week: '+new Set(wr.map(r=>r.exam_id)).size,'var(--gold-light)')
+        +chip('👥 Students entered: '+new Set(wr.map(r=>String(r.student_id))).size,'var(--success)')
+        +chip('✅ Submitted: '+new Set(done.map(r=>String(r.student_id))).size+' students · '+done.length+' attempts','var(--muted)');
+    }
+  }
   const gradedResults=allResults.filter(r=>r.graded!==false&&r.score!=null&&inWeek(r));
   const scoreMap={};
   gradedResults.forEach(r=>{const c=scoreMap[r.student_id];if(!c||r.score>c.score||(r.score===c.score&&new Date(r.submitted_at)<new Date(c.submitted_at)))scoreMap[r.student_id]=r;});
