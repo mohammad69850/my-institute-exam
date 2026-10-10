@@ -1109,6 +1109,7 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
     </div>
     <div id="questionsBuilder"></div>
     <button class="add-q-btn" onclick="addQuestion()">+ Add New Question</button>
+    <button class="add-q-btn" type="button" style="margin-top:8px;border-style:solid;color:var(--gold-light)" onclick="openTrAr()">🌐 Preview &amp; fix Arabic translation · معاينة وتصحيح الترجمة العربية</button>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeExamModal()">Cancel</button>
       <button class="btn btn-outline" style="width:auto;padding:10px 20px" onclick="saveExam(false)" title="Hidden from students — come back and finish later">📝 Save as draft</button>
@@ -1160,6 +1161,20 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modalReopen')">Cancel</button>
       <button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="saveReopen()">🔓 Reopen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Arabic translation preview / fix -->
+<div class="modal-overlay" id="modalTrAr">
+  <div class="modal" style="max-width:860px">
+    <div class="modal-title"><span>🌐 Arabic translation · الترجمة العربية</span> <button class="close-btn" onclick="closeModal('modalTrAr')">✕</button></div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:10px">This is what students whose language is <b>Arabic</b> will see. Edit any line you find wrong: edited lines are saved and used <b>instead of</b> the automatic translation. Clear a box to go back to the automatic one. · عدّل أي سطر خاطئ وسيُستخدم تعديلك بدل الترجمة الآلية.</div>
+    <div id="taStatus" style="font-size:12px;margin-bottom:8px"></div>
+    <div id="taList" style="max-height:55vh;overflow:auto;border:2px solid var(--border);border-radius:10px;padding:6px 12px;margin-bottom:12px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modalTrAr')">Cancel</button>
+      <button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="saveTrAr()">💾 Save translation</button>
     </div>
   </div>
 </div>
@@ -1417,7 +1432,7 @@ async function loadAllData(){
   allTeachers=allUsers.filter(u=>u.role==='teacher');
   [,allExams,allResults,allDiscounts,allSchedules,allQuestionBank,allNotifications]=
     await Promise.all([Promise.resolve(allUsers),j(eR),j(rR),j(dR),j(scR),j(bR),j(nR)]);
-  secRows=allQuestionBank.filter(q=>q.text==='__SECTIONS__');linkRow=allQuestionBank.find(q=>q.text==='__LINKS__')||null;try{links=JSON.parse(linkRow.subject)||{};}catch{links={};}langRow=allQuestionBank.find(q=>q.text==='__LANGS__')||null;try{langs=JSON.parse(langRow.subject)||{};}catch{langs={};}examCfg={};examCfgRows={};allQuestionBank.filter(q=>q.text==='__EXAMCFG__').forEach(r=>{try{const c=JSON.parse(r.subject);if(c&&c.e){examCfg[c.e]={q:!!c.q,o:!!c.o,n:parseInt(c.n)||0,t:!!c.t};examCfgRows[c.e]=r;}}catch(e){}});window._allUsers=allUsers;allQuestionBank=allQuestionBank.filter(q=>q.text!=='__SECTIONS__'&&q.text!=='__LINKS__'&&q.text!=='__LANGS__'&&q.text!=='__EXAMCFG__');
+  secRows=allQuestionBank.filter(q=>q.text==='__SECTIONS__');linkRow=allQuestionBank.find(q=>q.text==='__LINKS__')||null;try{links=JSON.parse(linkRow.subject)||{};}catch{links={};}langRow=allQuestionBank.find(q=>q.text==='__LANGS__')||null;try{langs=JSON.parse(langRow.subject)||{};}catch{langs={};}examCfg={};examCfgRows={};allQuestionBank.filter(q=>q.text==='__EXAMCFG__').forEach(r=>{try{const c=JSON.parse(r.subject);if(c&&c.e){examCfg[c.e]={q:!!c.q,o:!!c.o,n:parseInt(c.n)||0,t:!!c.t};examCfgRows[c.e]=r;}}catch(e){}});examTrOv={};examTrRows={};allQuestionBank.filter(q=>q.text==='__TRAR__').forEach(r=>{try{const c=JSON.parse(r.subject);if(c&&c.e){examTrOv[c.e]=c.m||{};examTrRows[c.e]=r;}}catch(e){}});window._allUsers=allUsers;allQuestionBank=allQuestionBank.filter(q=>q.text!=='__TRAR__'&&q.text!=='__SECTIONS__'&&q.text!=='__LINKS__'&&q.text!=='__LANGS__'&&q.text!=='__EXAMCFG__');
 }
 
 // ── TEACHER ↔ STUDENT LINKS (stored like sections: one hidden row in question_bank) ──
@@ -1495,7 +1510,7 @@ async function allowRetake(id){
 async function duplicateExam(id){
   const e=allExams.find(x=>x.id===id);if(!e)return;showLoading('Duplicating…');
   const r=await sb('exams',{method:'POST',prefer:'return=representation',body:JSON.stringify({title:e.title+' (copy)',subject:e.subject,level:e.level,duration_minutes:e.duration_minutes,passing_score:e.passing_score,description:e.description,questions:e.questions,assigned_students:e.assigned_students||[],auto_grade:e.auto_grade,result_mode:e.result_mode,is_active:false,created_by:currentUser.id,created_at:new Date().toISOString()})});
-  try{const c=examCfg[e.id];if(r.ok&&c){const d=await r.json();if(d&&d[0])await saveExamCfg(d[0].id,c);}}catch(err){}
+  try{if(r.ok){const d=await r.json();if(d&&d[0]){const c=examCfg[e.id];if(c)await saveExamCfg(d[0].id,c);if(examTrOv[e.id])await saveTrOv(d[0].id,examTrOv[e.id]);}}}catch(err){}
   await loadAllData();hideLoading();renderAdminExams();renderTeacherExamList();updateAdminStats();
   if(!r.ok)alert('Could not duplicate the exam.');
 }
@@ -2140,7 +2155,7 @@ const INP='width:100%;background:#fff;border:2px solid var(--border);border-radi
 function openCreateExamModal(examId){
   const ex=examId?allExams.find(e=>e.id===examId):null;
   if(ex&&allResults.some(r=>r.exam_id===ex.id)&&!confirm('This exam already has student attempts. Editing questions can make old answers not match in the review. Continue?'))return;
-  editingExamId=ex?ex.id:null;questionCount=0;
+  editingExamId=ex?ex.id:null;questionCount=0;trDraftOv=Object.assign({},(ex&&examTrOv[ex.id])||{});trDirty=false;
   document.getElementById('questionsBuilder').innerHTML='';
   document.getElementById('createExamAlert').innerHTML='';
   populateDropdowns();renderBankPicker();
@@ -2303,6 +2318,7 @@ async function saveExam(publish=true){
   if(res.ok){
     await saveExamWindow(editingExamId||(data&&data[0]&&data[0].id),opensISO,closesISO);
     if(!(await saveExamCfg(editingExamId||(data&&data[0]&&data[0].id),cfg)))alert('The exam was saved, but the shuffle settings could not be saved. Open the exam and press Save again.');
+    if(trDirty){const tid=editingExamId||(data&&data[0]&&data[0].id);if(await saveTrOv(tid,trDraftOv))trDirty=false;else alert('The exam was saved, but the Arabic translation edits could not be saved. Open the exam, press “Preview & fix Arabic translation” and save again.');}
     let bankFailed=0;
     if(publish){
       const exId=editingExamId||(data&&data[0]&&data[0].id);
@@ -4342,6 +4358,72 @@ async function openHifzAudio(id){
   }catch(e){box.innerHTML='<div class="alert alert-error">Could not load recordings.</div>';}
 }
 </script>
+<script id="ta-script">
+// ── ARABIC TRANSLATION: PREVIEW & MANUAL FIX (per exam) ──
+// Reads the questions currently in the builder (saved or not), shows the automatic Arabic translation, and lets you
+// correct it. Corrections are stored per exam in one hidden question_bank row, keyed by the ORIGINAL text, so they keep
+// working even if you reorder questions. They are used for students whose language is Arabic.
+let examTrOv={},examTrRows={},trDraftOv={},trDirty=false,taItems=[];
+async function saveTrOv(exId,map){
+  if(!exId)return true;
+  const row=examTrRows[exId],empty=!Object.keys(map||{}).length;
+  if(empty&&!row)return true;
+  if(empty){const r=await sb(`question_bank?id=eq.${row.id}`,{method:'DELETE',prefer:''});if(r.ok){delete examTrRows[exId];delete examTrOv[exId];}return r.ok;}
+  const sub=JSON.stringify({e:exId,m:map});
+  const body=row?{subject:sub}:{text:'__TRAR__',subject:sub,options:['','','',''],correct:0,points:1,created_by:currentUser.id,created_at:new Date().toISOString()};
+  const res=await sb(row?`question_bank?id=eq.${row.id}`:'question_bank',{method:row?'PATCH':'POST',body:JSON.stringify(body),prefer:row?'return=minimal':'return=representation'});
+  if(res.ok){if(!row){try{const d=await res.json();if(d&&d[0])examTrRows[exId]=d[0];}catch(e){}}examTrOv[exId]=Object.assign({},map);}
+  return res.ok;
+}
+function taCollect(){
+  const items=[],seen=new Set(),L=['A','B','C','D'];
+  const add=(src,label)=>{src=(src||'').trim();if(!src||seen.has(src))return;seen.add(src);items.push({src,label});};
+  let n=0;
+  document.querySelectorAll('.question-builder').forEach(qb=>{
+    const idx=qb.id.replace('qb-','');
+    const text=document.getElementById(`q-text-${idx}`)?.value.trim();if(!text)return;
+    n++;const type=document.getElementById(`q-type-${idx}`)?.value||'mcq';
+    add(text,'Question '+n);
+    if(type==='mcq')[0,1,2,3].forEach(k=>add(document.getElementById(`q-opt-${idx}-${k}`)?.value,`Q${n} · choice ${L[k]}`));
+    if(type==='tf'){add('True',`Q${n} · True`);add('False',`Q${n} · False`);}
+    if(type==='match')qb.querySelectorAll('.pair-row').forEach((p,k)=>{add(p.querySelector('.pl')?.value,`Q${n} · pair ${k+1} (left)`);add(p.querySelector('.pr')?.value,`Q${n} · pair ${k+1} (right)`);});
+  });
+  return items;
+}
+async function openTrAr(){
+  taItems=taCollect();
+  if(!taItems.length){alert('Add at least one question first. · أضف سؤالاً أولاً');return;}
+  openModal('modalTrAr');
+  const st=document.getElementById('taStatus'),list=document.getElementById('taList');
+  list.innerHTML='';st.textContent='🌐 Translating… · جاري الترجمة';
+  const saved=TR.ov;TR.ov=null;TR.fail=0;           // show the MACHINE translation, not earlier edits
+  const mt={};
+  try{await trPool(taItems.map(it=>async()=>{mt[it.src]=await trHTML(it.src,'ar');}),8);}finally{TR.ov=saved;}
+  TR.save();
+  taItems.forEach(it=>it.mt=mt[it.src]!=null?mt[it.src]:it.src);
+  list.innerHTML=taItems.map((it,i)=>{
+    const ov=trDraftOv[it.src],val=ov!=null&&ov!==''?ov:it.mt;
+    return `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">${esc(it.label)} <span id="taEd-${i}" style="color:var(--gold-light)">${ov?'✎ edited':''}</span></div>
+      <div style="font-size:13px;margin-bottom:6px;white-space:pre-wrap" dir="auto">${esc(it.src)}</div>
+      <textarea id="taTx-${i}" dir="rtl" rows="2" style="width:100%;font-size:15px;padding:8px 10px;border:2px solid var(--border);border-radius:8px;font-family:inherit" oninput="taMark(${i})">${esc(val)}</textarea>
+    </div>`;}).join('');
+  st.textContent=TR.fail?'⚠️ Some lines could not be translated automatically (service unreachable) — they are shown in the original language; you can type them yourself.':'✅ Edit what you need, then press Save.';
+}
+function taMark(i){const it=taItems[i],v=document.getElementById('taTx-'+i).value.trim();document.getElementById('taEd-'+i).textContent=(v&&v!==it.mt)?'✎ edited':'';}
+async function saveTrAr(){
+  const map=Object.assign({},trDraftOv);
+  taItems.forEach((it,i)=>{const v=document.getElementById('taTx-'+i).value.trim();if(v&&v!==it.mt)map[it.src]=v;else delete map[it.src];});
+  trDraftOv=map;trDirty=true;
+  if(editingExamId){
+    showLoading('Saving…');const ok=await saveTrOv(editingExamId,map);hideLoading();
+    if(!ok){alert('Could not save the translation. Check your connection / permissions.');return;}
+    trDirty=false;closeModal('modalTrAr');alert('Saved ✅ Arabic students will see your corrected translation.');
+  }else{
+    closeModal('modalTrAr');alert('Your corrections are kept and will be saved together with the exam when you press Save. ✅');
+  }
+}
+</script>
 <script id="ro-script">
 // ── REOPEN AN EXAM FOR SELECTED STUDENTS ─────
 // Makes an older exam available again, but only to the students you tick (those who have not entered it yet).
@@ -4424,6 +4506,7 @@ function trLang(){
 }
 async function trS(s,lang){
   s=String(s==null?'':s);
+  if(TR.ov&&TR.ov[s])return TR.ov[s];
   if(!s.trim()||/^[\s\d.,:;()\-+*\/=%<>_]+$/.test(s))return s;
   const c=TR.cache[lang]||(TR.cache[lang]={});if(s in c)return c[s];
   const url='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+encodeURIComponent(lang)+'&dt=t&q='+encodeURIComponent(s);
@@ -4438,6 +4521,7 @@ async function trS(s,lang){
 }
 async function trHTML(h,lang){
   h=String(h==null?'':h);
+  if(TR.ov&&TR.ov[h])return TR.ov[h];
   if(!/<[a-z!\/]/i.test(h))return trS(h,lang);
   const t=document.createElement('template');t.innerHTML=h;
   const w=document.createTreeWalker(t.content,NodeFilter.SHOW_TEXT),ns=[];while(w.nextNode())ns.push(w.currentNode);
@@ -4449,7 +4533,7 @@ async function prepTr(exam,plan){
   trMap=null;trOn=true;
   const L=trLang(),cfg=examCfg[exam.id];
   if(!L||(cfg&&cfg.t))return;
-  TR.fail=0;const m={},tasks=[];
+  TR.fail=0;TR.ov=(L.toLowerCase().split('-')[0]==='ar'&&examTrOv[exam.id])||null;const m={},tasks=[];
   servedIdx(exam,plan).forEach(i=>{
     const q=exam.questions[i],e=m[i]={o:[],pl:[],rt:{}};
     tasks.push(async()=>{e.t=await trHTML(q.text||'',L);});
@@ -4461,7 +4545,7 @@ async function prepTr(exam,plan){
   });
   showLoading('🌐 Translating exam… · جاري ترجمة الاختبار');
   try{await trPool(tasks,8);}finally{hideLoading();}
-  trMap=m;TR.save();
+  trMap=m;TR.ov=null;TR.save();
   if(TR.fail)alert('⚠️ Part of the translation could not be loaded (translation service unreachable). Those parts are shown in their original language.\nلم يتم تحميل جزء من الترجمة وسيظهر بلغته الأصلية.');
 }
 function trView(q,i){
