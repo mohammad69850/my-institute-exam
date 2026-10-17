@@ -109,6 +109,18 @@
     .option.correct .option-letter{background:var(--success);border-color:var(--success);color:#fff}
     .option.wrong .option-letter{background:var(--danger);border-color:var(--danger);color:#fff}
     .exam-nav{display:flex;gap:12px;justify-content:space-between;margin-top:24px;flex-wrap:wrap}
+
+    .rate-card{background:#FFFFFF;border:2px solid var(--border);border-radius:20px;padding:32px 28px;max-width:560px;margin:0 auto;box-shadow:0 8px 32px rgba(21,101,192,0.12)}
+    body.dark .rate-card{background:var(--card);color:var(--text)}
+    .rate-row{padding:12px 0;border-top:1px solid var(--border)}
+    .rate-row:first-of-type{border-top:0}
+    .rate-lbl{font-size:14px;font-weight:600;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+    .rate-lbl span{color:var(--muted);font-weight:400}
+    .rate-stars{display:flex;gap:4px;direction:ltr}
+    .rate-stars button{background:none;border:0;cursor:pointer;font-size:34px;line-height:1;padding:0 2px;color:#C9D3E3;transition:transform .12s,color .12s}
+    .rate-stars button.on{color:#F5B301}
+    .rate-stars button:hover{transform:scale(1.15)}
+    .rate-priv{background:rgba(21,101,192,.1);border:1px solid var(--gold);border-radius:10px;padding:10px 14px;font-size:13px;margin:0 0 18px;line-height:1.7}
     .result-card{background:#FFFFFF;border:2px solid var(--border);border-radius:20px;padding:40px;text-align:center;max-width:520px;margin:0 auto;box-shadow:0 8px 32px rgba(21,101,192,0.12)}
     .result-score-ring{width:140px;height:140px;border-radius:50%;border:6px solid var(--gold);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 24px;background:radial-gradient(circle,rgba(21,101,192,.1) 0%,transparent 70%)}
     .result-score-num{font-family:'Cinzel',serif;font-size:36px;font-weight:700;color:var(--gold-light)}
@@ -793,6 +805,20 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
       <button class="btn btn-ghost" id="prevBtn" onclick="prevQuestion()">← Previous</button>
       <div class="text-muted" id="questionCounter">1 / 1</div>
       <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" style="width:auto;padding:12px 24px">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TEACHER RATING PAGE (shown after the exam, before the result) -->
+<div class="page" id="page-rate">
+  <div class="exam-wrap fade-in">
+    <div class="rate-card">
+      <div class="section-title" style="justify-content:center;margin-bottom:6px">⭐ Rate your teacher <span style="margin-inline-start:8px">قيّم مدرسك</span></div>
+      <p class="text-muted" style="text-align:center;margin:0 0 14px;font-size:13px" id="rateIntro"></p>
+      <div class="rate-priv">🔒 <strong>Your rating is private.</strong> The teacher will NOT see it — only the administration can.<br><span dir="rtl">🔒 <strong>تقييمك سري.</strong> لن يظهر للمعلم إطلاقًا، وسيراه فريق الإدارة فقط.</span></div>
+      <div id="rateCriteria"></div>
+      <div id="rateExamMsg" style="font-size:13px;color:var(--danger);min-height:18px;margin-bottom:8px"></div>
+      <button class="btn btn-primary" id="rateExamBtn" onclick="submitExamRating()">Submit & see my result · إرسال وعرض النتيجة</button>
     </div>
   </div>
 </div>
@@ -3119,7 +3145,74 @@ async function submitExam(timeUp){
   try{await notifyExamDone(graded,score,passed);}catch(e){console.error('notify failed',e);}
   lastResult={score,correct,total,passed,timeUsed,graded,examTitle:activeExam.title};
   await loadAllData();hideLoading();
-  showResultPage(score,correct,total,passed,graded);
+  if(!openExamRating(score,correct,total,passed,graded))showResultPage(score,correct,total,passed,graded);
+}
+
+// ── TEACHER RATING AFTER EXAM (before result) ──
+const RATE_CRITERIA=[
+  {k:'clarity',en:'Clarity of explanation',ar:'وضوح الشرح وتبسيط المعلومة'},
+  {k:'mastery',en:'Mastery of the subject',ar:'التمكن من المادة العلمية'},
+  {k:'commit',en:'Commitment & punctuality',ar:'الالتزام بالمواعيد والانضباط'},
+  {k:'respect',en:'Respect & good treatment of students',ar:'احترام الطلاب وحسن المعاملة'},
+  {k:'support',en:'Follow-up, support & answering questions',ar:'المتابعة والتشجيع والرد على الاستفسارات'}
+];
+let rateCtx=null,rateVals={};
+function studentTeacherIds(){
+  if(!currentUser)return [];
+  const T=new Set(allTeachers.map(t=>String(t.id)));
+  const mine=[...new Set(teachersOf(String(currentUser.id)))].filter(id=>T.has(id));
+  if(mine.length)return mine;
+  // fallback: student not linked to any teacher -> the exam creator, if a teacher
+  if(activeExam&&activeExam.created_by&&T.has(String(activeExam.created_by)))return [String(activeExam.created_by)];
+  return [];
+}
+function openExamRating(score,correct,total,passed,graded){
+  if(!currentUser||currentUser.role!=='student')return false;
+  const tids=studentTeacherIds();if(!tids.length)return false;
+  rateCtx={tids,examId:activeExam.id,args:[score,correct,total,passed,graded]};rateVals={};
+  document.getElementById('rateIntro').textContent='Exam finished: '+(activeExam.title||'');
+  document.getElementById('rateCriteria').innerHTML=tids.map(tid=>{
+    const t=allTeachers.find(x=>String(x.id)===tid);
+    return `<div class="rate-block" data-t="${esc(tid)}" style="${tids.length>1?'border:1px solid var(--border);border-radius:14px;padding:12px 16px;margin-bottom:14px':''}">`
+    +`<div style="font-weight:700;font-size:15px;margin:4px 0 6px">👨‍🏫 ${esc(t?t.name:'')}</div>`
+    +RATE_CRITERIA.map(c=>`<div class="rate-row"><div class="rate-lbl">${esc(c.en)} <span dir="rtl">${esc(c.ar)}</span></div><div class="rate-stars" data-t="${esc(tid)}" data-k="${c.k}">${[1,2,3,4,5].map(n=>`<button type="button" onclick="setRate('${esc(tid)}','${c.k}',${n})" aria-label="${n}">★</button>`).join('')}</div></div>`).join('')
+    +`<div class="field" style="margin:12px 0 0"><label>Comment (optional) <span class="text-muted">· تعليق (اختياري)</span></label><textarea class="rate-comment" data-t="${esc(tid)}" rows="3" maxlength="500" placeholder="Write your comment here… / اكتب تعليقك هنا…" style="width:100%;background:#F5FAFF;border:2px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:vertical"></textarea></div></div>`;
+  }).join('');
+  document.getElementById('rateExamMsg').textContent='';
+  document.getElementById('rateExamBtn').disabled=false;
+  showPage('page-rate');return true;
+}
+function setRate(tid,k,n){
+  (rateVals[tid]=rateVals[tid]||{})[k]=n;
+  document.querySelectorAll('#rateCriteria .rate-stars').forEach(el=>{
+    if(el.dataset.t===tid&&el.dataset.k===k)el.querySelectorAll('button').forEach((b,i)=>b.classList.toggle('on',i<n));
+  });
+  document.getElementById('rateExamMsg').textContent='';
+}
+async function submitExamRating(){
+  if(!rateCtx)return;
+  const missing=rateCtx.tids.some(tid=>RATE_CRITERIA.some(c=>!(rateVals[tid]||{})[c.k]));
+  if(missing){document.getElementById('rateExamMsg').textContent='Please rate every point · من فضلك قيّم جميع النقاط';return;}
+  const btn=document.getElementById('rateExamBtn');btn.disabled=true;
+  for(const tid of rateCtx.tids){
+    const vals=RATE_CRITERIA.map(c=>rateVals[tid][c.k]);
+    const avg=Math.round(vals.reduce((x,y)=>x+y,0)/vals.length);
+    const ta=document.querySelector('.rate-comment[data-t="'+tid+'"]');
+    const txt=ta?ta.value.trim():'';
+    try{
+      await sb('teacher_ratings',{method:'POST',prefer:'return=minimal',body:JSON.stringify({
+        student_id:String(currentUser.id),teacher_id:tid,rating:avg,
+        comment:'⟦RT:'+vals.join(',')+'|E:'+rateCtx.examId+'⟧'+txt,anonymous:false})});
+    }catch(e){console.error('rating failed',e);}
+  }
+  const a=rateCtx.args;rateCtx=null;
+  showResultPage(...a);
+}
+function parseRating(r){
+  const m=String(r.comment||'').match(/^⟦RT:([\d,]+)(?:\|E:([^⟧]*))?⟧/);
+  if(!m)return{vals:null,text:r.comment||'',exam:null};
+  const v=m[1].split(',').map(Number);
+  return{vals:v.length===RATE_CRITERIA.length?v:null,text:String(r.comment).slice(m[0].length),exam:m[2]||null};
 }
 
 async function notifyExamDone(graded,score,passed){
@@ -3495,11 +3588,18 @@ async function renderAdminRatings(){
   const rows=await (await sb('teacher_ratings?select=*&order=created_at.desc')).json();
   if(!Array.isArray(rows)||!rows.length){box.innerHTML='<div class="empty-state"><div class="icon">⭐</div><p>No ratings yet</p></div>';return;}
   const nm=(L,id)=>(L.find(x=>String(x.id)===String(id))||{}).name||'—';
+  const stars=n=>'★'.repeat(Math.round(n))+'☆'.repeat(5-Math.round(n));
   const by={};rows.forEach(r=>(by[r.teacher_id]=by[r.teacher_id]||[]).push(r));
   box.innerHTML=Object.entries(by).map(([tid,L])=>{
-    const avg=(L.reduce((s,r)=>s+(r.rating||0),0)/L.length).toFixed(1);
-    return `<div class="card" style="margin-bottom:14px"><div class="card-title">📚 ${esc(nm(allTeachers,tid))} — ⭐ ${avg}/5 <span class="text-muted" style="font-size:12px">· ${L.length} rating(s)</span></div>`
-    +L.map(r=>`<div style="border-top:1px solid var(--border);padding:8px 0;font-size:13px">${'★'.repeat(r.rating||0)}${'☆'.repeat(5-(r.rating||0))} · ${esc(nm(allStudents,r.student_id))}${r.anonymous?' <span class="text-muted">(🕶️ anonymous to teacher)</span>':''} · <span class="text-muted">${new Date(r.created_at).toLocaleDateString()}</span>${r.comment?`<div>${esc(r.comment)}</div>`:''}</div>`).join('')+'</div>';
+    const P=L.map(r=>({r,p:parseRating(r)}));
+    const own=r=>r.p.vals?r.p.vals.reduce((s,x)=>s+x,0)/r.p.vals.length:(r.r.rating||0);
+    const avg=(P.reduce((s,x)=>s+own(x),0)/P.length).toFixed(1);
+    const withC=P.filter(x=>x.p.vals);
+    const crit=withC.length?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">`+RATE_CRITERIA.map((c,i)=>`<span class="badge badge-active" style="font-size:11px">${esc(c.ar)}: ${(withC.reduce((s,x)=>s+x.p.vals[i],0)/withC.length).toFixed(1)}</span>`).join('')+`</div>`:'';
+    return `<div class="card" style="margin-bottom:14px"><div class="card-title">📚 ${esc(nm(allTeachers,tid))} — ⭐ ${avg}/5 <span class="text-muted" style="font-size:12px">· ${L.length} rating(s)</span></div>${crit}`
+    +P.map(x=>{const r=x.r,p=x.p,ex=p.exam?allExams.find(e=>String(e.id)===String(p.exam)):null;
+      const det=p.vals?`<div class="text-muted" style="font-size:12px;margin-top:4px">`+RATE_CRITERIA.map((c,i)=>`${esc(c.ar)}: ${p.vals[i]}★`).join(' · ')+`</div>`:'';
+      return `<div style="border-top:1px solid var(--border);padding:8px 0;font-size:13px">${stars(own(x))} (${own(x).toFixed(1)}) · ${esc(nm(allStudents,r.student_id))}${ex?` · <span class="text-muted">📝 ${esc(ex.title)}</span>`:''} · <span class="text-muted">${new Date(r.created_at).toLocaleDateString()}</span>${det}${p.text?`<div style="margin-top:4px">${esc(p.text)}</div>`:''}</div>`;}).join('')+'</div>';
   }).join('');
 }
 
