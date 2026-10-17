@@ -656,7 +656,7 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
 
     <!-- REPORTS TAB -->
     <div id="adminTab-hifz" style="display:none"><div id="hifzAdminBody"></div></div>
-    <div id="adminTab-ratings" style="display:none"><div class="section-title">⭐ Teacher ratings</div><div id="ratBody"></div></div>
+    <div id="adminTab-ratings" style="display:none"><div class="section-title">⭐ Student ratings · تقييمات الطلاب</div><div id="ratBody"></div></div>
     <div id="adminTab-visits" style="display:none"><div class="section-title">👁️ Platform visits</div><div id="visBody"></div></div>
     <div id="adminTab-messages" style="display:none">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px"><div class="section-title" style="margin:0">💬 Teacher ⇄ Student conversations</div><button class="btn btn-primary" style="width:auto;padding:10px 18px" onclick="openMsgModal('all')">✉️ New message</button></div>
@@ -3656,24 +3656,68 @@ async function submitRating(){
   if(r.ok){document.getElementById('rateComment').value='';document.getElementById('rateAnon').checked=false;}
 }
 
+let ratRows=[];
 async function renderAdminRatings(){
-  const box=document.getElementById('ratBody');box.innerHTML='Loading…';
-  const rows=await (await sb('teacher_ratings?select=*&order=created_at.desc')).json();
-  if(!Array.isArray(rows)||!rows.length){box.innerHTML='<div class="empty-state"><div class="icon">⭐</div><p>No ratings yet</p></div>';return;}
-  const nm=(L,id)=>(L.find(x=>String(x.id)===String(id))||{}).name||'—';
+  const box=document.getElementById('ratBody');box.innerHTML='<div class="text-muted">Loading…</div>';
+  let rows=[];
+  try{rows=await (await sb('teacher_ratings?select=*&order=created_at.desc')).json();}catch(e){}
+  ratRows=Array.isArray(rows)?rows:[];
+  if(!ratRows.length){box.innerHTML='<div class="empty-state"><div class="icon">⭐</div><p>No ratings yet · لا توجد تقييمات بعد</p></div>';return;}
+  const mk=r=>{const d=new Date(r.created_at);return isNaN(d)?'0000-00':d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');};
+  const months=[...new Set(ratRows.map(mk))].sort().reverse();
+  box.innerHTML=`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+    <input id="ratSearch" type="search" placeholder="🔍 ابحث باسم الطالب / Search student" oninput="drawRatings()" style="flex:1;min-width:200px;padding:10px 12px;border:2px solid var(--border);border-radius:8px;font-size:13px;background:#F5FAFF;font-family:inherit"/>
+    <select id="ratMonth" onchange="drawRatings()" style="padding:10px 12px;border:2px solid var(--border);border-radius:8px;font-size:13px;background:#F5FAFF;font-family:inherit">
+      <option value="">📅 كل الشهور / All months</option>${months.map(m=>`<option value="${m}">${ratMonthLabel(m)}</option>`).join('')}</select>
+    <select id="ratKind" onchange="drawRatings()" style="padding:10px 12px;border:2px solid var(--border);border-radius:8px;font-size:13px;background:#F5FAFF;font-family:inherit">
+      <option value="">كل الأنواع / All</option><option value="RT">📚 المعلمون</option><option value="SP">🛟 الدعم</option><option value="SG">💡 المقترحات</option></select>
+  </div><div id="ratSummary"></div><div id="ratList"></div>`;
+  drawRatings();
+}
+function ratMonthLabel(m){
+  if(m==='0000-00')return '—';
+  const [y,mo]=m.split('-').map(Number);
+  try{return new Intl.DateTimeFormat('ar-EG-u-nu-latn',{month:'long',year:'numeric'}).format(new Date(y,mo-1,1));}catch(e){return m;}
+}
+function drawRatings(){
+  const q=((document.getElementById('ratSearch')||{}).value||'').trim().toLowerCase();
+  const mf=(document.getElementById('ratMonth')||{}).value||'';
+  const kf=(document.getElementById('ratKind')||{}).value||'';
   const stars=n=>'★'.repeat(Math.round(n))+'☆'.repeat(5-Math.round(n));
-  const by={};rows.forEach(r=>{const pk=parseRating(r).kind,k=pk==='SP'?SUPPORT_TID:pk==='SG'?'__sugg':r.teacher_id;(by[k]=by[k]||[]).push(r);});
-  box.innerHTML=Object.entries(by).sort((x,y)=>((y[0]===SUPPORT_TID)*2+(y[0]==='__sugg'))-((x[0]===SUPPORT_TID)*2+(x[0]==='__sugg'))).map(([tid,L])=>{
-    if(tid==='__sugg')return `<div class="card" style="margin-bottom:14px"><div class="card-title">💡 مقترحات الطلاب لتجربة تعليمية أفضل <span class="text-muted" style="font-size:12px">· ${L.length}</span></div>`+L.map(r=>{const p=parseRating(r),ex=p.exam?allExams.find(e=>String(e.id)===String(p.exam)):null;return `<div style="border-top:1px solid var(--border);padding:8px 0;font-size:13px">${esc(nm(allStudents,r.student_id))}${ex?` · <span class="text-muted">📝 ${esc(ex.title)}</span>`:''} · <span class="text-muted">${new Date(r.created_at).toLocaleDateString()}</span><div style="margin-top:4px">${esc(p.text)}</div></div>`;}).join('')+'</div>';
-    const P=L.map(r=>({r,p:parseRating(r)}));
-    const own=r=>r.p.vals?r.p.vals.reduce((s,x)=>s+x,0)/r.p.vals.length:(r.r.rating||0);
-    const avg=(P.reduce((s,x)=>s+own(x),0)/P.length).toFixed(1);
-    const isSP=tid===SUPPORT_TID,CR=isSP?SUPPORT_CRITERIA:RATE_CRITERIA;const withC=P.filter(x=>x.p.vals);
-    const crit=withC.length?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">`+CR.map((c,i)=>`<span class="badge badge-active" style="font-size:11px">${esc(c.ar)}: ${(withC.reduce((s,x)=>s+x.p.vals[i],0)/withC.length).toFixed(1)}</span>`).join('')+`</div>`:'';
-    return `<div class="card" style="margin-bottom:14px"><div class="card-title">${isSP?'🛟 فريق الدعم / Support':'📚 '+esc(nm(allTeachers,tid))} — ⭐ ${avg}/5 <span class="text-muted" style="font-size:12px">· ${L.length} rating(s)</span></div>${crit}`
-    +P.map(x=>{const r=x.r,p=x.p,ex=p.exam?allExams.find(e=>String(e.id)===String(p.exam)):null;
-      const det=p.vals?`<div class="text-muted" style="font-size:12px;margin-top:4px">`+CR.map((c,i)=>`${esc(c.ar)}: ${p.vals[i]}★`).join(' · ')+`</div>`:'';
-      return `<div style="border-top:1px solid var(--border);padding:8px 0;font-size:13px">${stars(own(x))} (${own(x).toFixed(1)}) · ${esc(nm(allStudents,r.student_id))}${ex?` · <span class="text-muted">📝 ${esc(ex.title)}</span>`:''} · <span class="text-muted">${new Date(r.created_at).toLocaleDateString()}</span>${det}${p.text?`<div style="margin-top:4px">${esc(p.text)}</div>`:''}</div>`;}).join('')+'</div>';
+  const nmS=id=>(allStudents.find(x=>String(x.id)===String(id))||{}).name||'—';
+  const nmT=id=>(allTeachers.find(x=>String(x.id)===String(id))||{}).name||'—';
+  const mk=r=>{const d=new Date(r.created_at);return isNaN(d)?'0000-00':d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');};
+  const all=ratRows.map(r=>({r,p:parseRating(r),m:mk(r),sn:nmS(r.student_id)}));
+  const F=all.filter(x=>(!mf||x.m===mf)&&(!kf||x.p.kind===kf)&&(!q||x.sn.toLowerCase().includes(q)));
+  const avgOf=x=>x.p.vals?x.p.vals.reduce((a,b)=>a+b,0)/x.p.vals.length:(x.r.rating||0);
+  // overall summary (teachers + support) for the current filter
+  const sumBox=[];const byT={};
+  F.filter(x=>x.p.kind==='RT').forEach(x=>(byT[x.r.teacher_id]=byT[x.r.teacher_id]||[]).push(x));
+  Object.entries(byT).forEach(([tid,L])=>sumBox.push(['📚 '+esc(nmT(tid)),L]));
+  const SPL=F.filter(x=>x.p.kind==='SP');if(SPL.length)sumBox.push(['🛟 الدعم / Support',SPL]);
+  document.getElementById('ratSummary').innerHTML=sumBox.length?`<details style="margin-bottom:14px" class="card"><summary style="cursor:pointer;font-weight:700">📊 المتوسطات / Averages</summary><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">`+sumBox.map(([t,L])=>`<div style="border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13px"><div style="font-weight:600">${t}</div><div><span style="color:#F5B301">${stars(L.reduce((a,x)=>a+avgOf(x),0)/L.length)}</span> ${(L.reduce((a,x)=>a+avgOf(x),0)/L.length).toFixed(1)} <span class="text-muted">(${L.length})</span></div></div>`).join('')+`</div></details>`:'';
+  // group by student -> month
+  const byS={};F.forEach(x=>(byS[x.r.student_id]=byS[x.r.student_id]||[]).push(x));
+  const students=Object.entries(byS).sort((a,b)=>nmS(a[0]).localeCompare(nmS(b[0]),'ar'));
+  if(!students.length){document.getElementById('ratList').innerHTML='<div class="empty-state"><div class="icon">🔍</div><p>لا توجد نتائج / No results</p></div>';return;}
+  const entry=x=>{
+    const ex=x.p.exam?allExams.find(e=>String(e.id)===String(x.p.exam)):null;
+    const exTxt=ex?` · <span class="text-muted">📝 ${esc(ex.title)}</span>`:'';
+    const day=(()=>{try{return new Date(x.r.created_at).toLocaleDateString();}catch(e){return '';}})();
+    if(x.p.kind==='SG')return `<div style="border-top:1px solid var(--border);padding:8px 0;font-size:13px">💡 <strong>مقترح</strong>${exTxt} · <span class="text-muted">${day}</span><div style="margin-top:4px;line-height:1.7">${esc(x.p.text)}</div></div>`;
+    const C=x.p.kind==='SP'?SUPPORT_CRITERIA:RATE_CRITERIA,v=x.p.vals,av=avgOf(x);
+    const title=x.p.kind==='SP'?'🛟 الدعم':'📚 '+esc(nmT(x.r.teacher_id));
+    return `<div style="border-top:1px solid var(--border);padding:8px 0;font-size:13px"><strong>${title}</strong> <span style="color:#F5B301">${stars(av)}</span> ${av.toFixed(1)}${exTxt} · <span class="text-muted">${day}</span>`
+      +(v?`<div class="text-muted" style="font-size:12px;margin-top:3px">`+C.map((c,i)=>`${esc(c.ar)}: ${v[i]}★`).join(' · ')+`</div>`:'')
+      +(x.p.text?`<div style="margin-top:4px;line-height:1.7">💬 ${esc(x.p.text)}</div>`:'')+`</div>`;
+  };
+  document.getElementById('ratList').innerHTML=students.map(([sid,L])=>{
+    const byM={};L.forEach(x=>(byM[x.m]=byM[x.m]||[]).push(x));
+    const ms=Object.keys(byM).sort().reverse();
+    const open=students.length===1?' open':'';
+    return `<details class="card" style="margin-bottom:12px"${open}><summary style="cursor:pointer;font-weight:700;font-size:15px">🎓 ${esc(nmS(sid))} <span class="text-muted" style="font-weight:400;font-size:12px">· ${L.length} · ${ms.length} شهر</span></summary><div style="margin-top:10px">`
+    +ms.map(m=>`<div style="margin-bottom:10px"><div style="background:rgba(21,101,192,.08);border-radius:8px;padding:6px 12px;font-weight:600;font-size:13px;display:flex;justify-content:space-between"><span>📅 ${ratMonthLabel(m)}</span><span class="text-muted" style="font-weight:400">${byM[m].length}</span></div>${byM[m].map(entry).join('')}</div>`).join('')
+    +`</div></details>`;
   }).join('');
 }
 
