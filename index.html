@@ -457,6 +457,13 @@ body.dark::before{z-index:-1}@keyframes fxtw{from{opacity:.35}to{opacity:1}}
     <div class="leaderboard-section">
       <div class="section-title"><span>🏆</span> Monthly Honor List · لوحة الشرف الشهرية</div>
       <div id="honorWeek" style="font-size:12px;color:var(--muted);margin:-6px 0 8px"></div>
+      <div id="honorFilters" style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px">
+        <select id="honorExam" onchange="honorExamChanged()" style="padding:9px 12px;border:2px solid var(--border);border-radius:10px;background:#F5FAFF;font-size:13px;max-width:100%"></select>
+        <select id="honorPeriod" onchange="renderLeaderboard()" style="padding:9px 12px;border:2px solid var(--border);border-radius:10px;background:#F5FAFF;font-size:13px">
+          <option value="month">📅 This month · الشهر ده</option>
+          <option value="all">♾️ All time · كل الوقت</option>
+        </select>
+      </div>
       <div id="honorStats" style="display:none;gap:8px;flex-wrap:wrap;margin:0 0 12px"></div>
       <div id="leaderboardList"><div class="empty-state"><div class="icon">🎓</div><p>No results yet this month. Be the first!</p></div></div>
     </div>
@@ -1612,15 +1619,39 @@ async function verifyCert(){
 // Honor list = best graded score per student for the CURRENT calendar month (1st 00:00 -> 1st of next month 00:00, local time).
 // Nothing is stored or deleted: on the 1st of every month the window simply moves forward, so the list starts fresh.
 function honorMonthStart(d){d=d||new Date();return new Date(d.getFullYear(),d.getMonth(),1);}
+// Exam picker: "" = all exams, otherwise one exam's honor board. Picking an exam switches the period to "all time" (the user can still change it).
+function honorExamChanged(){
+  const ex=document.getElementById('honorExam'),pr=document.getElementById('honorPeriod');
+  if(pr&&ex)pr.value=ex.value?'all':'month';
+  renderLeaderboard();
+}
+function fillHonorExamSelect(){
+  const sel=document.getElementById('honorExam');if(!sel)return;
+  const withScores=new Set(allResults.filter(r=>r.graded!==false&&r.score!=null&&r.submitted_at).map(r=>String(r.exam_id)));
+  const exams=allExams.filter(e=>withScores.has(String(e.id)));
+  const sig=exams.map(e=>e.id+'|'+e.title).join('~');
+  if(sel.dataset.sig===sig)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">🏆 All exams · كل الامتحانات</option>'+exams.map(e=>`<option value="${esc(e.id)}">${esc(e.title)}</option>`).join('');
+  sel.dataset.sig=sig;
+  sel.value=exams.some(e=>String(e.id)===cur)?cur:'';
+}
 function renderLeaderboard(){
   const lb=document.getElementById('leaderboardList');if(!lb)return;
+  fillHonorExamSelect();
+  const examSel=document.getElementById('honorExam'),perSel=document.getElementById('honorPeriod');
+  const examId=examSel?examSel.value:'',allTime=!!perSel&&perSel.value==='all';
   const ws=honorMonthStart(),we=new Date(ws.getFullYear(),ws.getMonth()+1,1);
   const wk=document.getElementById('honorWeek');
   if(wk){
     const mEn=ws.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
     let mAr='';try{mAr=ws.toLocaleDateString('ar-EG',{month:'long',year:'numeric'});}catch(e){}
     const ms=we-new Date(),dd=Math.floor(ms/864e5),hh=Math.floor(ms%864e5/36e5);
-    wk.textContent=`📅 ${mEn}${mAr?' · '+mAr:''} · resets on the 1st of next month (in ${dd}d ${hh}h) · تتجدد أول كل شهر`;
+    const exObj=examId?allExams.find(e=>String(e.id)===examId):null;
+    const examTxt=exObj?`📝 ${exObj.title} · `:'';
+    wk.textContent=allTime
+      ?`${examTxt}♾️ All time · كل الوقت`
+      :`${examTxt}📅 ${mEn}${mAr?' · '+mAr:''} · resets on the 1st of next month (in ${dd}d ${hh}h) · تتجدد أول كل شهر`;
   }
   const inMonth=r=>{const t=new Date(r.submitted_at);return t>=ws&&t<we;};
   const hs=document.getElementById('honorStats');
@@ -1637,11 +1668,11 @@ function renderLeaderboard(){
         +chip('✅ Submitted: '+new Set(done.map(r=>String(r.student_id))).size+' students · '+done.length+' attempts','var(--muted)');
     }
   }
-  const gradedResults=allResults.filter(r=>r.graded!==false&&r.score!=null&&inMonth(r));
+  const gradedResults=allResults.filter(r=>r.graded!==false&&r.score!=null&&r.submitted_at&&(allTime||inMonth(r))&&(!examId||String(r.exam_id)===examId));
   const scoreMap={};
   gradedResults.forEach(r=>{const c=scoreMap[r.student_id];if(!c||r.score>c.score||(r.score===c.score&&new Date(r.submitted_at)<new Date(c.submitted_at)))scoreMap[r.student_id]=r;});
   const sorted=Object.values(scoreMap).sort((a,b)=>b.score-a.score||new Date(a.submitted_at)-new Date(b.submitted_at)).slice(0,10);
-  if(!sorted.length){lb.innerHTML='<div class="empty-state"><div class="icon">🎓</div><p>No results yet this month. Be the first!</p></div>';return;}
+  if(!sorted.length){lb.innerHTML='<div class="empty-state"><div class="icon">🎓</div><p>'+(examId||allTime?'No results yet for this selection.':'No results yet this month. Be the first!')+'</p></div>';return;}
   const colors=['#1565C0','#16A34A','#0EA5E9','#0891B2','#059669','#2563EB'];
   lb.innerHTML=sorted.map((r,i)=>{
     const s=allStudents.find(s=>s.id===r.student_id)||{name:'Unknown'};
